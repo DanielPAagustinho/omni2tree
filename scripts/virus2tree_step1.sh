@@ -283,7 +283,7 @@ fetch_data() {
     log_info "--use_mat_peptides parameter specified, searching for gbk file and evaluating..."
     
     efetch -db nucleotide -id "$accessions_list" -format gbwithparts > "${TEMP_DIR}/gbk_dir/${strain}.gbk"
-    if python "${SCRIPTS_DIR}/write_mat_peptides.py" "${TEMP_DIR}/gbk_dir/${strain}.gbk" "db/${strain}_cds_from_genomic.fna"; then
+    if python3 "${SCRIPTS_DIR}/write_mat_peptides.py" "${TEMP_DIR}/gbk_dir/${strain}.gbk" "db/${strain}_cds_from_genomic.fna"; then
       if [[ -f "db/${strain}_cds_from_genomic.fna" ]]; then
         if [[ -s "db/${strain}_cds_from_genomic.fna" ]]; then
           if $HAS_CODE_COLUMN; then
@@ -912,7 +912,7 @@ if [[ "$RES_DOWN_VOID" == false ]]; then
 
   if [[ "$NCBI_DOWNLOAD_COUNT" -gt 0 ]]; then
     log_info "Generating CDS counts table and histogram..."
-    python "${SCRIPTS_DIR}/cds_accessions_statistics.py" --db-dir "${WORK_DIR}/db" --out-dir stats --prefix cds_count_per_accession
+    python3 "${SCRIPTS_DIR}/cds_accessions_statistics.py" --db-dir "${WORK_DIR}/db" --out-dir stats --prefix cds_count_per_accession
   else
     log_info "No new downloads -> skipping CDS counts/histogram."
   fi
@@ -953,10 +953,10 @@ else
   #Adding 5 letter code and cleaning for r2t
   if $HAS_CODE_COLUMN; then
     # If the user gave a CODE column, we pass db_codes.tsv as an argument
-    python "${SCRIPTS_DIR}/clean_fasta_cdna_cds.py" db "$RES_DOWN" "$FIVE_LETTER_FILE" 
+    python3 "${SCRIPTS_DIR}/clean_fasta_cdna_cds.py" db "$RES_DOWN" "$FIVE_LETTER_FILE" 
   else
-    # If no code was provided, the Python script generates codes on its own
-    python "${SCRIPTS_DIR}/clean_fasta_cdna_cds.py" db "$RES_DOWN"
+    # If no code was provided, the python3 script generates codes on its own
+    python3 "${SCRIPTS_DIR}/clean_fasta_cdna_cds.py" db "$RES_DOWN"
   fi
 fi
 
