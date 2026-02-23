@@ -172,7 +172,11 @@ skip_taxa() {
     fi
 
     if awk 'NR >=2 && NF {found=1; exit} END {exit !found}' "$filtered_input_file"; then #The NF verifies if there are fields, if so, found=1, and the exit will give 0, which is success
+      if [[ -n "$taxon_list" ]]; then
         log_info "Skipping the download of the following detected input files: ${taxon_list%, }"
+      else
+        log_info "Resume mode enabled, but no previously downloaded taxa were detected in db/. Proceeding with full download from NCBI."
+      fi
     else
         log_info "All taxa had a corresponding file, skipping downloading from NCBI"
         RES_DOWN_VOID=true
@@ -343,7 +347,7 @@ generate_og_gene_tsv() {
     local output_file=$3 # Output file to store results
     local unique_output_file="${output_file%.tsv}-unique.tsv"
     local tmp_file  
-    local -A SPECIES_TO_CODE
+    local -A SPECIES_TO_CODE=()
     log_info "Loading 5-letter code for each taxon from file ${FIVE_LETTER_FILE}"
     while IFS=$'\t' read -r species_val code_val; do
           SPECIES_TO_CODE["$species_val"]="$code_val"
@@ -356,10 +360,10 @@ generate_og_gene_tsv() {
     unique_output_file2="$TEMP_DIR/$(basename "$unique_output_file").tmp"
     log_info "Processing gene features from coding sequences files in directory: $fna_dir"
 
-    declare -A TOTAL_HEADERS_BY_SPECIES
-    declare -A MISSING_PID_BY_SPECIES
-    declare -A NO_OG_BY_SPECIES
-    declare -A MATCHED_BY_SPECIES
+    declare -A TOTAL_HEADERS_BY_SPECIES=()
+    declare -A MISSING_PID_BY_SPECIES=()
+    declare -A NO_OG_BY_SPECIES=()
+    declare -A MATCHED_BY_SPECIES=()
     while IFS=: read -r file line; do
         #Example of the complete input line: db/rsv_11_cds_from_genomic.fna:>lcl|MG813984.1_cds_AZQ19553.1_6 [gene=SH] [protein=small hydrophobic protein] [protein_id=AZQ19553.1] [location=4251..4445] [gbkey=CDS]
         local protein_id="NA"
@@ -520,7 +524,7 @@ generate_og_gene_tsv() {
     printf "Species\tTotal_CDS\tMissing_protein_id\tNo_OG_match\tOG_matched\n" >> "$summary_og"
 
     # Unir claves vistas sin duplicados (por si alguna especie solo aparece en uno de los mapas)
-    declare -A ALL_SPECIES
+    declare -A ALL_SPECIES=()
     for sp in "${!TOTAL_HEADERS_BY_SPECIES[@]}" "${!MISSING_PID_BY_SPECIES[@]}" "${!NO_OG_BY_SPECIES[@]}" "${!MATCHED_BY_SPECIES[@]}"; do
       [[ -z "$sp" ]] && continue
       ALL_SPECIES["$sp"]=1
