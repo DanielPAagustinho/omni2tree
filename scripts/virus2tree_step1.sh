@@ -136,7 +136,7 @@ skip_taxa() {
     local taxon_list=""
     #echo "This is the filtered_input_file: ${filtered_input_file}"
     # Create an associative array of downloaded taxa already in db dir
-    declare -A downloaded_taxa_map
+    declare -A downloaded_taxa_map=()
     while IFS= read -r file; do
         taxon=$(basename "$file" | awk -F '_cds_' '{print $1}' | tr -cd '[:alnum:]')
         downloaded_taxa_map["$taxon"]=1
@@ -691,13 +691,24 @@ if [[ -z "$OUT_DIR" ]]; then
   OUT_DIR=read2tree_output
   log_info "No name for the read2tree directory was specified, using '$(realpath "$OUT_DIR")'"
   if [[ -d "$OUT_DIR" ]]; then
-	  log_error "The read2tree output directory '$(realpath "$OUT_DIR")' already exists. Please provide a novel read2tree directory"
-    exit 1
+    #si esta resumiendo, que lo elimine y siga
+    if [[ "$RES_DOWN" == true ]]; then
+      log_info "Removing read2tree output directory: $(realpath "$OUT_DIR")"
+      rm -rf "$OUT_DIR"
+    else
+      log_error "The read2tree output directory '$(realpath "$OUT_DIR")' already exists. Please provide a novel read2tree directory"
+      exit 1
+    fi
   fi
 else
   if [[ -d "$OUT_DIR" ]]; then
-	  log_error "The read2tree output directory '$(realpath "$OUT_DIR")' already exists. Please provide a novel read2tree directory"
-    exit 1
+    if [[ "$RES_DOWN" == true ]]; then
+      log_info "Removing read2tree output directory: $(realpath "$OUT_DIR")"
+      rm -rf "$OUT_DIR"
+    else
+      log_error "The read2tree output directory '$(realpath "$OUT_DIR")' already exists. Please provide a novel read2tree directory"
+      exit 1
+    fi
   fi
   log_info "Using output directory: '$(realpath "$OUT_DIR")'"
 fi
@@ -1031,7 +1042,7 @@ fi
 
 if [ -f "parameters.drw" ]; then
   rm -f parameters.drw
-  log_info "Existing parameters.drw file removed"
+  # log_info "Existing parameters.drw file removed"
 fi
 log_info "Creating the parameters.drw file for OMA"
 oma -p 
