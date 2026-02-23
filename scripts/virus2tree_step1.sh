@@ -684,7 +684,7 @@ if [[ -n "$WORK_DIR" ]]; then
 else
     # por defecto: cwd del usuario al ejecutar el script
     WORK_DIR="$(pwd)"
-    log_info "No --work_dir specified. Outputs will be written in '$(pwd)'"
+    log_info "No --root_dir specified. Output directories will be written in '$(pwd)'"
 fi
 
 if [[ -z "$OUT_DIR" ]]; then
@@ -714,13 +714,38 @@ if [[ "$RES_DOWN" == true ]]; then
             exit 1
         fi
     fi
+    # the removal is already done with respect to the --root_dir!!!
+    # Remove, and tell you removed the possibly existing marker genes dir
+    if [[ -d "marker_genes" ]]; then
+      log_info "Removing marker_genes directory: $(realpath "marker_genes/")"
+      rm -rf "marker_genes/"
+    fi
+    # Remove Cache directory
+    if [[ -d "Cache" ]]; then
+      log_info "Removing Cache directory: $(realpath "Cache/")"
+      rm -rf "Cache/"
+    fi
+    # Remove and tell you removed the Output dir
+    if [[ -d "Output" ]]; then
+      log_info "Removing Output directory: $(realpath "Output/")"
+      rm -rf "Output/"
+    fi
 else
+  # error if dna ref.fa or five_letter taxon already exist
+  if [[ -f "dna_ref.fa" ]]; then
+    log_error "File $(realpath "dna_ref.fa") already exists, please remove it"
+    exit 1
+  fi
+  if [[ -f "five_letter_taxon.tsv" ]]; then
+    log_error "File $(realpath "five_letter_taxon.tsv") already exists, please remove it"
+    exit 1
+  fi
   if [[ -d "db" ]]; then
-        log_error "Directory $(realpath "db/")' already exists, please remove it"
+        log_error "Directory $(realpath "db/") already exists, please remove it"
         exit 1
   fi
   if [[ -d "DB" ]]; then
-        log_error "Directory $(realpath "DB/")' already exists, please remove it"
+        log_error "Directory $(realpath "DB/") already exists, please remove it"
         exit 1
   fi
   if [[ -d "$TEMP_DIR" ]]; then
@@ -728,6 +753,20 @@ else
             log_error "Temporary directory '$(realpath "$TEMP_DIR")' already exists and is not void. Please specify a novel directory to avoid conflicts with the new run."
             exit 1
         fi
+  fi
+    if [[ -d "marker_genes" ]]; then
+    log_error "Directory $(realpath "marker_genes/") already exists, please remove it"
+    exit 1
+  fi
+  #remove Cache directory
+  if [[ -d "Cache" ]]; then
+    log_error "Directory $(realpath "Cache") already exists, please remove it"
+    exit 1
+  fi
+  #remove output dir
+  if [[ -d "Output" ]]; then
+    log_error "Directory $(realpath "Output") already exists, please remove it"
+    exit 1
   fi
 fi
 
