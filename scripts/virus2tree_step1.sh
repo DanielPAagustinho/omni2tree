@@ -60,10 +60,12 @@ check_dependencies() {
   declare -A tools=(
     ["read2tree"]="read2tree"
     ["oma"]="OMA standalone"
+    ["oma-status"]="OMA standalone - oma-status"
     ["efetch"]="Entrez Direct utilities - efetch"
     ["esearch"]="Entrez Direct utilities - esearch"
     ["elink"]="Entrez Direct utilities - elink"
     ["awk"]="AWK"
+    ["python3"]="python 3"
 
   )
 
@@ -77,6 +79,18 @@ check_dependencies() {
       #log_info "Found: ${tools[$cmd]}"
     fi
   done
+
+  for pkg in pandas numpy matplotlib; do
+        if ! python3 -c "import $pkg" &>/dev/null; then
+            log_error "Missing python3 package: $pkg. Install with: pip install $pkg"
+            exit 1
+        fi
+    done
+
+  if ! python3 -c "import Bio" &>/dev/null; then
+    log_error "Missing python3 package: biopython. Install with: pip install biopython"
+    exit 1
+  fi
 }
 
 usage() {
