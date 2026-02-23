@@ -730,6 +730,11 @@ if [[ "$RES_DOWN" == true ]]; then
       log_info "Removing Output directory: $(realpath "Output/")"
       rm -rf "Output/"
     fi
+    # Remove and tell you removed the following files que contengan OG: OG_genes-unique.tsv  OG_genes.tsv  taxon_OG.tsv
+    if [[ -e "stats/OG_genes-unique.tsv" || -e "stats/OG_genes.tsv" || -e "stats/taxon_OG.tsv" || -e "stats/OG_taxa.tsv" ]]; then
+      log_info "Removing OG-related stats files (if present): stats/OG_genes-unique.tsv, stats/OG_genes.tsv, stats/taxon_OG.tsv, stats/OG_taxa.tsv"
+      rm -f "stats/OG_genes-unique.tsv" "stats/OG_genes.tsv" "stats/taxon_OG.tsv" "stats/OG_taxa.tsv"
+    fi
 else
   # error if dna ref.fa or five_letter taxon already exist
   if [[ -f "dna_ref.fa" ]]; then
@@ -950,6 +955,14 @@ if [[ "$RES_DOWN_VOID" == false ]]; then
   log_info "Nucleotide sequences retrieval completed successfully.\n"
 
   if [[ "$NCBI_DOWNLOAD_COUNT" -gt 0 ]]; then
+    # Si resume download es true, elimino stats directory para evitar sobreescribir los archivos
+    if [[ "$RES_DOWN" == true ]]; then
+      if [[ -d "stats" ]]; then
+        log_info "Removing stats directory: $(realpath "stats/")"
+        rm -rf "stats/"
+      fi
+    fi
+
     log_info "Generating CDS counts table and histogram..."
     python3 "${SCRIPTS_DIR}/cds_accessions_statistics.py" --db-dir "${WORK_DIR}/db" --out-dir stats --prefix cds_count_per_accession
   else
