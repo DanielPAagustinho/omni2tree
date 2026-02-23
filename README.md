@@ -37,6 +37,7 @@ cd OMA.2.6.0
 ## Below choose your install path, if not OMA will be installed in /usr/local/OMA (you might need to use sudo in this case)
 ./install.sh /your/install/path
 
+## This step is IMPORTANT:
 ## After installation, make sure the bin folder of OMA is in your PATH variable. For that, edit your shell configuration file (`~/.bashrc`, `~/.zshrc`, etc.)
 echo 'export PATH=$PATH:/your/install/path/OMA/bin' >> ~/.bashrc 
 source ~/.bashrc
@@ -174,8 +175,8 @@ If this file is not specified, OMA Standalone will use midpoint rooting, which i
 | `-g`, `--outgroup` | **Optional (recommended)** File with outgroup taxa used by OMA. |
 | `--root_dir`       |Root directory where all outputs are written. **Default:** current directory|
 | `--out_dir`        | read2tree step 1 output directory (relative to `--root_dir` or absolute). **Default:** `read2tree_output`. |
-| `--temp_dir`       | Temporary directory. If relative, it’s resolved under `--root_dir`. **Default:** `/tmp`|
-| `--resume_download`       |Skip taxa already downloaded from NCBI into the `db` folder. If all taxa were already downloaded, it resumes from Step 1.4. Additionally, if the required files are already present, Step 1.4 is bypassed and the script practically resumes from the OMA Standalone run (Step 1.6). |
+| `--temp_dir`       | Temporary directory. If relative, it’s resolved under `--root_dir`. **Default:** `mktemp -d`|
+| `--resume`       |Skips taxa already downloaded from NCBI into the `db` folder. If all taxa were already downloaded, it resumes at Step 1.4. Moreover, if the required files are already present, Step 1.4 is bypassed and the script practically resumes from the OMA Standalone run (Step 1.6). When run, it *removes* existing OMA output & read2tree directories. |
 |`--og_min_fraction`| Keep only OGs present in at least this fraction of species (0–1). If omitted, all OGs are kept. |
 | `-p, --use_mat_peptides`       | Download GBK files for each taxon's accession(s) and uses the mat_peptide features instead of CDS features if at least one mat_peptide is found. |
 | `-q, --use_mat_peptides_only`       | Same as --use_mat_peptides, except that if no mat_peptide feature is found, it does not download CDS features and simply skips that taxon. |
@@ -192,7 +193,7 @@ The accession file must be a comma-separated values (CSV) text file, with the fi
 2. **Second column (optional):** Five-letter code. Must be exactly 5 alphanumeric characters. Header: code(s). If not provided, a random five-letter code for each taxon will be generated and saved in the file five_letter_taxon.tsv
 3. **Third and onward (required):** One or more accession numbers (comma-separated) to obtain coding sequences. Accepts NCBI Nucleotide database accessions and assembly identifiers (GCF_/GCA_). Header: accession(s).
 
-Commented lines starting with # are ignored.
+Commented lines starting with `#` are ignored.
 
 #### **Example Input Files**
 
@@ -222,7 +223,7 @@ Norovirus GV, NC_008311.1
 
 ### **Outgroup File Format**
 
-The outgroup file should contain the taxa fo the accession file to be used as outgroups. It can include one or more taxa.
+The outgroup file should contain taxa from the accession file to be used as outgroups. It can include one or more taxa.
 
 #### **Example Outgroup File**
 

@@ -110,7 +110,7 @@ Optional:
   --root_dir <dir>                             Specify root directory where all the outputs will be saved [default: current directory]
   --temp_dir <dir>                             Specify temporary directory (otherwise mktemp -d is used). If relative, it will be relative to the root_dir.
   --out_dir <dir>                              Specify output directory for read2tree step1 [default: read2tree_output]. If relative, it will be relative to the root_dir.
-  --resume_download                            Skips taxa whose coding sequences have already been downloaded from NCBI to the db folder                                
+  --resume                                     Skips taxa whose coding sequences have already been downloaded from NCBI to the db folder. Skips as much steps as possible up to the OMA run step (1.6). When run, it removes existing OMA output and read2tree directories.                                
   --og_min_fraction <float>                    Keep only OGs present in at least this fraction of species (0–1). If omitted, all OGs are kept.
   -p, --use_mat_peptides                       Downloads the gbk file for each taxon's accession(s). If at least one mature peptide feature is detected, these features are used as the coding sequences; otherwise, the standard CDS features are downloaded.
   -q, --use_mat_peptides_only                  Downloads the gbk file for each taxon's accession(s). If at least one mature peptide feature is detected, these features are used as the coding sequences; if none are detected, that taxon is skipped.
@@ -635,7 +635,7 @@ while [[ "$#" -gt 0 ]]; do
         --out_dir) OUT_DIR="${2%/}"; shift ;;
         --debug) DEBUG=true;;
         --og_min_fraction) OG_MIN_FRAC="$2"; shift ;;
-        --resume_download) RES_DOWN=true;;
+        --resume) RES_DOWN=true;;
         -h|--help) show_help;;
         *) log_error "Unknown parameter passed: $1"; usage; log_info "Try '$PROGNAME --help' for more information."; exit 1 ;;
     esac
