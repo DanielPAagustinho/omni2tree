@@ -129,9 +129,9 @@ The installation script creates symlinks to the shell entry points.
 Finally, check your installation with:
 
 ```bash
-which v2t-step1 && v2t-step1 --help
-which v2t-step2 && v2t-step2 --help
-which v2t-sra   && v2t-sra   --help
+which o2t-step1 && o2t-step1 --help
+which o2t-step2 && o2t-step2 --help
+which o2t-sra   && o2t-sra   --help
 ```
 
 ## Quick start
@@ -140,14 +140,14 @@ Minimal example (adjust paths to your data):
 
 ```bash
 # Step 1: Create reference OMA database for r2t with NCBI accessions from RSV
-v2t-step1 -i rsv_accessions.csv -g rsv_outgroups.txt -T 25 --root_dir virus2tree_rsv &> rsv_long_step1.log
+o2t-step1 -i rsv_accessions.csv -g rsv_outgroups.txt -T 25 --root_dir virus2tree_rsv &> rsv_long_step1.log
 
 # Step 2: Map long nanopore RSV reads to the reference using GNU Parallel
-parallel -j 4 v2t-step2 -r {1} --root_dir virus2tree_rsv -T 20 ::: \
+parallel -j 4 o2t-step2 -r {1} --root_dir virus2tree_rsv -T 20 ::: \
   $(ls reads/*fastq* | sort) &>> "rsv_long_step2.log" &
 
 # Step 2: Map short paired end RSV reads to the reference
-  parallel -j 4 v2t-step2 \
+  parallel -j 4 o2t-step2 \
   -r {1} -t paired -map_op "-ax sr" --root_dir virus2tree_rsv -T 20 ::: \
   $(ls reads/*_1.fastq* | sort) :::+ $(ls reads/*_2.fastq* | sort) &>> "rsv_short_step2.log" &
 
@@ -158,7 +158,7 @@ read2tree --step 3combine --standalone_path marker_genes --dna_reference dna_ref
 ## Running step 1: Creating the reference database
 
 ```bash
-v2t-step1 -i rsv_accessions.csv -g rsv_outgroups.txt -T 25 --out_dir read2tree --temp_dir temp --debug &> def_rsv_long.log
+o2t-step1 -i rsv_accessions.csv -g rsv_outgroups.txt -T 25 --out_dir read2tree --temp_dir temp --debug &> def_rsv_long.log
 ```
 To create the reference database, two key input files are required:
 
@@ -256,12 +256,12 @@ After generating the reference database of orthologous groups, we proceed to add
 
 ```bash
 #For long nanopore reads (Default for -t, --read_type is single and for --minimap2_options is "-ax mp-ont")
-parallel -j 4 v2t-step2 \
+parallel -j 4 o2t-step2 \
   -r {1} --dedup --downsample --coverage 250 --genome_size 15kb --out_dir read2tree -T 20 ::: \
   $(ls reads/*fastq* | sort) &>> "rsv_long_step2.log" &
 
 #For paired end illumina reads
-parallel -j 4 v2t-step2 \
+parallel -j 4 o2t-step2 \
   -r {1} {2} -t paired --minimap2_options "-ax sr" --dedup --downsample --coverage 250 --genome_size 15kb --out_dir read2tree -T 20 ::: \
   $(ls reads/*_1.fastq* | sort) :::+ $(ls reads/*_2.fastq* | sort) &>> "rsv_short_step2.log" &
 
@@ -309,7 +309,7 @@ read2tree --step 3combine --standalone_path marker_genes --dna_reference dna_ref
 ```
 ## Downloading read samples
 
-To easily get read samples from SRA database, we developed the script `v2t-sra`. The purpose of this script is to facilitate the download and conversion to FASTQ of SRA IDs, whether they correspond to RUN (e.g., SRR, ERR, DRR) or EXPERIMENT (e.g., SRX, ERX, DRX).
+To easily get read samples from SRA database, we developed the script `o2t-sra`. The purpose of this script is to facilitate the download and conversion to FASTQ of SRA IDs, whether they correspond to RUN (e.g., SRR, ERR, DRR) or EXPERIMENT (e.g., SRX, ERX, DRX).
 
 Depending on the IDs type, the script proceeds differently:
 
@@ -335,7 +335,7 @@ The output consists of FASTQ files corresponding to each RUN, renamed to include
 #### **Example Command**
 
 ```bash
-./v2t-sra -i sra_runs_rsv.csv --chunk-size 3 --sleep-secs 2 --outdir rsv_reads
+./o2t-sra -i sra_runs_rsv.csv --chunk-size 3 --sleep-secs 2 --outdir rsv_reads
 ```
 
 It means to analyze the input file `sra_runs_rsv.csv`, extract the SRA IDs, fetch metadata in chunks of 3 SRA IDs at a time with a 2-second pause between chunks to avoid server overload, and download the resulting reads into the specified output directory `rsv_reads`.

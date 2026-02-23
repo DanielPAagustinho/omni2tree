@@ -1,4 +1,4 @@
-name: virus2tree
+name: omni2tree
 channels:
   - conda-forge
   - bioconda

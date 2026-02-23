@@ -2,9 +2,10 @@
 set -euo pipefail
 # usage: ./install.sh [/path/to/prefix]
 PREFIX="${1:-/usr/local/bin}"  #prefix is the place where symlinks will be created 
-BASENAMES=("virus2tree_step1.sh:v2t-step1"
-           "virus2tree_step2.sh:v2t-step2"
-           "download_sra_reads.sh:v2t-sra")
+APP_NAME="omni2tree"
+BASENAMES=("omni2tree_step1.sh:o2t-step1"
+           "omni2tree_step2.sh:o2t-step2"
+           "omni2tree_sra.sh:o2t-sra")
 
 # Resolve install.sh absolute directory, following symlinks
 SOURCE="${BASH_SOURCE[0]}"
@@ -65,7 +66,7 @@ for pair in "${BASENAMES[@]}"; do
 done
 
 # Install bash completions
-COMP_SRC="$REPO_ROOT/share/bash-completion/completions/virus2tree"
+COMP_SRC="$REPO_ROOT/share/bash-completion/completions/$APP_NAME"
 COMP_INSTALLED=false
 # install bash completions 
 if [[ -f "$COMP_SRC" ]]; then
@@ -78,16 +79,15 @@ if [[ -f "$COMP_SRC" ]]; then
   mkdir -p "$COMP_SHARE" 2>/dev/null || true
   
   if [[ -d "$COMP_SHARE" && -w "$COMP_SHARE" ]]; then
-    # Copiar el archivo principal
-    if cp -f "$COMP_SRC" "$COMP_SHARE/virus2tree" 2>/dev/null; then
-      echo "[OK] Bash completions installed to $COMP_SHARE/virus2tree"
+    if cp -f "$COMP_SRC" "$COMP_SHARE/$APP_NAME" 2>/dev/null; then
+      echo "[OK] Bash completions installed to $COMP_SHARE/$APP_NAME"
       COMP_INSTALLED=true
       
-      # Crear symlinks para que bash-completion lo encuentre por cada comando
-      for cmd in v2t-step1 v2t-step2 v2t-sra; do
-        ln -sf virus2tree "$COMP_SHARE/$cmd" 2>/dev/null || true
+      # Symlinks so bash-completion can reuse the same completion file per command
+      for cmd in o2t-step1 o2t-step2 o2t-sra; do
+        ln -sf "$APP_NAME" "$COMP_SHARE/$cmd" 2>/dev/null || true
       done
-      echo "[OK] Created completion symlinks: v2t-step1, v2t-step2, v2t-sra"
+      echo "[OK] Created completion symlinks: o2t-step1, o2t-step2, o2t-sra"
     fi
   fi
 fi
@@ -99,9 +99,12 @@ case ":$PATH:" in
      echo "export PATH=\"$PREFIX:\$PATH\"";;
 esac
 
-echo "$PREFIX" > "$REPO_ROOT/.install_prefix"
+if ! (printf '%s\n' "$PREFIX" > "$REPO_ROOT/.install_prefix") 2>/dev/null; then
+  echo "[WARN] Could not write $REPO_ROOT/.install_prefix (permission denied?)."
+  echo "[WARN] Uninstall may not auto-detect the prefix; pass it explicitly to ./uninstall.sh."
+fi
 
-echo "[DONE] Installed executables: v2t-step1, v2t-step2, v2t-sra"
+echo "[DONE] Installed Omni2tree executables: o2t-step1, o2t-step2, o2t-sra"
 if [[ "$COMP_INSTALLED" == true ]]; then
   echo "[INFO] To enable completions now, run:"
   echo "  source ~/.bashrc"

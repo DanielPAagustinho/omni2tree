@@ -2,7 +2,7 @@
 
 # Bash completion for Omni2tree commands.
 
-_v2t_sra_complete() {
+_o2t_sra_complete() {
   local cur prev opts
   COMPREPLY=()
   cur="${COMP_WORDS[COMP_CWORD]}"
@@ -30,7 +30,7 @@ _v2t_sra_complete() {
   fi
 }
 
-_v2t_step1_complete() {
+_o2t_step1_complete() {
   local cur prev opts
   COMPREPLY=()
   cur="${COMP_WORDS[COMP_CWORD]}"
@@ -55,7 +55,7 @@ _v2t_step1_complete() {
   fi
 }
 
-_v2t_step2_complete() {
+_o2t_step2_complete() {
   local cur prev opts
   COMPREPLY=()
   cur="${COMP_WORDS[COMP_CWORD]}"
@@ -85,6 +85,6 @@ _v2t_step2_complete() {
   fi
 }
 
-complete -o default -F _v2t_sra_complete o2t-sra
-complete -o default -F _v2t_step1_complete o2t-step1
-complete -o default -F _v2t_step2_complete o2t-step2
+complete -o default -F _o2t_sra_complete o2t-sra
+complete -o default -F _o2t_step1_complete o2t-step1
+complete -o default -F _o2t_step2_complete o2t-step2
