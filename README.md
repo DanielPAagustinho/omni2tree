@@ -3,7 +3,19 @@
 
 This new version of read2tree enables the creation of a reference database via OMA Standalone using as input coding sequences from NCBI assemblies. The final tree combines the presence of assemblies (that is, the reference) and the read samples. It also supports read deduplication with czid-dedup and downsampling with rasusa, among other functionalities.
 
-## Installation of dependencies
+## Table of Contents
+
+- [Installation](#installation)
+- [Quick start](#quick-start)
+- [Running step 1: Creating the reference database](#running-step-1-creating-the-reference-database)
+- [Running step 2: Processing sample reads and adding them to the read2tree folder](#running-step-2-processing-sample-reads-and-adding-them-to-the-read2tree-folder)
+- [Running step 3: Getting the tree](#running-step-3-getting-the-tree)
+- [Downloading read samples](#downloading-read-samples)
+- [Shannon Entropy Analysis Pipeline for MSA Data](#shannon-entropy-analysis-pipeline-for-msa-data)
+
+## Installation
+
+### Dependencies
 
 This software relies on four external tools: [OMA Standalone](https://omabrowser.org/standalone/), [Rasusa](https://github.com/mbhall88/rasusa?tab=readme-ov-file#install), [czid-dedup](https://github.com/chanzuckerberg/czid-dedup?tab=readme-ov-file#installation), and [Read2Tree](https://github.com/DessimozLab/read2tree/tree/minimap2?tab=readme-ov-file#installation). It assumes all programs are in your Conda environment or `PATH`. 
 Below are two general ways to install all the required dependencies. For more details, please visit the respective web pages.
@@ -112,7 +124,7 @@ To verify that all tools are correctly installed and available in your Conda env
 command -v oma && command -v rasusa && command -v czid-dedup && command -v read2tree && command -v fasterq-dump && command -v esearch
 ```
 
-## Installation
+### Omni2tree installation
 
 You can set up Omni2tree cloning the repo and running the installer:
 
@@ -140,25 +152,28 @@ Minimal example (adjust paths to your data):
 
 ```bash
 # Step 1: Create reference OMA database for r2t with NCBI accessions from RSV
-o2t-step1 -i rsv_accessions.csv -g rsv_outgroups.txt -T 25 --root_dir virus2tree_rsv &> rsv_long_step1.log
+o2t-step1 -i rsv_accessions.csv -g rsv_outgroups.txt -T 25 --o2t_out virus2tree_rsv &> rsv_long_step1.log
 
 # Step 2: Map long nanopore RSV reads to the reference using GNU Parallel
-parallel -j 4 o2t-step2 -r {1} --root_dir virus2tree_rsv -T 20 ::: \
+parallel -j 4 o2t-step2 -r {1} --o2t_out virus2tree_rsv -T 20 ::: \
   $(ls reads/*fastq* | sort) &>> "rsv_long_step2.log" &
 
 # Step 2: Map short paired end RSV reads to the reference
   parallel -j 4 o2t-step2 \
-  -r {1} -t paired -map_op "-ax sr" --root_dir virus2tree_rsv -T 20 ::: \
+  -r {1} -t paired -map_op "-ax sr" --o2t_out virus2tree_rsv -T 20 ::: \
   $(ls reads/*_1.fastq* | sort) :::+ $(ls reads/*_2.fastq* | sort) &>> "rsv_short_step2.log" &
 
 # Step 3: Create the tree
-read2tree --step 3combine --standalone_path marker_genes --dna_reference dna_ref.fa --output_path virus2tree_rsv/read2tree_output --tree --debug
+read2tree --step 3combine --standalone_path marker_genes --dna_reference dna_ref.fa --output_path virus2tree_rsv/O2T_RESULTS --tree --debug
 ```
 
 ## Running step 1: Creating the reference database
 
+<details>
+<summary>Click to expand/collapse</summary>
+
 ```bash
-o2t-step1 -i rsv_accessions.csv -g rsv_outgroups.txt -T 25 --out_dir read2tree --temp_dir temp --debug &> def_rsv_long.log
+o2t-step1 -i rsv_accessions.csv -g rsv_outgroups.txt -T 25 --o2t_out virus2tree_rsv --temp_dir temp --debug &> def_rsv_long.log
 ```
 To create the reference database, two key input files are required:
 
@@ -173,9 +188,8 @@ If this file is not specified, OMA Standalone will use midpoint rooting, which i
 |--------------------|-----------------------------|
 | `-i`, `--input`    | **Required.** CSV file with NCBI accessions. |
 | `-g`, `--outgroup` | **Optional (recommended)** File with outgroup taxa used by OMA. |
-| `--root_dir`       |Root directory where all outputs are written. **Default:** current directory|
-| `--out_dir`        | read2tree step 1 output directory (relative to `--root_dir` or absolute). **Default:** `read2tree_output`. |
-| `--temp_dir`       | Temporary directory. If relative, it’s resolved under `--root_dir`. **Default:** `mktemp -d`|
+| `--o2t_out`       | Base output directory where all outputs are written. **Default:** current directory|
+| `--temp_dir`       | Temporary directory (relative to `--o2t_out` or absolute). **Default:** `mktemp -d`|
 | `--resume`       |Skips taxa already downloaded from NCBI into the `db` folder. If all taxa were already downloaded, it resumes at Step 1.4. Moreover, if the required files are already present, Step 1.4 is bypassed and the script practically resumes from the OMA Standalone run (Step 1.6). When run, it *removes* existing OMA output & read2tree directories. |
 |`--og_min_fraction`| Keep only OGs present in at least this fraction of species (0–1). If omitted, all OGs are kept. |
 | `-p, --use_mat_peptides`       | Download GBK files for each taxon's accession(s) and uses the mat_peptide features instead of CDS features if at least one mat_peptide is found. |
@@ -234,6 +248,8 @@ Influenza A Hong Kong
 
 ### **Output Files**
 
+All outputs are placed within the `--o2t_out` directory
+
 | **File**                      | **Description** |
 |--------------------------------|------------------------------------------------------------------|
 | `db/{taxon}_cds_from_genomic.fna` | Nucleotide FASTA files for each taxon with CDS (or mature peptides if selected) retrieved from NCBI. |
@@ -248,21 +264,26 @@ Influenza A Hong Kong
 | `stats/OG_genes-unique.tsv`         | Summary table listing the OGs alongside its associated gene, protein, and the taxa in which it is found. |
 |`stats/taxon_OG.tsv`| Table containing per-taxon summary: total CDS, missing protein_id, no-OG matches, and matched counts. |
 |`stats/OG_taxa.tsv	`|Summary of species coverage per OG and whether it is kept (only when --og_min_fraction is used)|
-| `read2tree_output`     | Named according to the `--out_dir` parameter, this folder contains the output of step 1 of read2tree. |
+| `O2T_RESULTS`     | Output of step 1 of read2tree. |
+
+</details>
 
 ## Running step 2: Processing sample reads and adding them to the read2tree folder
+
+<details>
+<summary>Click to expand/collapse</summary>
 
 After generating the reference database of orthologous groups, we proceed to add the sample reads.
 
 ```bash
 #For long nanopore reads (Default for -t, --read_type is single and for --minimap2_options is "-ax mp-ont")
 parallel -j 4 o2t-step2 \
-  -r {1} --dedup --downsample --coverage 250 --genome_size 15kb --out_dir read2tree -T 20 ::: \
+  -r {1} --dedup --downsample --coverage 250 --genome_size 15kb --o2t_out virus2tree_rsv -T 20 ::: \
   $(ls reads/*fastq* | sort) &>> "rsv_long_step2.log" &
 
 #For paired end illumina reads
 parallel -j 4 o2t-step2 \
-  -r {1} {2} -t paired --minimap2_options "-ax sr" --dedup --downsample --coverage 250 --genome_size 15kb --out_dir read2tree -T 20 ::: \
+  -r {1} {2} -t paired --minimap2_options "-ax sr" --dedup --downsample --coverage 250 --genome_size 15kb --o2t_out virus2tree_rsv -T 20 ::: \
   $(ls reads/*_1.fastq* | sort) :::+ $(ls reads/*_2.fastq* | sort) &>> "rsv_short_step2.log" &
 
 ```
@@ -274,9 +295,8 @@ parallel -j 4 o2t-step2 \
 | `-r, --reads`     | **Required.** Input reads file(s) in `fastq` or `fastq.gz` format. If multiple files are provided and `--read_type` is not `paired`, they will be concatenated, assuming they belong to the same sample. |
 | `-t, --read_type` | Generic read type: `single` or `paired`. If `paired`, two input files are required in `--reads`. **Default:** `single`.|
 |`-map_op, --minimap2_options`| Options for minimap2 when mapping read set to the reference. Click [here](docs/recommended_presets.md) for suggested values. **Default:** `-ax map-ont`|
-|`--root_dir`       | Root directory that contains step 1 results; all outputs are written under it. **Default:** current directory.|
-| `--out_dir`      | Path to step-1 read2tree output (relative to --root_dir or absolute). **Default:** `read2tree_output`. |
-| `--temp_dir`      | Temporary directory. If relative, it’s resolved under `--root_dir`. **Default:** `/tmp`. |
+|`--o2t_out`       | Base output directory that contains step 1 results and where step 2 writes outputs. **Default:** current directory.|
+| `--temp_dir`      | Temporary directory (relative to `--o2t_out` or absolute). **Default:** `mktemp -d`. |
 | `--stats_file`   | Name of the summary read statistics file. **Default:** `reads_statistics.tsv` | 
 | `--dedup`        | Enables `czid-dedup` to remove duplicate reads. |
 | `--dedup_l`      | Prefix length used for deduplication (requires `--dedup`). |
@@ -291,23 +311,36 @@ parallel -j 4 o2t-step2 \
 
 ### **Output Files**
 
+All outputs are placed within the `--o2t_out` directory
+
 | **File**                       | **Description** |
 |---------------------------------|------------------------------------------------------------------------------------------|
-| `read2tree_output`       | Named according to the `--out_dir` parameter. Contains the output of step 2 of read2tree. |
+| `O2T_RESULTS`       | Directory used by steps 1 and 2 for read2tree output. |
 | `reads_statistics.tsv`          | Summary of statistics for processed read samples, including initial state, deduplication, and downsampling. Reports the number of reads, average length, and total bases. |
 | `temp/{sample}.fastq`           | Original reads. Uncompressed if initially compressed and concatenated if multiple input files were provided without `paired` option. |
 | `temp/{sample}_dedup.fastq`     | Deduplicated reads. |
 | `temp/{sample}_ds.fastq`        | Downsampled reads. |
 | `temp/{sample}_dedup_ds.fastq`  | Deduplicated and downsampled reads. |
 
+</details>
+
 ## Running step 3: Getting the tree
+
+<details>
+<summary>Click to expand/collapse</summary>
 
 Finally, we run step 3 of read2tree to generate the tree in .nwk format.
 
 ```bash
-read2tree --step 3combine --standalone_path marker_genes --dna_reference dna_ref.fa --output_path read2tree --tree --debug
+read2tree --step 3combine --standalone_path marker_genes --dna_reference dna_ref.fa --output_path O2T_RESULTS --tree --debug
 ```
+
+</details>
+
 ## Downloading read samples
+
+<details>
+<summary>Click to expand/collapse</summary>
 
 To easily get read samples from SRA database, we developed the script `o2t-sra`. The purpose of this script is to facilitate the download and conversion to FASTQ of SRA IDs, whether they correspond to RUN (e.g., SRR, ERR, DRR) or EXPERIMENT (e.g., SRX, ERX, DRX).
 
@@ -380,9 +413,11 @@ Also, a summary file with details about the SRA IDs downloaded is available:`{ou
 
 At the end of execution, the script removes the directories containing the .sra and metadata files, leaving only the final FASTQ files and the summary file in the specified output directory.
 
-# Shannon Entropy Analysis Pipeline for MSA Data
+</details>
+
+## Shannon Entropy Analysis Pipeline for MSA Data
 <details>
-<summary>Click to expand/collapse</summary>
+<summary><strong>Expand Shannon Entropy documentation</strong></summary>
   A modular three-script pipeline for calculating and visualizing Shannon entropy from Multiple Sequence Alignments (MSA). Works with both amino acid (AA) and nucleotide (DNA) sequences from Read2Tree output.
 
 ## Overview
@@ -815,5 +850,3 @@ For issues or questions:
 
 ---
 </details>
-
-
