@@ -179,19 +179,19 @@ Minimal example (adjust paths to your data):
 
 ```bash
 # Step 1: Create reference OMA database for r2t with NCBI accessions from RSV
-o2t-step1 -i rsv_accessions.csv -g rsv_outgroups.txt -T 25 --root_dir omni2tree_rsv &> rsv_long_step1.log
+o2t-step1 -i rsv_accessions.csv -g rsv_outgroups.txt -T 25 --o2t_out omni2tree_rsv &> rsv_long_step1.log
 
 # Step 2: Map long nanopore RSV reads to the reference
-parallel -j 4 o2t-step2 -r {1} --root_dir omni2tree_rsv -T 20 ::: \
+parallel -j 4 o2t-step2 -r {1} --o2t_out omni2tree_rsv -T 20 ::: \
   $(ls reads/*fastq* | sort) &>> "rsv_long_step2.log" &
 
 # Step 2: Map short paired end RSV reads to the reference
 parallel -j 4 o2t-step2 \
-  -r {1} -t paired -map_op "-ax sr" --root_dir omni2tree_rsv -T 20 ::: \
+  -r {1} -t paired -map_op "-ax sr" --o2t_out omni2tree_rsv -T 20 ::: \
   $(ls reads/*_1.fastq* | sort) :::+ $(ls reads/*_2.fastq* | sort) &>> "rsv_short_step2.log" &
 
 # Step 3: Create the tree
-read2tree --step 3combine --standalone_path marker_genes --dna_reference dna_ref.fa --output_path omni2tree_rsv/read2tree_output --tree --debug
+read2tree --step 3combine --standalone_path marker_genes --dna_reference dna_ref.fa --output_path omni2tree_rsv/O2T_RESULTS --tree --debug
 ```
 
 ---
@@ -202,7 +202,7 @@ read2tree --step 3combine --standalone_path marker_genes --dna_reference dna_ref
 <summary><b>Click to expand Step 1 details</b></summary>
 
 ```bash
-o2t-step1 -i rsv_accessions.csv -g rsv_outgroups.txt -T 25 --out_dir read2tree --temp_dir temp --debug &> def_rsv_long.log
+o2t-step1 -i rsv_accessions.csv -g rsv_outgroups.txt -T 25 --o2t_out omni2tree_rsv --temp_dir temp --debug &> def_rsv_long.log
 ```
 
 To create the reference database, two key input files are required:
@@ -219,9 +219,8 @@ If this file is not specified, OMA Standalone will use midpoint rooting, which i
 |--------------------|-----------------------------|
 | `-i`, `--input`    | **Required.** CSV file with NCBI accessions. |
 | `-g`, `--outgroup` | **Optional (recommended)** File with outgroup taxa used by OMA. |
-| `--root_dir`       |Root directory where all outputs are written. **Default:** current directory|
-| `--out_dir`        | read2tree step 1 output directory (relative to `--root_dir` or absolute). **Default:** `read2tree_output`. |
-| `--temp_dir`       | Temporary directory. If relative, it's resolved under `--root_dir`. **Default:** `/tmp`|
+| `--o2t_out`       | Base output directory where all outputs are written. **Default:** current directory|
+| `--temp_dir`       | Temporary directory (relative to `--o2t_out` or absolute). **Default:** `mktemp -d`|
 | `--resume_download`       |Skip taxa already downloaded from NCBI into the `db` folder. If all taxa were already downloaded, it resumes from Step 1.4. Additionally, if the required files are already present, Step 1.4 is bypassed and the script practically resumes from the OMA Standalone run (Step 1.6). |
 |`--og_min_fraction`| Keep only OGs present in at least this fraction of species (0–1). If omitted, all OGs are kept. |
 | `-p, --use_mat_peptides`       | Download GBK files for each taxon's accession(s) and uses the mat_peptide features instead of CDS features if at least one mat_peptide is found. |
@@ -308,7 +307,7 @@ Influenza A Hong Kong
 | `stats/OG_genes-unique.tsv`         | Summary table listing the OGs alongside its associated gene, protein, and the taxa in which it is found. |
 |`stats/taxon_OG.tsv`| Table containing per-taxon summary: total CDS, missing protein_id, no-OG matches, and matched counts. |
 |`stats/OG_taxa.tsv	`|Summary of species coverage per OG and whether it is kept (only when --og_min_fraction is used)|
-| `read2tree_output`     | Named according to the `--out_dir` parameter, this folder contains the output of step 1 of read2tree. |
+| `O2T_RESULTS`     | Output of step 1 of read2tree (inside `--o2t_out`). |
 
 </details>
 
@@ -326,12 +325,12 @@ After generating the reference database of orthologous groups, we proceed to add
 ```bash
 #For long nanopore reads (Default for -t, --read_type is single and for --minimap2_options is "-ax map-ont")
 parallel -j 4 o2t-step2 \
-  -r {1} --dedup --downsample --coverage 250 --genome_size 15kb --out_dir read2tree -T 20 ::: \
+  -r {1} --dedup --downsample --coverage 250 --genome_size 15kb --o2t_out omni2tree_rsv -T 20 ::: \
   $(ls reads/*fastq* | sort) &>> "rsv_long_step2.log" &
 
 #For paired end illumina reads
 parallel -j 4 o2t-step2 \
-  -r {1} {2} -t paired --minimap2_options "-ax sr" --dedup --downsample --coverage 250 --genome_size 15kb --out_dir read2tree -T 20 ::: \
+  -r {1} {2} -t paired --minimap2_options "-ax sr" --dedup --downsample --coverage 250 --genome_size 15kb --o2t_out omni2tree_rsv -T 20 ::: \
   $(ls reads/*_1.fastq* | sort) :::+ $(ls reads/*_2.fastq* | sort) &>> "rsv_short_step2.log" &
 ```
 
@@ -342,9 +341,8 @@ parallel -j 4 o2t-step2 \
 | `-r, --reads`     | **Required.** Input reads file(s) in `fastq` or `fastq.gz` format. If multiple files are provided and `--read_type` is not `paired`, they will be concatenated, assuming they belong to the same sample. |
 | `-t, --read_type` | Generic read type: `single` or `paired`. If `paired`, two input files are required in `--reads`. **Default:** `single`.|
 |`-map_op, --minimap2_options`| Options for minimap2 when mapping read set to the reference. Click [here](docs/recommended_presets.md) for suggested values. **Default:** `-ax map-ont`|
-|`--root_dir`       | Root directory that contains step 1 results; all outputs are written under it. **Default:** current directory.|
-| `--out_dir`      | Path to step-1 read2tree output (relative to --root_dir or absolute). **Default:** `read2tree_output`. |
-| `--temp_dir`      | Temporary directory. If relative, it's resolved under `--root_dir`. **Default:** `/tmp`. |
+|`--o2t_out`       | Base output directory that contains step 1 results (`O2T_RESULTS`) and where step 2 writes outputs. **Default:** current directory.|
+| `--temp_dir`      | Temporary directory (relative to `--o2t_out` or absolute). **Default:** `mktemp -d`. |
 | `--stats_file`   | Name of the summary read statistics file. **Default:** `reads_statistics.tsv` | 
 | `--dedup`        | Enables `czid-dedup` to remove duplicate reads. |
 | `--dedup_l`      | Prefix length used for deduplication (requires `--dedup`). |
@@ -364,7 +362,7 @@ parallel -j 4 o2t-step2 \
 
 | **File**                       | **Description** |
 |---------------------------------|------------------------------------------------------------------------------------------|
-| `read2tree_output`       | Named according to the `--out_dir` parameter. Contains the output of step 2 of read2tree. |
+| `O2T_RESULTS`       | Directory used by steps 1 and 2 for read2tree output (inside `--o2t_out`). |
 | `reads_statistics.tsv`          | Summary of statistics for processed read samples, including initial state, deduplication, and downsampling. Reports the number of reads, average length, and total bases. |
 | `temp/{sample}.fastq`           | Original reads. Uncompressed if initially compressed and concatenated if multiple input files were provided without `paired` option. |
 | `temp/{sample}_dedup.fastq`     | Deduplicated reads. |
@@ -385,7 +383,7 @@ parallel -j 4 o2t-step2 \
 Finally, we run step 3 of read2tree to generate the tree in .nwk format.
 
 ```bash
-read2tree --step 3combine --standalone_path marker_genes --dna_reference dna_ref.fa --output_path read2tree --tree --debug
+read2tree --step 3combine --standalone_path marker_genes --dna_reference dna_ref.fa --output_path O2T_RESULTS --tree --debug
 ```
 
 </details>
@@ -915,5 +913,3 @@ For issues or questions:
 
 ---
 </details>
-
-

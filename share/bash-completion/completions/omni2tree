@@ -36,7 +36,7 @@ _o2t_step1_complete() {
   cur="${COMP_WORDS[COMP_CWORD]}"
   prev="${COMP_WORDS[COMP_CWORD-1]}"
 
-  opts="-i --input -g --outgroup --root_dir --temp_dir --out_dir --resume --og_min_fraction \
+  opts="-i --input -g --outgroup --o2t_out --temp_dir --resume --og_min_fraction \
         -p --use_mat_peptides -q --use_mat_peptides_only -T --threads --debug -h --help"
 
   case "$prev" in
@@ -44,7 +44,7 @@ _o2t_step1_complete() {
       COMPREPLY=( $(compgen -f -- "$cur") )
       return 0
       ;;
-    --root_dir|--temp_dir|--out_dir)
+    --o2t_out|--temp_dir)
       COMPREPLY=( $(compgen -d -- "$cur") )
       return 0
       ;;
@@ -61,8 +61,8 @@ _o2t_step2_complete() {
   cur="${COMP_WORDS[COMP_CWORD]}"
   prev="${COMP_WORDS[COMP_CWORD-1]}"
 
-  opts="-r --reads -t --read_type -map_op --minimap2_options -T --threads --temp_dir --root_dir \
-        --out_dir --stats_file --dedup --dedup_l --downsample --coverage --genome_size \
+  opts="-r --reads -t --read_type -map_op --minimap2_options -T --threads --temp_dir --o2t_out \
+        --stats_file --dedup --dedup_l --downsample --coverage --genome_size \
         --num_bases --num_reads --debug -h --help"
 
   case "$prev" in
@@ -70,7 +70,7 @@ _o2t_step2_complete() {
       COMPREPLY=( $(compgen -f -- "$cur") )
       return 0
       ;;
-    --temp_dir|--root_dir|--out_dir)
+    --temp_dir|--o2t_out)
       COMPREPLY=( $(compgen -d -- "$cur") )
       return 0
       ;;

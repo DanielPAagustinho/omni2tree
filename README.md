@@ -418,6 +418,7 @@ At the end of execution, the script removes the directories containing the .sra 
 ## Shannon Entropy Analysis Pipeline for MSA Data
 <details>
 <summary><strong>Expand Shannon Entropy documentation</strong></summary>
+
   A modular three-script pipeline for calculating and visualizing Shannon entropy from Multiple Sequence Alignments (MSA). Works with both amino acid (AA) and nucleotide (DNA) sequences from Read2Tree output.
 
 ## Overview
