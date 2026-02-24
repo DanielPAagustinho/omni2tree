@@ -97,13 +97,14 @@ $(usage)
   Optional:
     -t, --read_type <paired|single>    Generic type of reads [default: single]
     -map_op, --minimap2_options <options>   Options for minimap2 when mapping read set to the reference [default: "-ax map-ont"]
+                                            Pass as a single quoted string, e.g. "--minimap2_options \"-ax map-ont\""
                                             Suggested: -ax map-sr (for short single or paired end short reads), 
                                             -ax map-pb (for PacBio reads), -ax map-hifi (for HiFi reads)
     -T, --threads <int>      Threads to use [default: 4]
     --temp_dir <dir>         Specify temp directory (otherwise mktemp -d is used)
-    --root_dir <dir>         Specify root directory containing step 1 result; all the outputs will be saved here [default: current directory]
-    --out_dir <dir>          Specify read2tree step 1 output directory (absolute or relative to --root_dir). Must exist from step 1 [default: root_dir/read2tree_output]
-    --stats_file <file>      Specify read statistics output file (absolute or relative to --root_dir) [default: root_directory/stats/reads_statistics.tsv]
+    --o2t_out <dir>          Specify base output directory containing step 1 result; all outputs will be saved here [default: current directory]
+                             Step 1 read2tree output is expected at --o2t_out/O2T_RESULTS
+    --stats_file <file>      Specify read statistics output file (absolute or relative to --o2t_out) [default: o2t_out/stats/reads_statistics.tsv]
     --dedup                  Run czid-dedup
     --dedup_l <int>          Provide '-l <int>' to czid-dedup (requires --dedup)
     --downsample             Run rasusa
@@ -185,19 +186,20 @@ while [[ $# -gt 0 ]]; do
       shift 2
       ;;
     -map_op|--minimap2_options)
-      MINIMAP2_OPTS_ARR=()
-      shift
-      while [[ $# -gt 0 ]]; do
-        case "$1" in
-          -t|--read_type|-r|--reads|-T|--threads|--temp_dir|--root_dir|--out_dir|--stats_file|\
-          --dedup|--dedup_l|--downsample|--coverage|--genome_size|--num_bases|--num_reads|\
-          --debug|-h|--help|-map_op|--minimap2_options)
-            break;;
-          *)
-            MINIMAP2_OPTS_ARR+=("$1"); shift;;
-        esac
-      done
-      MINIMAP2_OPTIONS="${MINIMAP2_OPTS_ARR[*]}"
+      if [[ $# -lt 2 ]]; then
+        log_error "Missing value for --minimap2_options. Pass it as a single quoted string, e.g. --minimap2_options \"-ax map-ont\""
+        exit 1
+      fi
+      case "$2" in
+        -t|--read_type|-r|--reads|-T|--threads|--temp_dir|--o2t_out|--stats_file|\
+        --dedup|--dedup_l|--downsample|--coverage|--genome_size|--num_bases|--num_reads|\
+        --debug|-h|--help|-map_op|--minimap2_options)
+          log_error "Missing value for --minimap2_options. Pass minimap2 options as a single quoted string, e.g. --minimap2_options \"-ax map-ont\""
+          exit 1
+          ;;
+      esac
+      MINIMAP2_OPTIONS="$2"
+      shift 2
       ;;
     -r|--reads)
       shift
@@ -214,12 +216,8 @@ while [[ $# -gt 0 ]]; do
       TEMP_DIR="${2%/}"
       shift 2
       ;;
-    --root_dir)
+    --o2t_out)
       ROOT_DIR="${2%/}"
-      shift 2
-      ;;
-    --out_dir)
-      OUT_DIR="${2%/}"
       shift 2
       ;;
     --stats_file)
@@ -363,20 +361,16 @@ if [[ -n "$ROOT_DIR" ]]; then
   log_info "Using root directory: $ROOT_DIR"
 else
   ROOT_DIR="$(pwd -P)"
-  log_info "No --root_dir provided. Using current directory as root: $ROOT_DIR"
+  log_info "No --o2t_out provided. Using current directory as root: $ROOT_DIR"
 fi
 
-if [[ -z "$OUT_DIR" ]]; then
-  OUT_DIR="$ROOT_DIR/read2tree_output"
-  log_info "No --out_dir specified; assuming $OUT_DIR"
+OUT_DIR="$ROOT_DIR/O2T_RESULTS"
+if [[ -d "$OUT_DIR" ]]; then
+  OUT_DIR="$(realpath "$OUT_DIR")"
+  log_info "Using step 1 read2tree output directory: $OUT_DIR"
 else
-  [[ "$OUT_DIR" = /* ]] || OUT_DIR="$ROOT_DIR/$OUT_DIR"
-  if [[ -d "$OUT_DIR" ]]; then
-    OUT_DIR="$(realpath "$OUT_DIR")"
-  else
-    log_error "read2tree output directory not found: $OUT_DIR. Please run step 1 first."
-    exit 1
-  fi
+  log_error "Expected step 1 output directory not found: $OUT_DIR. Please run step 1 first."
+  exit 1
 fi
 if [[ -z "$TEMP_DIR" ]]; then
   TEMP_DIR="$(mktemp -d)"
@@ -649,7 +643,7 @@ log_info "read2tree step 2 map completed successfully."
 # read2tree --step 3combine \
 #           --standalone_path marker_genes \
 #           --dna_reference dna_ref.fa \
-#           --output_path read2tree_output \
+#           --output_path O2T_RESULTS \
 #           --tree \
 #           --debug
 

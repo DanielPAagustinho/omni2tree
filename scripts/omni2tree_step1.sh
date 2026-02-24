@@ -107,9 +107,9 @@ Required:
 
 Optional:
   -g, --outgroup <file>                        Path to the outgroup taxon/species/strain file
-  --root_dir <dir>                             Specify root directory where all the outputs will be saved [default: current directory]
-  --temp_dir <dir>                             Specify temporary directory (otherwise mktemp -d is used). If relative, it will be relative to the root_dir.
-  --out_dir <dir>                              Specify output directory for read2tree step1 [default: read2tree_output]. If relative, it will be relative to the root_dir.
+  --o2t_out <dir>                              Specify base output directory where all outputs will be saved [default: current directory]
+  --temp_dir <dir>                             Specify temporary directory (otherwise mktemp -d is used). If relative, it will be relative to o2t_out.
+                                               The read2tree step1 output directory is always named O2T_RESULTS inside o2t_out.
   --resume                                     Skips taxa whose coding sequences have already been downloaded from NCBI to the db folder. Skips as much steps as possible up to the OMA run step (1.6). When run, it removes existing OMA output and read2tree directories.                                
   --og_min_fraction <float>                    Keep only OGs present in at least this fraction of species (0–1). If omitted, all OGs are kept.
   -p, --use_mat_peptides                       Downloads the gbk file for each taxon's accession(s). If at least one mature peptide feature is detected, these features are used as the coding sequences; otherwise, the standard CDS features are downloaded.
@@ -631,8 +631,7 @@ while [[ "$#" -gt 0 ]]; do
         -q|--use_mat_peptides_only) MAT_PEPTIDES=true; ONLY_MAT_PEPTIDES=true; Q_FLAG=true;;
         -T|--threads) THREADS="$2"; shift ;;
         --temp_dir) TEMP_DIR="${2%/}"; shift ;;
-        --root_dir) WORK_DIR="${2%/}"; shift ;;   # NUEVO
-        --out_dir) OUT_DIR="${2%/}"; shift ;;
+        --o2t_out) WORK_DIR="${2%/}"; shift ;;
         --debug) DEBUG=true;;
         --og_min_fraction) OG_MIN_FRAC="$2"; shift ;;
         --resume) RES_DOWN=true;;
@@ -688,33 +687,20 @@ if [[ -n "$WORK_DIR" ]]; then
 else
     # por defecto: cwd del usuario al ejecutar el script
     WORK_DIR="$(pwd)"
-    log_info "No --root_dir specified. Output directories will be written in '$(pwd)'"
+    log_info "No --o2t_out specified. Output directories will be written in '$(pwd)'"
 fi
 
-if [[ -z "$OUT_DIR" ]]; then
-  OUT_DIR=read2tree_output
-  log_info "No name for the read2tree directory was specified, using '$(realpath "$OUT_DIR")'"
-  if [[ -d "$OUT_DIR" ]]; then
-    #si esta resumiendo, que lo elimine y siga
-    if [[ "$RES_DOWN" == true ]]; then
-      log_info "Removing read2tree output directory: $(realpath "$OUT_DIR")"
-      rm -rf "$OUT_DIR"
-    else
-      log_error "The read2tree output directory '$(realpath "$OUT_DIR")' already exists. Please provide a novel read2tree directory"
-      exit 1
-    fi
+OUT_DIR="O2T_RESULTS"
+log_info "Using read2tree output directory: '$(pwd -P)/$OUT_DIR'"
+if [[ -d "$OUT_DIR" ]]; then
+  #si esta resumiendo, que lo elimine y siga
+  if [[ "$RES_DOWN" == true ]]; then
+    log_info "Removing existing read2tree output directory: $(realpath "$OUT_DIR") to avoid conflicts when rerunning"
+    rm -rf "$OUT_DIR"
+  else
+    log_error "The fixed read2tree output directory '$(realpath "$OUT_DIR")' already exists (name is always O2T_RESULTS). Delete it or use --resume"
+    exit 1
   fi
-else
-  if [[ -d "$OUT_DIR" ]]; then
-    if [[ "$RES_DOWN" == true ]]; then
-      log_info "Removing read2tree output directory: $(realpath "$OUT_DIR")"
-      rm -rf "$OUT_DIR"
-    else
-      log_error "The read2tree output directory '$(realpath "$OUT_DIR")' already exists. Please provide a novel read2tree directory"
-      exit 1
-    fi
-  fi
-  log_info "Using output directory: '$(realpath "$OUT_DIR")'"
 fi
 
 if [[ "$RES_DOWN" == true ]]; then
@@ -729,7 +715,7 @@ if [[ "$RES_DOWN" == true ]]; then
             exit 1
         fi
     fi
-    # the removal is already done with respect to the --root_dir!!!
+    # the removal is already done with respect to the --o2t_out!!!
     # Remove, and tell you removed the possibly existing marker genes dir
     if [[ -d "marker_genes" ]]; then
       log_info "Removing marker_genes directory: $(realpath "marker_genes/")"
@@ -1094,7 +1080,7 @@ fi
 
 log_info "========== Step 1.8: Running Read2tree (step 1 marker) =========="
 log_info "Using ${THREADS} threads..."
-#read2tree --standalone_path ./marker_genes --output_path read2tree_output --dna_reference dna_ref.fa
+#read2tree --standalone_path ./marker_genes --output_path O2T_RESULTS --dna_reference dna_ref.fa
 read2tree --step 1marker --standalone_path marker_genes --dna_reference dna_ref.fa --output_path "$OUT_DIR" --debug 
 # echo "Starting read processing..."
 # echo "Searching for FASTQ files in: $READS_DIR"
@@ -1158,7 +1144,7 @@ read2tree --step 1marker --standalone_path marker_genes --dna_reference dna_ref.
 #                   --reads "$R1" "$R2" \
 #                   --read_type "short" \
 #                   --threads "$THREADS" \
-#                   --output_path read2tree_output \
+#                   --output_path O2T_RESULTS \
 #                   --debug
 #     else
 #         # => Single-end => use READ_TYPE ('short', 'long-ont', 'long-hifi')
@@ -1175,7 +1161,7 @@ read2tree --step 1marker --standalone_path marker_genes --dna_reference dna_ref.
 #                   --reads "$SE_FILE" \
 #                   --read_type "$READ_TYPE" \
 #                   --threads "$THREADS" \
-#                   --output_path read2tree_output \
+#                   --output_path O2T_RESULTS \
 #                   --debug
 #     fi
 # done
@@ -1183,8 +1169,8 @@ read2tree --step 1marker --standalone_path marker_genes --dna_reference dna_ref.
 # echo "Read processing completed successfully."
 
 #echo "Merging..."
-#read2tree --step 3combine --standalone_path marker_genes --dna_reference dna_ref.fa --output_path read2tree_output --tree --debug
+#read2tree --step 3combine --standalone_path marker_genes --dna_reference dna_ref.fa --output_path O2T_RESULTS --tree --debug
 #
 
-#iqtree -T ${THREADS} -s read2tree_output/concat_*_aa.phy -bb 1000
-#iqtree -T ${THREADS} -s read2tree_output/concat_*_dna.phy 
+#iqtree -T ${THREADS} -s O2T_RESULTS/concat_*_aa.phy -bb 1000
+#iqtree -T ${THREADS} -s O2T_RESULTS/concat_*_dna.phy 
