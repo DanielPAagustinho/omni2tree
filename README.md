@@ -160,7 +160,7 @@ parallel -j 4 o2t-step2 -r {1} --o2t_out virus2tree_rsv -T 20 ::: \
 
 # Step 2: Map short paired end RSV reads to the reference
   parallel -j 4 o2t-step2 \
-  -r {1} -t paired -map_op "-ax sr" --o2t_out virus2tree_rsv -T 20 ::: \
+  -r {1} -t paired -map_op '"-ax sr"' --o2t_out virus2tree_rsv -T 20 ::: \
   $(ls reads/*_1.fastq* | sort) :::+ $(ls reads/*_2.fastq* | sort) &>> "rsv_short_step2.log" &
 
 # Step 3: Create the tree
@@ -283,7 +283,7 @@ parallel -j 4 o2t-step2 \
 
 #For paired end illumina reads
 parallel -j 4 o2t-step2 \
-  -r {1} {2} -t paired --minimap2_options "-ax sr" --dedup --downsample --coverage 250 --genome_size 15kb --o2t_out virus2tree_rsv -T 20 ::: \
+  -r {1} {2} -t paired --minimap2_options '"-ax sr"' --dedup --downsample --coverage 250 --genome_size 15kb --o2t_out virus2tree_rsv -T 20 ::: \
   $(ls reads/*_1.fastq* | sort) :::+ $(ls reads/*_2.fastq* | sort) &>> "rsv_short_step2.log" &
 
 ```
@@ -294,7 +294,7 @@ parallel -j 4 o2t-step2 \
 |--------------------|--------------------------------------------------------------------------------------------------------------------------------|
 | `-r, --reads`     | **Required.** Input reads file(s) in `fastq` or `fastq.gz` format. If multiple files are provided and `--read_type` is not `paired`, they will be concatenated, assuming they belong to the same sample. |
 | `-t, --read_type` | Generic read type: `single` or `paired`. If `paired`, two input files are required in `--reads`. **Default:** `single`.|
-|`-map_op, --minimap2_options`| Options for minimap2 when mapping read set to the reference. Pass as a single quoted string (e.g., `--minimap2_options "-ax map-ont"`). Click [here](docs/recommended_presets.md) for suggested values. **Default:** `-ax map-ont`|
+|`-map_op, --minimap2_options`| Options for minimap2 when mapping read set to the reference. Pass as a *single quoted string* (e.g., `--minimap2_options "-ax map-ont"`). Click [here](docs/recommended_presets.md) for suggested values. **Default:** `-ax map-ont`|
 |`--o2t_out`       | Base output directory that contains step 1 results and where step 2 writes outputs. **Default:** current directory.|
 | `--temp_dir`      | Temporary directory (relative to `--o2t_out` or absolute). **Default:** `mktemp -d`. |
 | `--stats_file`   | Name of the summary read statistics file. **Default:** `reads_statistics.tsv` | 
