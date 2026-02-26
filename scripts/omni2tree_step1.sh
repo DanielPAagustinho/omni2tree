@@ -346,6 +346,8 @@ generate_og_gene_tsv() {
     local fa_dir=$2      # Directory containing .fa files from OMA output (Output/OrthologousGroupsFasta)
     local output_file=$3 # Output file to store results
     local unique_output_file="${output_file%.tsv}-unique.tsv"
+    local entropy_output_file
+    local entropy_script="${MAIN_DIR}/entropy_msa_og_gene_table.py"
     local tmp_file  
     local -A SPECIES_TO_CODE=()
     log_info "Loading 5-letter code for each taxon from file ${FIVE_LETTER_FILE}"
@@ -518,6 +520,15 @@ generate_og_gene_tsv() {
           }
       }' "$file" > "${dest_dir}/${final_name}"
     done
+
+    entropy_output_file="${dest_dir}/OG_genes_entropy.csv"
+    if [[ ! -f "$entropy_script" ]]; then
+      log_error "Entropy OG-gene mapping script not found: $entropy_script"
+      exit 1
+    fi
+    log_info "Generating entropy OG->gene CSV: $entropy_output_file"
+    python3 "$entropy_script" --input "$output_file" --output "$entropy_output_file"
+
     log_info "OG-Gene TSV generation complete: $output_file"
         summary_og="${dest_dir}/taxon_OG.tsv"
     : > "$summary_og"
@@ -732,9 +743,9 @@ if [[ "$RES_DOWN" == true ]]; then
       rm -rf "Output/"
     fi
     # Remove and tell you removed the following files que contengan OG: OG_genes-unique.tsv  OG_genes.tsv  taxon_OG.tsv
-    if [[ -e "stats/OG_genes-unique.tsv" || -e "stats/OG_genes.tsv" || -e "stats/taxon_OG.tsv" || -e "stats/OG_taxa.tsv" ]]; then
-      log_info "Removing OG-related stats files (if present): stats/OG_genes-unique.tsv, stats/OG_genes.tsv, stats/taxon_OG.tsv, stats/OG_taxa.tsv"
-      rm -f "stats/OG_genes-unique.tsv" "stats/OG_genes.tsv" "stats/taxon_OG.tsv" "stats/OG_taxa.tsv"
+    if [[ -e "stats/OG_genes-unique.tsv" || -e "stats/OG_genes.tsv" || -e "stats/OG_genes_entropy.csv" || -e "stats/taxon_OG.tsv" || -e "stats/OG_taxa.tsv" ]]; then
+      log_info "Removing OG-related stats files (if present): stats/OG_genes-unique.tsv, stats/OG_genes.tsv, stats/OG_genes_entropy.csv, stats/taxon_OG.tsv, stats/OG_taxa.tsv"
+      rm -f "stats/OG_genes-unique.tsv" "stats/OG_genes.tsv" "stats/OG_genes_entropy.csv" "stats/taxon_OG.tsv" "stats/OG_taxa.tsv"
     fi
 else
   # error if dna ref.fa or five_letter taxon already exist
