@@ -24,7 +24,21 @@ while [[ $# -gt 0 ]]; do
   shift
 done
 
-SYMLINKS=("o2t-step1" "o2t-step2" "o2t-sra")
+SYMLINKS=("o2t-step1" "o2t-step2" "o2t-step3" "o2t-sra")
+SCRIPTS_DIR="$REPO_ROOT/scripts"
+UTILS_DIR="$REPO_ROOT/utils"
+
+shopt -s nullglob
+for target in "$SCRIPTS_DIR"/*.py "$SCRIPTS_DIR"/*.R; do
+  [[ -f "$target" ]] && SYMLINKS+=("$(basename "$target")")
+done
+shopt -u nullglob
+for target in "$UTILS_DIR"/prepare_metadata_o2t_view.py "$UTILS_DIR"/validate_metadata.py; do
+  [[ -f "$target" ]] && SYMLINKS+=("$(basename "$target")")
+done
+if [[ -f "$REPO_ROOT/view/omni2treeview.py" ]]; then
+  SYMLINKS+=("omni2treeview.py")
+fi
 
 echo "[INFO] Removing symlinks from: $PREFIX"
 for name in "${SYMLINKS[@]}"; do
@@ -41,7 +55,7 @@ done
 
 removed_any=false
 comp_files=("omni2tree")
-comp_symlinks=("o2t-step1" "o2t-step2" "o2t-sra" "v2t-step1" "v2t-step2" "v2t-sra")
+comp_symlinks=("${SYMLINKS[@]}" "v2t-step1" "v2t-step2" "v2t-step3" "v2t-sra")
 
 for base_path in "$HOME/.local/share/bash-completion/completions" "/usr/share/bash-completion/completions"; do
   for comp_file in "${comp_files[@]}"; do

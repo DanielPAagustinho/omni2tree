@@ -3,9 +3,10 @@ set -euo pipefail
 # usage: ./install.sh [/path/to/prefix]
 PREFIX="${1:-/usr/local/bin}"  #prefix is the place where symlinks will be created 
 APP_NAME="omni2tree"
-BASENAMES=("omni2tree_step1.sh:o2t-step1"
-           "omni2tree_step2.sh:o2t-step2"
-           "omni2tree_sra.sh:o2t-sra")
+ALIASED_TARGETS=("omni2tree_step1.sh:o2t-step1"
+                 "omni2tree_step2.sh:o2t-step2"
+                 "omni2tree_step3.sh:o2t-step3"
+                 "omni2tree_sra.sh:o2t-sra")
 
 # Resolve install.sh absolute directory, following symlinks
 SOURCE="${BASH_SOURCE[0]}"
@@ -16,28 +17,48 @@ while [ -h "$SOURCE" ]; do
 done
 REPO_ROOT="$(cd -P "$(dirname "$SOURCE")" && pwd)"
 SCRIPTS_DIR="$REPO_ROOT/scripts" #here will be the scripts to be installed
+UTILS_DIR="$REPO_ROOT/utils"
+VIEW_SCRIPT="$REPO_ROOT/view/omni2treeview.py"
 
-# Check the three targets exist and are executable
-for pair in "${BASENAMES[@]}"; do
-  src="${pair%%:*}"
-  target="$SCRIPTS_DIR/$src"
+EXACT_TARGETS=()
+shopt -s nullglob
+for target in "$SCRIPTS_DIR"/*.py "$SCRIPTS_DIR"/*.R; do
+  EXACT_TARGETS+=("$target")
+done
+shopt -u nullglob
+for target in "$UTILS_DIR"/prepare_metadata_o2t_view.py "$UTILS_DIR"/validate_metadata.py; do
+  [[ -f "$target" ]] && EXACT_TARGETS+=("$target")
+done
+if [[ -f "$VIEW_SCRIPT" ]]; then
+  EXACT_TARGETS+=("$VIEW_SCRIPT")
+fi
 
-  # Must exist
+ensure_executable() {
+  local target="$1"
+
   [[ -f "$target" ]] || { echo "[ERROR] Missing file: $target"; exit 1; }
 
-  # Ensure executable bit; try to fix if not
-  if [[ ! -x "$target" ]]; then
-    if [[ -w "$target" ]]; then
-      chmod u+x "$target" || true
-    fi
+  if [[ ! -x "$target" && -w "$target" ]]; then
+    chmod u+x "$target" || true
   fi
 
-  # Final check
   [[ -x "$target" ]] || {
     echo "[ERROR] Not executable and could not fix perms: $target"
     echo "        Try: chmod +x \"$target\""
     exit 1
   }
+}
+
+# Check aliased targets exist and are executable
+for pair in "${ALIASED_TARGETS[@]}"; do
+  src="${pair%%:*}"
+  target="$SCRIPTS_DIR/$src"
+  ensure_executable "$target"
+done
+
+# Check python/R/view helper scripts to expose directly in PATH
+for target in "${EXACT_TARGETS[@]}"; do
+  ensure_executable "$target"
 done
 
 # Create the prefix if it's a user-owned location
@@ -53,7 +74,8 @@ if [[ ! -w "$PREFIX" ]]; then
 fi
 
 # Create absolute symlinks
-for pair in "${BASENAMES[@]}"; do
+INSTALLED_COMMANDS=()
+for pair in "${ALIASED_TARGETS[@]}"; do
   src="${pair%%:*}"
   dst="${pair##*:}"
   # refuse to clobber a regular file
@@ -63,6 +85,18 @@ for pair in "${BASENAMES[@]}"; do
   fi
   ln -sfn "$SCRIPTS_DIR/$src" "$PREFIX/$dst"
   echo "[OK] $PREFIX/$dst -> $SCRIPTS_DIR/$src"
+  INSTALLED_COMMANDS+=("$dst")
+done
+
+for target in "${EXACT_TARGETS[@]}"; do
+  dst="$(basename "$target")"
+  if [[ -e "$PREFIX/$dst" && ! -L "$PREFIX/$dst" ]]; then
+    echo "[ERROR] $PREFIX/$dst exists and is not a symlink. Remove it first."
+    exit 1
+  fi
+  ln -sfn "$target" "$PREFIX/$dst"
+  echo "[OK] $PREFIX/$dst -> $target"
+  INSTALLED_COMMANDS+=("$dst")
 done
 
 # Install bash completions
@@ -84,10 +118,14 @@ if [[ -f "$COMP_SRC" ]]; then
       COMP_INSTALLED=true
       
       # Symlinks so bash-completion can reuse the same completion file per command
-      for cmd in o2t-step1 o2t-step2 o2t-sra; do
+      COMP_COMMANDS=("o2t-step1" "o2t-step2" "o2t-step3" "o2t-sra")
+      for target in "${EXACT_TARGETS[@]}"; do
+        COMP_COMMANDS+=("$(basename "$target")")
+      done
+      for cmd in "${COMP_COMMANDS[@]}"; do
         ln -sf "$APP_NAME" "$COMP_SHARE/$cmd" 2>/dev/null || true
       done
-      echo "[OK] Created completion symlinks: o2t-step1, o2t-step2, o2t-sra"
+      echo "[OK] Created completion symlinks: ${COMP_COMMANDS[*]}"
     fi
   fi
 fi
@@ -104,7 +142,7 @@ if ! (printf '%s\n' "$PREFIX" > "$REPO_ROOT/.install_prefix") 2>/dev/null; then
   echo "[WARN] Uninstall may not auto-detect the prefix; pass it explicitly to ./uninstall.sh."
 fi
 
-echo "[DONE] Installed Omni2tree executables: o2t-step1, o2t-step2, o2t-sra"
+echo "[DONE] Installed Omni2tree executables: ${INSTALLED_COMMANDS[*]}"
 if [[ "$COMP_INSTALLED" == true ]]; then
   echo "[INFO] To enable completions now, run:"
   echo "  source ~/.bashrc"
