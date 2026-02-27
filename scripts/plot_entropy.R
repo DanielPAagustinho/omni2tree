@@ -41,15 +41,23 @@ check_and_install_packages(required_packages)
 library(tidyverse)
 library(RColorBrewer)
 
+fixed_entropy_cols <- c(
+  "gene", "og", "position", "seq_type", "entropy",
+  "n_samples", "n_unique_chars", "gap_percent", "most_common_char"
+)
+
+detect_group_cols <- function(df) {
+  setdiff(colnames(df), fixed_entropy_cols)
+}
+
 # Function to create entropy plot for all genes
 plot_entropy_all_genes <- function(entropy_df, output_file, title = "Shannon Entropy Across Positions") {
   
-  # Check if grouping column exists
-  has_groups <- any(c("genotype", "subgroup", "time_phase") %in% colnames(entropy_df))
+  group_cols <- detect_group_cols(entropy_df)
+  has_groups <- length(group_cols) > 0
   
   if (has_groups) {
-    # Determine which grouping column to use
-    group_col <- intersect(c("genotype", "subgroup", "time_phase"), colnames(entropy_df))[1]
+    group_col <- group_cols[1]
     
     p <- ggplot(entropy_df, aes(x = position, y = entropy, color = .data[[group_col]])) +
       geom_line(aes(group = .data[[group_col]])) +
@@ -93,8 +101,8 @@ plot_entropy_per_gene <- function(entropy_df, gene_name, output_file,
     return(NULL)
   }
   
-  # Check if grouping column exists
-  has_groups <- any(c("genotype", "subgroup", "time_phase") %in% colnames(gene_data))
+  group_cols <- detect_group_cols(gene_data)
+  has_groups <- length(group_cols) > 0
   
   p <- ggplot(gene_data, aes(x = position, y = entropy))
   
@@ -110,7 +118,7 @@ plot_entropy_per_gene <- function(entropy_df, gene_name, output_file,
   }
   
   if (has_groups) {
-    group_col <- intersect(c("genotype", "subgroup", "time_phase"), colnames(gene_data))[1]
+    group_col <- group_cols[1]
     p <- p +
       geom_line(aes(color = .data[[group_col]], group = .data[[group_col]])) +
       geom_point(aes(color = .data[[group_col]]), size = 1) +
@@ -178,7 +186,7 @@ main <- function() {
   cat("Genes found:", paste(unique(entropy_df$gene), collapse = ", "), "\n")
   
   # Check for grouping
-  group_cols <- intersect(c("genotype", "subgroup", "time_phase"), colnames(entropy_df))
+  group_cols <- detect_group_cols(entropy_df)
   if (length(group_cols) > 0) {
     cat("Grouping by:", paste(group_cols, collapse = ", "), "\n")
   }
