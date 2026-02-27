@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 # Plot Shannon entropy from entropy table
-# Usage: Rscript plot_entropy.R entropy_table.csv output_directory [seq_type] [domain_csv]
+# Usage: Rscript plot_entropy.R entropy_table.csv output_directory
 
 # Function to check and install required packages
 check_and_install_packages <- function(packages) {
@@ -48,68 +48,6 @@ fixed_entropy_cols <- c(
 
 detect_group_cols <- function(df) {
   setdiff(colnames(df), fixed_entropy_cols)
-}
-
-load_domain_annotations <- function(domain_file, entropy_df) {
-  if (is.null(domain_file)) {
-    return(NULL)
-  }
-
-  if (!file.exists(domain_file)) {
-    stop(paste("Error: Domain CSV not found:", domain_file))
-  }
-
-  domains <- read_csv(domain_file, show_col_types = FALSE) %>%
-    rename_with(tolower)
-
-  required_cols <- c("gene", "domain", "start", "end")
-  missing_cols <- setdiff(required_cols, colnames(domains))
-  if (length(missing_cols) > 0) {
-    stop(paste("Domain CSV missing required columns:", paste(missing_cols, collapse = ", ")))
-  }
-
-  domains <- domains %>%
-    transmute(
-      gene = as.character(gene),
-      domain = as.character(domain),
-      plot_start = suppressWarnings(as.numeric(start)),
-      plot_end = suppressWarnings(as.numeric(end))
-    )
-
-  if (nrow(domains) == 0) {
-    stop("Domain CSV is empty")
-  }
-
-  if (any(is.na(domains$gene) | domains$gene == "")) {
-    stop("Domain CSV contains empty gene values")
-  }
-
-  if (any(is.na(domains$domain) | domains$domain == "")) {
-    stop("Domain CSV contains empty domain values")
-  }
-
-  if (any(is.na(domains$plot_start) | is.na(domains$plot_end))) {
-    stop("Domain CSV contains non-numeric start/end values")
-  }
-
-  if (any(domains$plot_start <= 0 | domains$plot_end <= 0 | domains$plot_end < domains$plot_start)) {
-    stop("Domain CSV contains invalid intervals; require start > 0, end > 0, end >= start")
-  }
-
-  valid_genes <- unique(as.character(entropy_df$gene))
-  extra_genes <- setdiff(unique(domains$gene), valid_genes)
-  if (length(extra_genes) > 0) {
-    warning(
-      paste(
-        "Ignoring domain annotations for genes absent from entropy table:",
-        paste(extra_genes, collapse = ", ")
-      )
-    )
-  }
-
-  domains %>%
-    filter(gene %in% valid_genes) %>%
-    arrange(gene, plot_start, plot_end, domain)
 }
 
 # Function to create entropy plot for all genes
@@ -173,7 +111,7 @@ plot_entropy_per_gene <- function(entropy_df, gene_name, output_file,
     p <- p + 
       geom_rect(
         data = domain_df,
-        aes(xmin = plot_start, xmax = plot_end, fill = domain),
+        aes(xmin = aa_start, xmax = aa_stop, fill = domain),
         ymin = 0, ymax = Inf, alpha = 0.2, inherit.aes = FALSE
       ) +
       scale_fill_brewer(palette = "Accent", name = "Domain")
@@ -213,21 +151,19 @@ main <- function() {
   args <- commandArgs(trailingOnly = TRUE)
   
   if (length(args) < 2) {
-    cat("Usage: Rscript plot_entropy.R <entropy_table.csv> <output_directory> [seq_type] [domain_csv]\n")
+    cat("Usage: Rscript plot_entropy.R <entropy_table.csv> <output_directory> [seq_type]\n")
     cat("\nArguments:\n")
     cat("  entropy_table.csv  : CSV file from calculate_entropy.py\n")
     cat("  output_directory   : Directory to save plots\n")
     cat("  seq_type          : Optional, 'AA' or 'DNA' (default: auto-detect)\n")
-    cat("  domain_csv        : Optional CSV with columns gene,domain,start,end\n")
     cat("\nExample:\n")
-    cat("  Rscript plot_entropy.R hepc_entropy.csv plots/entropy AA domains.csv\n")
+    cat("  Rscript plot_entropy.R hepc_entropy.csv plots/entropy AA\n")
     quit(status = 1)
   }
   
   entropy_file <- args[1]
   output_dir <- args[2]
   seq_type <- if (length(args) >= 3) args[3] else NULL
-  domain_file <- if (length(args) >= 4) args[4] else NULL
   
   # Check input file exists
   if (!file.exists(entropy_file)) {
@@ -248,13 +184,6 @@ main <- function() {
   
   cat("Sequence type:", seq_type, "\n")
   cat("Genes found:", paste(unique(entropy_df$gene), collapse = ", "), "\n")
-
-  domain_df <- load_domain_annotations(domain_file, entropy_df)
-  if (!is.null(domain_df)) {
-    cat("Loaded domain annotations from:", domain_file, "\n")
-    cat("Annotated genes:", paste(unique(domain_df$gene), collapse = ", "), "\n")
-    cat("Coordinate mode:", seq_type, "(start/end are used as provided)\n")
-  }
   
   # Check for grouping
   group_cols <- detect_group_cols(entropy_df)
@@ -272,13 +201,9 @@ main <- function() {
   cat("\nGenerating individual gene plots...\n")
   genes <- unique(entropy_df$gene)
   
-  for (gene_name in genes) {
-    gene_file <- file.path(output_dir, paste0("entropy_", gene_name, ".png"))
-    gene_domains <- NULL
-    if (!is.null(domain_df)) {
-      gene_domains <- domain_df %>% filter(gene == gene_name)
-    }
-    plot_entropy_per_gene(entropy_df, gene_name, gene_file, domain_df = gene_domains)
+  for (gene in genes) {
+    gene_file <- file.path(output_dir, paste0("entropy_", gene, ".png"))
+    plot_entropy_per_gene(entropy_df, gene, gene_file)
     cat("  Saved:", gene_file, "\n")
   }
   
