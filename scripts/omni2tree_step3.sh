@@ -20,7 +20,7 @@ BOOTSTRAP=1000
 SEQ_MODE="aa"
 SEQ_LC="aa"
 SEQ_UC="AA"
-LABEL=""
+LABEL="Omni2tree_Tree"
 METADATA_FILE=""
 TEMP_DIR=""
 DEBUG=false
@@ -32,6 +32,8 @@ EXCLUDE_GAPS=false
 MIN_SAMPLES=""
 ADD_DOMAIN_FILE=""
 GROUP_BY=()
+FIVE_LETTER_FILE="five_letter_taxon.tsv"
+OG_ENTROPY_TABLE="stats/entropy/OG_genes_entropy.csv"
 
 if [ -t 1 ]; then
   RED="\033[1;31m"
@@ -58,7 +60,7 @@ log_error() {
 }
 
 usage() {
-  log_info "Usage: ${PROGNAME} --o2t_out <dir> -l <label> -m <metadata.csv> [options]"
+  log_info "Usage: ${PROGNAME} --o2t_out <dir> -m <metadata.csv> [-l <label>] [options]"
 }
 
 show_help() {
@@ -73,28 +75,18 @@ Runs Omni2tree Step 3 end-to-end:
 
 Required:
   --o2t_out <dir>                               Base Omni2tree output directory that contains O2T_RESULTS
-  -l, --label <text>                            Label/name for visualization output
   -m, --metadata <file>                         Metadata CSV (header + first data row with column types)
 
 General Optional:
-  --seq_type <aa|dna>                           Sequence type to use across entropy + concatenated alignment [default: aa]
+  --seq_type <aa|dna>                           Selects concatenated alignment used by IQ-TREE and entropy input [default: aa]
   -T, --threads <int>                           Threads for iqtree [default: 4]
   --bootstrap <int>                             IQ-TREE ultrafast bootstrap replicates [default: 1000]
-  --temp_dir <dir>                              Optional temp dir (reserved for helper intermediates)
+  --temp_dir <dir>                              Optional temp dir. If relative, it will be relative to o2t_out.
   --debug                                       Keep temp dir and print extra messages
   -h, --help                                    Show this help
 
-Visualization (uses prepare_metadata_o2t_view.py + omni2treeview.py):
-  -l, --label <text>                            Required (already listed)
-  -m, --metadata <file>                         Required (already listed)
-  Notes:
-    - The metadata file must have at least columns 'label' and 'accession' (case-insensitive).
-    - The first row after the header must contain column types (character/date/numeric/integer).
-    - 'label' and 'accession' must be complete (no empty values in data rows).
-    - 'accession' must contain exactly one accession per row (no commas).
-    - All reference labels from five_letter_taxon.tsv must be present in metadata (after alphanumeric cleanup).
-    - All readsets with consensus in O2T_RESULTS/*_all_cov.txt must be present in metadata 'label' column.
-    - Readset labels should not collide (alphanumeric-only comparison) with reference labels from step1.
+Visualization:
+  -l, --label <text>                            Optional visualization label [default: Omni2tree_Tree]
 
 Entropy Step 1 (msa_to_position_table.py) optional filters:
   --exclude_pattern <regex>                     Python regex to exclude sample IDs (case-sensitive)
@@ -108,17 +100,18 @@ Entropy Step 2 (calculate_entropy.py) optional:
 
 Entropy Step 3 (plot_entropy.R) optional:
   --add_domain <csv>                            Domain annotations CSV with columns: gene,domain,start,end
-                                                Gene names are validated against stats/OG_genes_entropy.csv
+                                                Gene names are validated against stats/entropy/OG_genes_entropy.csv
+                                                Note: currently validation-only; plot_entropy.R does not render domains yet.
 
 Expected inputs from previous steps (inside --o2t_out):
   O2T_RESULTS/                                  read2tree output from step1/step2
   marker_genes/                                 marker genes directory from step1
   dna_ref.fa                                    read2tree DNA reference from step1
   five_letter_taxon.tsv                         mapping generated in step1
-  stats/OG_genes_entropy.csv                    generated in step1 from entropy_msa_og_gene_table.py
+  stats/entropy/OG_genes_entropy.csv            generated in step1 from entropy_msa_og_gene_table.py
 
 Examples:
-  $PROGNAME --o2t_out virus2tree_rsv -l RSV_Run -m metadata.csv
+  $PROGNAME --o2t_out virus2tree_rsv -m metadata.csv
 
   $PROGNAME --o2t_out virus2tree_rsv -l RSV_Run -m metadata.csv \\
     --seq_type aa --exclude_pattern s0 --group_by subgroup time_phase --exclude_gaps
@@ -274,8 +267,8 @@ if "gene" not in og.columns:
 valid_genes = set(og["gene"].astype(str))
 bad_genes = sorted(set(d["gene"].astype(str)) - valid_genes)
 if bad_genes:
-    print(
-        "Domain CSV contains gene(s) not present in stats/OG_genes_entropy.csv: "
+        print(
+        "Domain CSV contains gene(s) not present in stats/entropy/OG_genes_entropy.csv: "
         + ", ".join(bad_genes),
         file=sys.stderr,
     )
@@ -317,7 +310,7 @@ validate_og_names_vs_msa() {
   if [[ -n "$extra_in_table" ]]; then
     log_warn "Some OGs in $og_table_csv are not present in $msa_dir (continuing)."
   fi
-  log_info "Validated OG names: MSA files are covered by stats/OG_genes_entropy.csv"
+  log_info "Validated OG names: MSA files are covered by $OG_ENTROPY_TABLE"
 }
 
 detect_concat_phy() {
@@ -435,10 +428,6 @@ if [[ -z "$ROOT_DIR" ]]; then
   log_error "The user must specify --o2t_out <dir> (base directory containing O2T_RESULTS)"
   exit 1
 fi
-if [[ -z "$LABEL" ]]; then
-  log_error "--label (-l) is required for visualization"
-  exit 1
-fi
 if [[ -z "$METADATA_FILE" ]]; then
   log_error "--metadata (-m) is required for visualization and entropy metadata-aware steps"
   exit 1
@@ -487,7 +476,7 @@ require_dir "$OUT_DIR" "Expected step1/step2 read2tree output directory not foun
 require_dir "marker_genes" "Required marker_genes directory not found"
 require_file "dna_ref.fa" "Required dna_ref.fa not found"
 require_file "five_letter_taxon.tsv" "Required five_letter_taxon.tsv not found"
-require_file "stats/OG_genes_entropy.csv" "Required entropy OG mapping file not found (step1 should generate it)"
+require_file "$OG_ENTROPY_TABLE" "Required entropy OG mapping file not found (step1 should generate it)"
 
 if [[ -z "$TEMP_DIR" ]]; then
   TEMP_DIR="$(mktemp -d)"
@@ -507,7 +496,7 @@ fi
 if [[ -n "$ADD_DOMAIN_FILE" ]]; then
   require_file "$ADD_DOMAIN_FILE" "Domain CSV not found or empty"
   ADD_DOMAIN_FILE="$(realpath "$ADD_DOMAIN_FILE")"
-  validate_domain_csv "$ADD_DOMAIN_FILE" "stats/OG_genes_entropy.csv" || {
+  validate_domain_csv "$ADD_DOMAIN_FILE" "$OG_ENTROPY_TABLE" || {
     log_error "Domain CSV validation failed"
     exit 1
   }
@@ -517,7 +506,7 @@ fi
 log_info "========== Step 3.1b: Validating metadata (early) =========="
 VALIDATE_META_CMD=(python3 "$UTILS_DIR/validate_metadata.py"
   -m "$METADATA_FILE"
-  --five_letter "five_letter_taxon.tsv"
+  --five_letter "$FIVE_LETTER_FILE"
   --o2t_results "$OUT_DIR")
 run_cmd "${VALIDATE_META_CMD[@]}"
 
@@ -548,10 +537,10 @@ fi
 log_info "========== Step 3.4: Preparing visualization inputs =========="
 mkdir -p stats visualization
 VIEW_TREE_OUTPUT="$OUT_DIR/concat_merge_view_${SEQ_LC}.phy.treefile"
-VIEW_META_OUTPUT="stats/metadata_o2t_view.csv"
+VIEW_META_OUTPUT="visualization/metadata_o2t_view.csv"
 PREP_META_CMD=(python3 "$UTILS_DIR/prepare_metadata_o2t_view.py"
   -m "$METADATA_FILE"
-  --five_letter "five_letter_taxon.tsv"
+  --five_letter "$FIVE_LETTER_FILE"
   --in_nwk "$VIEW_TREE_INPUT"
   --out_nwk "$VIEW_TREE_OUTPUT"
   --out_meta "$VIEW_META_OUTPUT")
@@ -579,21 +568,22 @@ run_cmd "${OMNIVIEW_CMD[@]}"
 log_info "========== Step 3.5: Entropy Step 1 (MSA -> position table) =========="
 MSA_DIR="$OUT_DIR/06_align_merge_${SEQ_LC}"
 require_dir "$MSA_DIR" "MSA directory not found for selected seq_type"
-validate_og_names_vs_msa "$MSA_DIR" "stats/OG_genes_entropy.csv"
+validate_og_names_vs_msa "$MSA_DIR" "$OG_ENTROPY_TABLE"
 
-ENTROPY_DIR="$OUT_DIR/O7_entropy"
+ENTROPY_DIR="stats/entropy"
 mkdir -p "$ENTROPY_DIR"
 POSITIONS_CSV="$ENTROPY_DIR/${SEQ_LC}_positions.csv"
 ENTROPY_CSV="$ENTROPY_DIR/${SEQ_LC}_entropy.csv"
-ENTROPY_PLOTS_DIR="stats/entropy"
-mkdir -p "$ENTROPY_PLOTS_DIR"
+ENTROPY_PLOTS_DIR="$ENTROPY_DIR"
 
 MSA2POS_CMD=(python3 "$MAIN_DIR/msa_to_position_table.py"
   --msa_dir "$MSA_DIR"
-  --og_table "stats/OG_genes_entropy.csv"
+  --og_table "$OG_ENTROPY_TABLE"
   --output "$POSITIONS_CSV"
   --seq_type "$SEQ_UC"
-  --metadata "$VIEW_META_OUTPUT")
+  --metadata "$VIEW_META_OUTPUT"
+  --metadata_match_column "label"
+  --five_letter "$FIVE_LETTER_FILE")
 
 if [[ -n "$EXCLUDE_PATTERN" ]]; then
   MSA2POS_CMD+=(--exclude_pattern "$EXCLUDE_PATTERN")

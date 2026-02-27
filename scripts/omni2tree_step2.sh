@@ -101,7 +101,7 @@ $(usage)
                                             Suggested: -ax map-sr (for short single or paired end short reads), 
                                             -ax map-pb (for PacBio reads), -ax map-hifi (for HiFi reads)
     -T, --threads <int>      Threads to use [default: 4]
-    --temp_dir <dir>         Specify temp directory (otherwise mktemp -d is used)
+    --temp_dir <dir>         Specify temp directory. If relative, it will be relative to o2t_out.
     --o2t_out <dir>          Specify base output directory containing step 1 result; all outputs will be saved here [default: current directory]
                              Step 1 read2tree output is expected at --o2t_out/O2T_RESULTS
     --stats_file <file>      Specify read statistics output file (absolute or relative to --o2t_out) [default: o2t_out/stats/reads_statistics.tsv]

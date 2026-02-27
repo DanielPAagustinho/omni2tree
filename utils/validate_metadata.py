@@ -134,6 +134,10 @@ def parse_metadata_csv(path: Path) -> MetadataInput:
         label = row[label_col]
         if label == "":
             raise ValueError(f"Metadata row {i} has empty label")
+        if "," in label:
+            raise ValueError(
+                f"Metadata row {i} label contains a comma; labels must not contain commas"
+            )
 
         accession = row[accession_col]
         if accession == "":

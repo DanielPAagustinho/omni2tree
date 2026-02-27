@@ -108,13 +108,13 @@ Required:
 Optional:
   -g, --outgroup <file>                        Path to the outgroup taxon/species/strain file
   --o2t_out <dir>                              Specify base output directory where all outputs will be saved [default: current directory]
-  --temp_dir <dir>                             Specify temporary directory (otherwise mktemp -d is used). If relative, it will be relative to o2t_out.
                                                The read2tree step1 output directory is always named O2T_RESULTS inside o2t_out.
+  -T, --threads <int>                          Number of threads [default: 12]  
   --resume                                     Skips taxa whose coding sequences have already been downloaded from NCBI to the db folder. Skips as much steps as possible up to the OMA run step (1.6). When run, it removes existing OMA output and read2tree directories.                                
   --og_min_fraction <float>                    Keep only OGs present in at least this fraction of species (0–1). If omitted, all OGs are kept.
   -p, --use_mat_peptides                       Downloads the gbk file for each taxon's accession(s). If at least one mature peptide feature is detected, these features are used as the coding sequences; otherwise, the standard CDS features are downloaded.
   -q, --use_mat_peptides_only                  Downloads the gbk file for each taxon's accession(s). If at least one mature peptide feature is detected, these features are used as the coding sequences; if none are detected, that taxon is skipped.
-  -T, --threads <int>                          Number of threads [default: 12]  
+  --temp_dir <dir>                             Optional temp directory. If relative, it will be relative to o2t_out.
   --debug                                      Keeps temporary directory
   -h, --help                                   Show this help message
 
@@ -521,7 +521,8 @@ generate_og_gene_tsv() {
       }' "$file" > "${dest_dir}/${final_name}"
     done
 
-    entropy_output_file="${dest_dir}/OG_genes_entropy.csv"
+    mkdir -p "stats/entropy"
+    entropy_output_file="stats/entropy/OG_genes_entropy.csv"
     if [[ ! -f "$entropy_script" ]]; then
       log_error "Entropy OG-gene mapping script not found: $entropy_script"
       exit 1
@@ -743,9 +744,13 @@ if [[ "$RES_DOWN" == true ]]; then
       rm -rf "Output/"
     fi
     # Remove and tell you removed the following files que contengan OG: OG_genes-unique.tsv  OG_genes.tsv  taxon_OG.tsv
-    if [[ -e "stats/OG_genes-unique.tsv" || -e "stats/OG_genes.tsv" || -e "stats/OG_genes_entropy.csv" || -e "stats/taxon_OG.tsv" || -e "stats/OG_taxa.tsv" ]]; then
-      log_info "Removing OG-related stats files (if present): stats/OG_genes-unique.tsv, stats/OG_genes.tsv, stats/OG_genes_entropy.csv, stats/taxon_OG.tsv, stats/OG_taxa.tsv"
-      rm -f "stats/OG_genes-unique.tsv" "stats/OG_genes.tsv" "stats/OG_genes_entropy.csv" "stats/taxon_OG.tsv" "stats/OG_taxa.tsv"
+    if [[ -e "stats/OG_genes-unique.tsv" || -e "stats/OG_genes.tsv" || -e "stats/taxon_OG.tsv" || -e "stats/OG_taxa.tsv" ]]; then
+      log_info "Removing OG-related stats files (if present): stats/OG_genes-unique.tsv, stats/OG_genes.tsv, stats/taxon_OG.tsv, stats/OG_taxa.tsv"
+      rm -f "stats/OG_genes-unique.tsv" "stats/OG_genes.tsv" "stats/taxon_OG.tsv" "stats/OG_taxa.tsv"
+    fi
+    if [[ -d "stats/entropy" ]]; then
+      log_info "Removing stats/entropy directory: $(realpath "stats/entropy")"
+      rm -rf "stats/entropy"
     fi
 else
   # error if dna ref.fa or five_letter taxon already exist
