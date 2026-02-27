@@ -101,7 +101,8 @@ Entropy Step 2 (calculate_entropy.py) optional:
 Entropy Step 3 (plot_entropy.R) optional:
   --add_domain <csv>                            Domain annotations CSV with columns: gene,domain,start,end
                                                 Gene names are validated against stats/entropy/OG_genes_entropy.csv
-                                                Note: currently validation-only; plot_entropy.R does not render domains yet.
+                                                Coordinates are used as provided: AA positions for --seq_type aa,
+                                                DNA positions for --seq_type dna.
 
 Expected inputs from previous steps (inside --o2t_out):
   O2T_RESULTS/                                  read2tree output from step1/step2
@@ -622,15 +623,9 @@ if ! awk 'NR>1 {found=1; exit 0} END {exit found ? 0 : 1}' "$ENTROPY_CSV"; then
 fi
 
 log_info "========== Step 3.7: Entropy Step 3 (Plot entropy) =========="
-# NOTE (intentional, no changes applied to plot_entropy.R):
-# - plot_entropy.R remains unchanged and does not consume the optional domain CSV.
-# - If --add_domain is provided, the file is validated earlier but NOT passed to Rscript.
-# - What would need changing (if desired later): plot_entropy.R argument parsing + domain overlay logic.
-# - What is NOT affected: msa_to_position_table.py and calculate_entropy.py outputs.
-log_warn "plot_entropy.R invocation note: R script is intentionally unmodified and will not process --add_domain CSV."
 PLOT_CMD=(Rscript "$MAIN_DIR/plot_entropy.R" "$ENTROPY_CSV" "$ENTROPY_PLOTS_DIR" "$SEQ_UC")
 if [[ -n "$ADD_DOMAIN_FILE" ]]; then
-  log_warn "--add_domain was provided ($ADD_DOMAIN_FILE), but it is ignored because plot_entropy.R was intentionally left unchanged."
+  PLOT_CMD+=("$ADD_DOMAIN_FILE")
 fi
 run_cmd "${PLOT_CMD[@]}"
 
