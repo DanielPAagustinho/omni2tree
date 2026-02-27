@@ -151,14 +151,14 @@ which o2t-sra   && o2t-sra   --help
 Minimal example (adjust paths to your data):
 
 ```bash
-# Step 1: Create reference OMA database for r2t with NCBI accessions from RSV
+# Step 1: Create reference OMA database for r2t with NCBI accessions
 o2t-step1 -i rsv_accessions.csv -g rsv_outgroups.txt -T 25 --o2t_out virus2tree_rsv &> rsv_long_step1.log
 
-# Step 2: Map long nanopore RSV reads to the reference using GNU Parallel
+# Step 2: Map long nanopore reads to the reference using GNU Parallel
 parallel -j 4 o2t-step2 -r {1} --o2t_out virus2tree_rsv -T 20 ::: \
   $(ls reads/*fastq* | sort) &>> "rsv_long_step2.log" &
 
-# Step 2: Map short paired end RSV reads to the reference
+# Step 2: Map short paired end reads to the reference
   parallel -j 4 o2t-step2 \
   -r {1} -t paired -map_op '"-ax sr"' --o2t_out virus2tree_rsv -T 20 ::: \
   $(ls reads/*_1.fastq* | sort) :::+ $(ls reads/*_2.fastq* | sort) &>> "rsv_short_step2.log" &
@@ -329,17 +329,7 @@ All outputs are placed within the `--o2t_out` directory
 <details>
 <summary>Click to expand/collapse</summary>
 
-Run the Omni2tree wrapper `o2t-step3` (not raw `read2tree` directly).  
-This wrapper executes the full Step 3 workflow:
-1. Early metadata validation (`validate_metadata.py`)
-2. `read2tree --step 3combine`
-3. IQ-TREE inference
-4. Tree/metadata preparation for visualization (`prepare_metadata_o2t_view.py`)
-5. HTML view generation (`omni2treeview.py`)
-6. Entropy table generation (`msa_to_position_table.py`, `calculate_entropy.py`)
-7. Entropy plotting (`plot_entropy.R`)
-
-### **Example Command**
+Finally, to obtain the phylogenetic tree and much more, run
 
 ```bash
 o2t-step3 \
@@ -348,6 +338,16 @@ o2t-step3 \
   --seq_type aa \
   -T 8
 ```
+
+This last step executes the following workflow:
+1. Early metadata validation (`validate_metadata.py`)
+2. `read2tree --step 3combine`
+3. IQ-TREE inference
+4. Tree/metadata preparation for visualization (`prepare_metadata_o2t_view.py`)
+5. HTML view generation (`omni2treeview.py`)
+6. Entropy table generation (`msa_to_position_table.py`, `calculate_entropy.py`)
+7. Entropy plotting (`plot_entropy.R`)
+
 
 ### **Command Parameters**
 
@@ -559,12 +559,12 @@ OG5,E2
 ### Optional Files
 
 #### 3. Metadata Table (for grouping/filtering)
-- **Format**: CSV with `sample_id` column
+- **Format**: CSV with `label` column
 - **Purpose**: Filter samples or group entropy calculations
 
 **Example:**
 ```csv
-sample_id,genotype,collection_year,location
+label,genotype,collection_year,location
 HepC_SRR1170677,GT1,2011,USA
 HepC_SRR5122806,GT4,2009,Netherlands
 s0252,GT7,2014,Reference
@@ -660,7 +660,7 @@ python msa_to_position_table.py \
 ```
 
 **Output:** CSV with columns:
-- `sample_id` - Sample identifier
+- `label` - Sample identifier
 - `position` - Position in alignment (1-indexed)
 - `character` - Amino acid or nucleotide at this position
 - `og` - Ortholog group (e.g., OG1)
@@ -890,7 +890,7 @@ Rscript -e "install.packages(c('tidyverse', 'RColorBrewer'), repos='https://cran
 
 ### Position Table Example
 ```csv
-sample_id,position,character,og,gene,seq_type
+label,position,character,og,gene,seq_type
 HepC_SRR1170677,1,-,OG1,NS3,AA
 HepC_SRR1170677,2,-,OG1,NS3,AA
 HepC_SRR1170677,3,-,OG1,NS3,AA
