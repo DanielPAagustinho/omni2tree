@@ -367,7 +367,7 @@ This last step executes the following workflow:
 | `--group_by` | One or more metadata columns to group entropy calculations. |
 | `--min_samples` | Minimum samples per position for entropy. |
 | `--exclude_gaps` | Exclude gap character (`-`) before entropy calculation. |
-| `--add_domain` | Optional domain CSV (`gene,domain,start,end`) validated before plotting (currently validation-only; not rendered by `plot_entropy.R`). |
+| `--add_domain` | Optional domain CSV (`gene,domain,start,end`) to add domain ranges to per-gene entropy plots. |
 | `-h, --help` | Show help. |
 
 ### **Metadata Input Format (`-m`)**
