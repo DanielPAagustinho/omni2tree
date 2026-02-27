@@ -80,7 +80,7 @@ Required:
 General Optional:
   --seq_type <aa|dna>                           Selects concatenated alignment used by IQ-TREE and entropy input [default: aa]
   -T, --threads <int>                           Threads for iqtree [default: 4]
-  --bootstrap <int>                             IQ-TREE ultrafast bootstrap replicates [default: 1000]
+  --bootstrap <int>                             IQ-TREE ultrafast bootstrap replicates (0 or >=1000) [default: 1000]
   --temp_dir <dir>                              Optional temp dir. If relative, it will be relative to o2t_out.
   --debug                                       Keep temp dir and print extra messages
   -h, --help                                    Show this help
@@ -267,7 +267,7 @@ if "gene" not in og.columns:
 valid_genes = set(og["gene"].astype(str))
 bad_genes = sorted(set(d["gene"].astype(str)) - valid_genes)
 if bad_genes:
-        print(
+    print(
         "Domain CSV contains gene(s) not present in stats/entropy/OG_genes_entropy.csv: "
         + ", ".join(bad_genes),
         file=sys.stderr,
@@ -450,6 +450,10 @@ if ! [[ "$BOOTSTRAP" =~ ^[0-9]+$ ]]; then
   log_error "--bootstrap must be a non-negative integer"
   exit 1
 fi
+if (( BOOTSTRAP > 0 && BOOTSTRAP < 1000 )); then
+  log_error "--bootstrap must be 0 or >= 1000 for IQ-TREE ultrafast bootstrap"
+  exit 1
+fi
 if [[ -n "$MIN_SAMPLES" ]] && ! [[ "$MIN_SAMPLES" =~ ^[1-9][0-9]*$ ]]; then
   log_error "--min_samples must be a positive integer"
   exit 1
@@ -611,6 +615,11 @@ if [[ "$EXCLUDE_GAPS" == true ]]; then
 fi
 
 run_cmd "${CALC_ENTROPY_CMD[@]}"
+
+if ! awk 'NR>1 {found=1; exit 0} END {exit found ? 0 : 1}' "$ENTROPY_CSV"; then
+  log_error "Entropy output contains no data rows after filtering. Adjust --filter_column/--filter_value and/or lower --min_samples."
+  exit 1
+fi
 
 log_info "========== Step 3.7: Entropy Step 3 (Plot entropy) =========="
 # NOTE (intentional, no changes applied to plot_entropy.R):
