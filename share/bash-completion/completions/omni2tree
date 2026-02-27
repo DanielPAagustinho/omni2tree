@@ -91,9 +91,7 @@ _o2t_step3_complete() {
   cur="${COMP_WORDS[COMP_CWORD]}"
   prev="${COMP_WORDS[COMP_CWORD-1]}"
 
-  opts="--o2t_out -l --label -m --metadata --seq_type -T --threads --bootstrap --temp_dir --debug \
-        --exclude_pattern --filter_column --filter_value --group_by --min_samples --exclude_gaps \
-        --add_domain -h --help"
+  opts="--o2t_out -l --label -m --metadata --seq_type -T --threads --bootstrap --temp_dir --debug --exclude_pattern --filter_column --filter_value --group_by --min_samples --exclude_gaps --add_domain -h --help"
 
   case "$prev" in
     --o2t_out|--temp_dir)
