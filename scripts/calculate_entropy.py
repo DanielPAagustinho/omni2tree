@@ -91,7 +91,7 @@ def main():
     pos_df = pd.read_csv(args.input)
     
     print(f"  Records: {len(pos_df):,}")
-    print(f"  Samples: {pos_df['sample_id'].nunique()}")
+    print(f"  Samples: {pos_df['label'].nunique()}")
     print(f"  Genes: {pos_df['gene'].nunique()}")
     
     # Load and merge metadata if provided
@@ -102,7 +102,7 @@ def main():
         
         print(f"Loading metadata: {args.metadata}")
         meta_df = pd.read_csv(args.metadata)
-        pos_df = pos_df.merge(meta_df, on='sample_id', how='left')
+        pos_df = pos_df.merge(meta_df, on='label', how='left')
         
         # Check for grouping columns
         if args.group_by:
