@@ -10,7 +10,7 @@ This new version of read2tree enables the creation of a reference database via O
 - [Running step 1: Creating the reference database](#running-step-1-creating-the-reference-database)
 - [Running step 2: Processing sample reads and adding them to the read2tree folder](#running-step-2-processing-sample-reads-and-adding-them-to-the-read2tree-folder)
 - [Running step 3: Getting the tree](#running-step-3-getting-the-tree)
-- [Downloading read samples](#downloading-read-samples)
+- [Bulk Downloading read samples](#bulk-downloading-read-samples)
 - [Shannon Entropy Analysis Pipeline for MSA Data](#shannon-entropy-analysis-pipeline-for-msa-data)
 
 ## Installation
@@ -129,8 +129,8 @@ command -v oma && command -v rasusa && command -v czid-dedup && command -v read2
 You can set up Omni2tree cloning the repo and running the installer:
 
 ```bash
-git clone https://github.com/DanielPAagustinho/virus2tree.git
-cd virus2tree
+git clone https://github.com/DanielPAagustinho/omni2tree.git
+cd omni2tree
 ./install.sh /your/install/path
 ```
 
@@ -419,7 +419,7 @@ NextSeq_22_SRR34709337_1,SRR34709337,A,Human
 
 </details>
 
-## Downloading read samples
+## Bulk downloading read samples
 
 <details>
 <summary>Click to expand/collapse</summary>
