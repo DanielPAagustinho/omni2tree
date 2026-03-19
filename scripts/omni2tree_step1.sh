@@ -477,6 +477,7 @@ generate_og_gene_tsv() {
           }
       }'
     } > "$unique_output_file2"
+    sed -i '1cOG\tGene\tProtein\tTaxa' "$unique_output_file2"
     # assure stats is there
     dest_dir="$(dirname "$output_file")"
     mkdir -p "$dest_dir" 
