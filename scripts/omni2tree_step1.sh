@@ -59,6 +59,7 @@ check_dependencies() {
   #Initialize array to map tools to messages
   declare -A tools=(
     ["read2tree"]="read2tree"
+    ["mafft"]="MAFFT"
     ["oma"]="OMA standalone"
     ["oma-status"]="OMA standalone - oma-status"
     ["efetch"]="Entrez Direct utilities - efetch"
