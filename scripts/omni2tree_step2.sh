@@ -83,7 +83,7 @@ check_dependencies() {
 }
 
 usage() {
-  log_info "Usage: ${PROGNAME} -r <read_file1> [read_file2...] -t <single|paired> [-map_op|--minimap2_options \"<opts>\"] [options]\n"
+  log_info "Usage: ${PROGNAME} -r <read_file1> [read_file2...] -t <single|paired> [-o <dir>] [-map_op|--minimap2_options \"<opts>\"] [options]\n"
   #echo "Try '$0 --help' for more information."
 }
 
@@ -102,7 +102,7 @@ $(usage)
                                             -ax map-pb (for PacBio reads), -ax map-hifi (for HiFi reads)
     -T, --threads <int>      Threads to use [default: 4]
     --temp_dir <dir>         Specify temp directory. If relative, it will be relative to o2t_out.
-    --o2t_out <dir>          Specify base output directory containing step 1 result; all outputs will be saved here [default: current directory]
+    -o, --o2t_out <dir>      Specify base output directory containing step 1 result; all outputs will be saved here [default: current directory]
                              Step 1 read2tree output is expected at --o2t_out/O2T_RESULTS
     --stats_file <file>      Specify read statistics output file (absolute or relative to --o2t_out) [default: o2t_out/stats/reads_statistics.tsv]
     --dedup                  Run czid-dedup
@@ -116,8 +116,8 @@ $(usage)
     -h, --help               Show this help
 
 Examples:
-  $PROGNAME -t single -r sample.fastq.gz --dedup --downsample --num_reads 10000 --minimap2_options "-ax map-ont"
-  $PROGNAME --read_type paired --reads R1.fastq R2.fastq --coverage 30 --genome_size 5MB --minimap2_options "-ax sr"
+  $PROGNAME -t single -r sample.fastq.gz -o virus2tree_rsv --dedup --downsample --num_reads 10000 --minimap2_options "-ax map-ont"
+  $PROGNAME --read_type paired --reads R1.fastq R2.fastq -o virus2tree_rsv --coverage 30 --genome_size 5MB --minimap2_options "-ax sr"
 
 EOF
   exit 0
@@ -191,7 +191,7 @@ while [[ $# -gt 0 ]]; do
         exit 1
       fi
       case "$2" in
-        -t|--read_type|-r|--reads|-T|--threads|--temp_dir|--o2t_out|--stats_file|\
+        -t|--read_type|-r|--reads|-T|--threads|--temp_dir|-o|--o2t_out|--stats_file|\
         --dedup|--dedup_l|--downsample|--coverage|--genome_size|--num_bases|--num_reads|\
         --debug|-h|--help|-map_op|--minimap2_options)
           log_error "Missing value for --minimap2_options. Pass minimap2 options as a single quoted string, e.g. --minimap2_options \"-ax map-ont\""
@@ -216,7 +216,7 @@ while [[ $# -gt 0 ]]; do
       TEMP_DIR="${2%/}"
       shift 2
       ;;
-    --o2t_out)
+    -o|--o2t_out)
       ROOT_DIR="${2%/}"
       shift 2
       ;;
@@ -361,7 +361,7 @@ if [[ -n "$ROOT_DIR" ]]; then
   log_info "Using root directory: $ROOT_DIR"
 else
   ROOT_DIR="$(pwd -P)"
-  log_info "No --o2t_out provided. Using current directory as root: $ROOT_DIR"
+  log_info "No -o/--o2t_out provided. Using current directory as root: $ROOT_DIR"
 fi
 
 OUT_DIR="$ROOT_DIR/O2T_RESULTS"

@@ -152,19 +152,19 @@ Minimal example (adjust paths to your data):
 
 ```bash
 # Step 1: Create reference OMA database for r2t with NCBI accessions
-o2t-step1 -i rsv_accessions.csv -g rsv_outgroups.txt -T 25 --o2t_out virus2tree_rsv &> rsv_long_step1.log
+o2t-step1 -i rsv_accessions.csv -g rsv_outgroups.txt -T 25 -o virus2tree_rsv &> rsv_long_step1.log
 
 # Step 2: Map long nanopore reads to the reference using GNU Parallel
-parallel -j 4 o2t-step2 -r {1} --o2t_out virus2tree_rsv -T 20 ::: \
+parallel -j 4 o2t-step2 -r {1} -o virus2tree_rsv -T 20 ::: \
   $(ls reads/*fastq* | sort) &>> "rsv_long_step2.log" &
 
 # Step 2: Map short paired end reads to the reference
   parallel -j 4 o2t-step2 \
-  -r {1} -t paired -map_op '"-ax sr"' --o2t_out virus2tree_rsv -T 20 ::: \
+  -r {1} -t paired -map_op '"-ax sr"' -o virus2tree_rsv -T 20 ::: \
   $(ls reads/*_1.fastq* | sort) :::+ $(ls reads/*_2.fastq* | sort) &>> "rsv_short_step2.log" &
 
 # Step 3: Create tree + visualization + entropy outputs
-o2t-step3 --o2t_out virus2tree_rsv -m data/metadata.csv --seq_type aa -T 8
+o2t-step3 -o virus2tree_rsv -m data/metadata.csv --seq_type aa -T 8
 ```
 
 ## Running step 1: Creating the reference database
@@ -173,7 +173,7 @@ o2t-step3 --o2t_out virus2tree_rsv -m data/metadata.csv --seq_type aa -T 8
 <summary>Click to expand/collapse</summary>
 
 ```bash
-o2t-step1 -i rsv_accessions.csv -g rsv_outgroups.txt -T 25 --o2t_out virus2tree_rsv --temp_dir temp --debug &> def_rsv_long.log
+o2t-step1 -i rsv_accessions.csv -g rsv_outgroups.txt -T 25 -o virus2tree_rsv --temp_dir temp --debug &> def_rsv_long.log
 ```
 To create the reference database, two key input files are required:
 
@@ -188,9 +188,9 @@ If this file is not specified, OMA Standalone will use midpoint rooting, which i
 |--------------------|-----------------------------|
 | `-i`, `--input`    | **Required.** CSV file with NCBI accessions. |
 | `-g`, `--outgroup` | **Optional (recommended)** File with outgroup taxa used by OMA. |
-| `--o2t_out`       | Base output directory where all outputs are written. **Default:** current directory|
+| `-o`, `--o2t_out`       | Base output directory where all outputs are written. **Default:** current directory|
 | `--temp_dir`       | Temporary directory (relative to `--o2t_out` or absolute). **Default:** `mktemp -d`|
-| `--resume`       |Skips taxa already downloaded from NCBI into the `db` folder. If all taxa were already downloaded, it resumes at Step 1.4. Moreover, if the required files are already present, Step 1.4 is bypassed and the script practically resumes from the OMA Standalone run (Step 1.6). When run, it *removes* existing OMA output & read2tree directories. |
+| `-R`, `--resume`       |Skips taxa already downloaded from NCBI into the `db` folder. If all taxa were already downloaded, it resumes at Step 1.4. Moreover, if the required files are already present, Step 1.4 is bypassed and the script practically resumes from the OMA Standalone run (Step 1.6). When run, it *removes* existing OMA output & read2tree directories. |
 |`--og_min_fraction`| Keep only OGs present in at least this fraction of species (0–1). If omitted, all OGs are kept. |
 | `-p, --use_mat_peptides`       | Download GBK files for each taxon's accession(s) and uses the mat_peptide features instead of CDS features if at least one mat_peptide is found. |
 | `-q, --use_mat_peptides_only`       | Same as --use_mat_peptides, except that if no mat_peptide feature is found, it does not download CDS features and simply skips that taxon. |
@@ -200,7 +200,7 @@ If this file is not specified, OMA Standalone will use midpoint rooting, which i
 
 ### **Accession File Format**
 
-The accession file must be a comma-separated values (CSV) text file, with the first line as the header. Each line represents a taxon/species/strain with associated accessions. The format varies depending on whether a five-letter code is included.
+The accession file must be a comma-separated values (CSV) text file, with the first line as the header. Each line represents a taxon/species/strain/label with associated accessions. The format varies depending on whether a five-letter code is included.
 
 #### **Columns:**
 1. **First column (required):** Taxon/species/label/strain name. Header: taxon (or taxa), species, label(s) or strain(s).
@@ -279,12 +279,12 @@ After generating the reference database of orthologous groups, we proceed to add
 ```bash
 #For long nanopore reads (Default for -t, --read_type is single and for --minimap2_options is "-ax mp-ont")
 parallel -j 4 o2t-step2 \
-  -r {1} --dedup --downsample --coverage 250 --genome_size 15kb --o2t_out virus2tree_rsv -T 20 ::: \
+  -r {1} --dedup --downsample --coverage 250 --genome_size 15kb -o virus2tree_rsv -T 20 ::: \
   $(ls reads/*fastq* | sort) &>> "rsv_long_step2.log" &
 
 #For paired end illumina reads
 parallel -j 4 o2t-step2 \
-  -r {1} {2} -t paired --minimap2_options '"-ax sr"' --dedup --downsample --coverage 250 --genome_size 15kb --o2t_out virus2tree_rsv -T 20 ::: \
+  -r {1} {2} -t paired --minimap2_options '"-ax sr"' --dedup --downsample --coverage 250 --genome_size 15kb -o virus2tree_rsv -T 20 ::: \
   $(ls reads/*_1.fastq* | sort) :::+ $(ls reads/*_2.fastq* | sort) &>> "rsv_short_step2.log" &
 
 ```
@@ -296,7 +296,7 @@ parallel -j 4 o2t-step2 \
 | `-r, --reads`     | **Required.** Input reads file(s) in `fastq` or `fastq.gz` format. If multiple files are provided and `--read_type` is not `paired`, they will be concatenated, assuming they belong to the same sample. |
 | `-t, --read_type` | Generic read type: `single` or `paired`. If `paired`, two input files are required in `--reads`. **Default:** `single`.|
 |`-map_op, --minimap2_options`| Options for minimap2 when mapping read set to the reference. Pass as a *single quoted string* (e.g., `--minimap2_options "-ax map-ont"`). Click [here](docs/recommended_presets.md) for suggested values. **Default:** `-ax map-ont`|
-|`--o2t_out`       | Base output directory that contains step 1 results and where step 2 writes outputs. **Default:** current directory.|
+|`-o`, `--o2t_out`       | Base output directory that contains step 1 results and where step 2 writes outputs. **Default:** current directory.|
 | `--temp_dir`      | Temporary directory (relative to `--o2t_out` or absolute). **Default:** `mktemp -d`. |
 | `--stats_file`   | Name of the summary read statistics file. **Default:** `reads_statistics.tsv` | 
 | `--dedup`        | Enables `czid-dedup` to remove duplicate reads. |
@@ -334,7 +334,7 @@ Finally, to obtain the phylogenetic tree and much more, run
 
 ```bash
 o2t-step3 \
-  --o2t_out virus2tree_rsv \
+  -o virus2tree_rsv \
   -m data/metadata.csv \
   --seq_type aa \
   -T 8
@@ -354,7 +354,7 @@ This last step executes the following workflow:
 
 | **Parameter** | **Description** |
 |--------------------|--------------------------------------------------------------------------------------------------------------------------------|
-| `--o2t_out` | **Required.** Base output directory containing step1/step2 outputs (`O2T_RESULTS`, `marker_genes`, `dna_ref.fa`, `five_letter_taxon.tsv`). |
+| `-o`, `--o2t_out` | **Required.** Base output directory containing step1/step2 outputs (`O2T_RESULTS`, `marker_genes`, `dna_ref.fa`, `five_letter_taxon.tsv`). |
 | `-m, --metadata` | **Required.** Metadata CSV used for validation, relabeling and entropy grouping/filtering. |
 | `--seq_type` | Sequence mode: `aa` or `dna`. Selects the concatenated alignment used by IQ-TREE and entropy inputs. **Default:** `aa`. |
 | `-T, --threads` | Threads for IQ-TREE. **Default:** `4`. |

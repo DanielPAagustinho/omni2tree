@@ -94,7 +94,7 @@ check_dependencies() {
 }
 
 usage() {
-  log_info "Usage: ${PROGNAME} -i <accession_file> [-g <outgroup_file>] [options]\n"
+  log_info "Usage: ${PROGNAME} -i <accession_file> [-g <outgroup_file>] [-o <dir>] [-R] [options]\n"
   #echo "Try '$0 --help' for more information."
 }
 
@@ -103,14 +103,14 @@ show_help() {
 $(usage)
 
 Required:
-  -i, --input <file>                           Path to the accession file. Should be a comma-separated file with the structure: taxon(s)/species/strain(s),code(optional),accession(s). If provided, the code should have exactly 5 alphanumeric characters.
+  -i, --input <file>                           Path to the accession file. Should be a comma-separated file with the structure: taxon(s)/species/strain(s)/label(s),code(optional),accession(s). If provided, the code should have exactly 5 alphanumeric characters.
 
 Optional:
   -g, --outgroup <file>                        Path to the outgroup taxon/species/strain file
-  --o2t_out <dir>                              Specify base output directory where all outputs will be saved [default: current directory]
+  -o, --o2t_out <dir>                          Specify base output directory where all outputs will be saved [default: current directory]
                                                The read2tree step1 output directory is always named O2T_RESULTS inside o2t_out.
   -T, --threads <int>                          Number of threads [default: 12]  
-  --resume                                     Skips taxa whose coding sequences have already been downloaded from NCBI to the db folder. Skips as much steps as possible up to the OMA run step (1.6). When run, it removes existing OMA output and read2tree directories.                                
+  -R, --resume                                 Skips taxa whose coding sequences have already been downloaded from NCBI to the db folder. Skips as much steps as possible up to the OMA run step (1.6). When run, it removes existing OMA output and read2tree directories.
   --og_min_fraction <float>                    Keep only OGs present in at least this fraction of species (0–1). If omitted, all OGs are kept.
   -p, --use_mat_peptides                       Downloads the gbk file for each taxon's accession(s). If at least one mature peptide feature is detected, these features are used as the coding sequences; otherwise, the standard CDS features are downloaded.
   -q, --use_mat_peptides_only                  Downloads the gbk file for each taxon's accession(s). If at least one mature peptide feature is detected, these features are used as the coding sequences; if none are detected, that taxon is skipped.
@@ -643,10 +643,10 @@ while [[ "$#" -gt 0 ]]; do
         -q|--use_mat_peptides_only) MAT_PEPTIDES=true; ONLY_MAT_PEPTIDES=true; Q_FLAG=true;;
         -T|--threads) THREADS="$2"; shift ;;
         --temp_dir) TEMP_DIR="${2%/}"; shift ;;
-        --o2t_out) WORK_DIR="${2%/}"; shift ;;
+        -o|--o2t_out) WORK_DIR="${2%/}"; shift ;;
         --debug) DEBUG=true;;
         --og_min_fraction) OG_MIN_FRAC="$2"; shift ;;
-        --resume) RES_DOWN=true;;
+        -R|--resume) RES_DOWN=true;;
         -h|--help) show_help;;
         *) log_error "Unknown parameter passed: $1"; usage; log_info "Try '$PROGNAME --help' for more information."; exit 1 ;;
     esac
@@ -699,7 +699,7 @@ if [[ -n "$WORK_DIR" ]]; then
 else
     # por defecto: cwd del usuario al ejecutar el script
     WORK_DIR="$(pwd)"
-    log_info "No --o2t_out specified. Output directories will be written in '$(pwd)'"
+    log_info "No -o/--o2t_out specified. Output directories will be written in '$(pwd)'"
 fi
 
 OUT_DIR="O2T_RESULTS"
@@ -710,7 +710,7 @@ if [[ -d "$OUT_DIR" ]]; then
     log_info "Removing existing read2tree output directory: $(realpath "$OUT_DIR") to avoid conflicts when rerunning"
     rm -rf "$OUT_DIR"
   else
-    log_error "The fixed read2tree output directory '$(realpath "$OUT_DIR")' already exists (name is always O2T_RESULTS). Delete it or use --resume"
+    log_error "The fixed read2tree output directory '$(realpath "$OUT_DIR")' already exists (name is always O2T_RESULTS). Delete it or use -R/--resume"
     exit 1
   fi
 fi
@@ -844,7 +844,7 @@ LOWER_HEADER=("${HEADER_COLS[@],,}")
 HAS_CODE_COLUMN=false
 # Validate the number of columns first
 if [[ "${#HEADER_COLS[@]}" -lt 2 ]]; then
-  log_error "Error: The header must have at least 2 columns: 'taxon/species/strain' and 'accession(s)' (or equivalent)."
+  log_error "Error: The header must have at least 2 columns: 'taxon/species/strain/label' and 'accession(s)' (or equivalent)."
   exit 1
 elif [[ "${#HEADER_COLS[@]}" -gt 3 ]]; then
   log_error "Error: The header has more than 3 columns. This is not supported."
@@ -903,7 +903,7 @@ if [[ "${#HEADER_COLS[@]}" -eq 3 ]]; then
       exit 1
     fi
   else
-    log_error "The header columns are not correct. Expected 'taxon/species/strain' and 'accession(s)' (or equivalent). Found: '${HEADER_COLS[0]}' and '${HEADER_COLS[2]}'."
+    log_error "The header columns are not correct. Expected 'taxon/species/strain/label' and 'accession(s)' (or equivalent). Found: '${HEADER_COLS[0]}' and '${HEADER_COLS[2]}'."
     exit 1
   fi
 elif [[ "${#HEADER_COLS[@]}" -eq 2 ]]; then
@@ -938,7 +938,7 @@ elif [[ "${#HEADER_COLS[@]}" -eq 2 ]]; then
     fi
 
   else
-    log_error "The header columns are not correct. Expected 'taxon/species/strain' and 'accession(s)' (or equivalent). Found: '${HEADER_COLS[0]}' and '${HEADER_COLS[1]}'."
+    log_error "The header columns are not correct. Expected 'taxon/species/strain/label' and 'accession(s)' (or equivalent). Found: '${HEADER_COLS[0]}' and '${HEADER_COLS[1]}'."
     exit 1
   fi
 fi

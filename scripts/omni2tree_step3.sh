@@ -60,7 +60,7 @@ log_error() {
 }
 
 usage() {
-  log_info "Usage: ${PROGNAME} --o2t_out <dir> -m <metadata.csv> [-l <label>] [options]"
+  log_info "Usage: ${PROGNAME} -o <dir> -m <metadata.csv> [-l <label>] [options]"
 }
 
 show_help() {
@@ -74,7 +74,7 @@ Runs Omni2tree Step 3 end-to-end:
   4) Shannon entropy pipeline (msa_to_position_table.py -> calculate_entropy.py -> plot_entropy.R)
 
 Required:
-  --o2t_out <dir>                               Base Omni2tree output directory that contains O2T_RESULTS
+  -o, --o2t_out <dir>                           Base Omni2tree output directory that contains O2T_RESULTS
   -m, --metadata <file>                         Metadata CSV (header + first data row with column types)
 
 General Optional:
@@ -112,12 +112,12 @@ Expected inputs from previous steps (inside --o2t_out):
   stats/entropy/OG_genes_entropy.csv            generated in step1 from entropy_msa_og_gene_table.py
 
 Examples:
-  $PROGNAME --o2t_out virus2tree_rsv -m metadata.csv
+  $PROGNAME -o virus2tree_rsv -m metadata.csv
 
-  $PROGNAME --o2t_out virus2tree_rsv -l RSV_Run -m metadata.csv \\
+  $PROGNAME -o virus2tree_rsv -l RSV_Run -m metadata.csv \\
     --seq_type aa --exclude_pattern s0 --group_by subgroup time_phase --exclude_gaps
 
-  $PROGNAME --o2t_out virus2tree_rsv -l RSV_Run -m metadata.csv \\
+  $PROGNAME -o virus2tree_rsv -l RSV_Run -m metadata.csv \\
     --seq_type dna --bootstrap 2000 --add_domain domains.csv
 
 EOF
@@ -346,7 +346,7 @@ log_info "========== Step 3.1: Validating parameters =========="
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --o2t_out)
+    -o|--o2t_out)
       ROOT_DIR="${2%/}"
       shift 2
       ;;
@@ -426,7 +426,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [[ -z "$ROOT_DIR" ]]; then
-  log_error "The user must specify --o2t_out <dir> (base directory containing O2T_RESULTS)"
+  log_error "The user must specify -o/--o2t_out <dir> (base directory containing O2T_RESULTS)"
   exit 1
 fi
 if [[ -z "$METADATA_FILE" ]]; then
