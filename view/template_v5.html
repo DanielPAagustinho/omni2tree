@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Read2TreeView</title>
+    <title>Omni2TreeView</title>
     <script src="https://d3js.org/d3.v6.min.js"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
 
@@ -150,7 +150,7 @@
         <div id="header" class="header"
             style=" color:#f7f5f3;  padding: 0 20px; display: flex; justify-content: space-between; align-items: center; height: 5vh;  position: relative;">
 
-            <h4 style="margin: 0;">Read2TreeView</h4>
+            <h4 style="margin: 0;">Omni2TreeView</h4>
 
             <div style="display: flex; align-items: center; gap: 10px;">
                 <label for="currMeta">Main Palette <helper>The main palette is used to color all nodes. Non-leaf
@@ -453,7 +453,7 @@
 
             <!-- Right panel -->
             <div id="right_panel"
-                style="width: 15%; background-color: #FAFAFA; padding: 3px;  overflow: auto;border: 1px solid black;border-left: none;">
+                style="width: 15%; background-color: #FAFAFA; padding: 3px; overflow: hidden; border: 1px solid black; border-left: none; display: flex; flex-direction: column; gap: 8px;">
 
                 <!-- <div style="display: flex; justify-content: space-between;">
                     <span> <button @click="showTab('info')">Node information</button></span>
@@ -461,150 +461,193 @@
 
                 </div> -->
 
-
-                <div style="display: flex; justify-content: space-between; margin-top:4px;margin-bottom: 4px;">
-                    <div style="
-                                width: 100%;
-                                background-color: #FFA726;
-                                color: white;
-                                padding: 6px 0;
-                                font-size: 14px;
-                                font-weight: bold;
-                                border-radius: 4px;
-                                text-align: center;
-                                user-select: none;
-                                box-shadow: 1px 1px 3px rgba(0,0,0,0.1);
-                                ">
-                        Node Information
+                <div style="height: 75%; min-height: 0; display: flex; flex-direction: column;">
+                    <div style="display: flex; justify-content: space-between; margin-top:4px;margin-bottom: 4px;">
+                        <div style="
+                                    width: 100%;
+                                    background-color: #FFA726;
+                                    color: white;
+                                    padding: 6px 0;
+                                    font-size: 14px;
+                                    font-weight: bold;
+                                    border-radius: 4px;
+                                    text-align: center;
+                                    user-select: none;
+                                    box-shadow: 1px 1px 3px rgba(0,0,0,0.1);
+                                    ">
+                            Node Information
+                        </div>
                     </div>
 
+                    <div id="info" style="flex: 1; min-height: 0; overflow-y: auto; padding-right: 2px;">
+                        <div v-if="selectedNode">
+                            <div style="margin-top: 10px;">
+
+                                <collapse-panel>
+                                    <template #title>
+                                        <strong>Basic:</strong>
+
+                                    </template>
+                                    <template #content>
+                                        <div style="padding: 4px; font-size: 12px;">
+                                            <div> <strong>Node id:</strong> {{ selectedNode && selectedNode.id || null }}
+                                            </div>
+                                            <div><strong>Node name:</strong> {{ selectedNode && selectedNode.name || null }}
+                                            </div>
+                                            <div><strong>Node type:</strong> {{ isLeafNode2Label(selectedNode) }}</div>
+                                            <div><strong>Branch Length:</strong> {{ selectedNode &&
+                                                selectedNode.branch_length || null }}</div>
+                                            <div><strong>Sample szie:</strong> {{getSampleSize(selectedNode)}} <helper
+                                                    :color="'#000'">
+                                                    Sample Size only count the samples(leaf nodes). Non-leaf nodes will be
+                                                    ignored.</helper>
+                                            </div>
+                                            <div>
+                                                <strong>Confidence:</strong>
+                                                {{selectedNode && selectedNode.confidence || null }}
+
+                                            </div>
+                                            <div style="margin-top: 8px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                                <strong>Highlight:</strong>
+                                                <label style="display: inline-flex; align-items: center; gap: 4px;">
+                                                    <input type="checkbox" :checked="isSelectedSubtreeHighlighted()"
+                                                        @change="toggleSelectedSubtreeHighlight($event.target.checked)"
+                                                        :disabled="!selectedNode">
+                                                    <span>current subtree</span>
+                                                </label>
+                                                <button @click="resetHighlight" :disabled="!highlightNodeIds.length">reset</button>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </collapse-panel>
+                            </div>
+
+                            <div style="margin-top: 10px;">
+
+                                <collapse-panel>
+                                    <template #title>
+                                        <strong>Composition:</strong>
+
+                                    </template>
+                                    <template #content>
+                                        <div
+                                            style="max-height: 300px; overflow: auto; border: 1px solid #ccc; font-size: 12px;">
+                                            <div style="padding: 4px; background-color: #ccc;">
+                                                <div style="display: flex; justify-content: space-between;">
+                                                    <span>Name</span>
+                                                    <span>Count [Porpotion]</span>
+                                                </div>
+                                            </div>
+
+                                            <div v-for="item in getPieChartData((selectedNode && selectedNode.pieValues) || [], main_color_map)"
+                                                :key="item.label" :style="{ backgroundColor: item.color, padding: '4px' }">
+                                                <div style="display: flex; justify-content: space-between;">
+                                                    <span>{{ item.label }}</span>
+                                                    <span>{{ item.count }} [{{ (item.value *100) .toFixed(2) }}%]</span>
+                                                </div>
+                                            </div>
+
+                                        </div>
+
+                                    </template>
+
+                                </collapse-panel>
+                            </div>
+
+                            <div style="margin-top: 10px;">
+
+                                <collapse-panel>
+                                    <template #title>
+                                        <strong>Sample details:</strong>
+                                    </template>
+                                    <template #content>
+                                        <div style="max-height: 500px; overflow: auto; border: 1px solid #ccc;">
+                                            <div style="margin-top: 6px; display: flex; justify-content: right;">
+                                                <button @click="exportSampleDetailsAsCSV">Download</button>
+                                            </div>
+
+
+                                            <div
+                                                style="margin-top: 6px; display: flex; justify-content: center; align-items: center; gap: 6px;">
+                                                <button @click="changePage(-1)" :disabled="currentPage === 1">
+                                                    Prev</button>
+                                                <span>Page {{ currentPage }} / {{ totalPages }}</span>
+                                                <button @click="changePage(1)" :disabled="currentPage === totalPages">Next
+                                                </button>
+                                            </div>
+                                            <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                                                <thead>
+                                                    <tr>
+                                                        <th v-for="header in selectedNodeChildrenMata.table_header"
+                                                            :key="header"
+                                                            style="position: sticky; top: 0; background: #f0f0f0; padding: 4px;">
+                                                            {{ header }}
+                                                        </th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr v-for="row in pagedTableData" :key="row['Sample Name']">
+                                                        <td v-for="header in selectedNodeChildrenMata.table_header"
+                                                            :key="header" style="padding: 4px;">
+                                                            {{ row[header] }}
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+
+                                            <div
+                                                style="margin-top: 6px; display: flex; justify-content: center; align-items: center; gap: 6px;">
+                                                <button @click="changePage(-1)" :disabled="currentPage === 1">
+                                                    Prev</button>
+                                                <span>Page {{ currentPage }} / {{ totalPages }}</span>
+                                                <button @click="changePage(1)" :disabled="currentPage === totalPages">Next
+                                                </button>
+                                            </div>
+
+                                        </div>
+                                    </template>
+                                </collapse-panel>
+                            </div>
+
+                        </div>
+                        <div v-else style="padding: 8px; font-size: 12px; color: #666;">
+                            Click a node to view details.
+                        </div>
+                    </div>
                 </div>
 
-
-
-                <div id="info" v-show="isShowInfoTab">
-
-                    <div>
-                        <div style="margin-top: 10px;">
-
-                            <collapse-panel>
-                                <template #title>
-                                    <strong>Basic:</strong>
-
-                                </template>
-                                <template #content>
-                                    <div style="padding: 4px; font-size: 12px;">
-                                        <div> <strong>Node id:</strong> {{ selectedNode && selectedNode.id || null }}
-                                        </div>
-                                        <div><strong>Node name:</strong> {{ selectedNode && selectedNode.name || null }}
-                                        </div>
-                                        <div><strong>Node type:</strong> {{ isLeafNode2Label(selectedNode) }}</div>
-                                        <div><strong>Branch Length:</strong> {{ selectedNode &&
-                                            selectedNode.branch_length || null }}</div>
-                                        <div><strong>Sample szie:</strong> {{getSampleSize(selectedNode)}} <helper
-                                                :color="'#000'">
-                                                Sample Size only count the samples(leaf nodes). Non-leaf nodes will be
-                                                ignored.</helper>
-                                        </div>
-                                        <div>
-                                            <strong>Confidence:</strong>
-                                            {{selectedNode && selectedNode.confidence || null }}
-
-                                        </div>
-                                    </div>
-                                </template>
-                            </collapse-panel>
+                <div style="height: 25%; min-height: 0; display: flex; flex-direction: column;">
+                    <div style="display: flex; justify-content: space-between; margin-top:4px;margin-bottom: 4px;">
+                        <div style="
+                                    width: 100%;
+                                    background-color: #FFA726;
+                                    color: white;
+                                    padding: 6px 0;
+                                    font-size: 14px;
+                                    font-weight: bold;
+                                    border-radius: 4px;
+                                    text-align: center;
+                                    user-select: none;
+                                    box-shadow: 1px 1px 3px rgba(0,0,0,0.1);
+                                    ">
+                            Entropy Information
                         </div>
+                    </div>
 
-                        <div style="margin-top: 10px;">
-
-                            <collapse-panel>
-                                <template #title>
-                                    <strong>Composition:</strong>
-
-                                </template>
-                                <template #content>
-                                    <div
-                                        style="max-height: 300px; overflow: auto; border: 1px solid #ccc; font-size: 12px;">
-                                        <div style="padding: 4px; background-color: #ccc;">
-                                            <div style="display: flex; justify-content: space-between;">
-                                                <span>Name</span>
-                                                <span>Count [Porpotion]</span>
-                                            </div>
-                                        </div>
-
-                                        <div v-for="item in getPieChartData((selectedNode && selectedNode.pieValues) || [], main_color_map)"
-                                            :key="item.label" :style="{ backgroundColor: item.color, padding: '4px' }">
-                                            <div style="display: flex; justify-content: space-between;">
-                                                <span>{{ item.label }}</span>
-                                                <span>{{ item.count }} [{{ (item.value *100) .toFixed(2) }}%]</span>
-                                            </div>
-                                        </div>
-
-                                    </div>
-
-                                </template>
-
-                            </collapse-panel>
-                        </div>
-
-                        <div style="margin-top: 10px;">
-
-                            <collapse-panel>
-                                <template #title>
-                                    <strong>Sample details:</strong>
-                                </template>
-                                <template #content>
-                                    <div style="max-height: 500px; overflow: auto; border: 1px solid #ccc;">
-                                        <div style="margin-top: 6px; display: flex; justify-content: right;">
-                                            <button @click="exportSampleDetailsAsCSV">Download</button>
-                                        </div>
-
-
-                                        <div
-                                            style="margin-top: 6px; display: flex; justify-content: center; align-items: center; gap: 6px;">
-                                            <button @click="changePage(-1)" :disabled="currentPage === 1">
-                                                Prev</button>
-                                            <span>Page {{ currentPage }} / {{ totalPages }}</span>
-                                            <button @click="changePage(1)" :disabled="currentPage === totalPages">Next
-                                            </button>
-                                        </div>
-                                        <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
-                                            <thead>
-                                                <tr>
-                                                    <th v-for="header in selectedNodeChildrenMata.table_header"
-                                                        :key="header"
-                                                        style="position: sticky; top: 0; background: #f0f0f0; padding: 4px;">
-                                                        {{ header }}
-                                                    </th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                <tr v-for="row in pagedTableData" :key="row['Sample Name']">
-                                                    <td v-for="header in selectedNodeChildrenMata.table_header"
-                                                        :key="header" style="padding: 4px;">
-                                                        {{ row[header] }}
-                                                    </td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
-
-                                        <div
-                                            style="margin-top: 6px; display: flex; justify-content: center; align-items: center; gap: 6px;">
-                                            <button @click="changePage(-1)" :disabled="currentPage === 1">
-                                                Prev</button>
-                                            <span>Page {{ currentPage }} / {{ totalPages }}</span>
-                                            <button @click="changePage(1)" :disabled="currentPage === totalPages">Next
-                                            </button>
-                                        </div>
-
-
-                                    </div>
-                                </template>
-                            </collapse-panel>
-
-
-
+                    <div style="flex: 1; min-height: 0; overflow-y: auto; border: 1px solid #ccc; border-radius: 4px; background-color: #f7f5f5; padding: 8px;">
+                        <div style="font-size: 12px;">
+                            <div><strong>#Entropy PNG:</strong> {{ entropyInfo.count_excluding_all_genes || 0 }}</div>
+                            <div style="margin-top: 8px; max-height: 100%; overflow-y: auto; border: 1px solid #ccc; background-color: #fff;">
+                                <div v-if="!entropyInfo.files || entropyInfo.files.length === 0"
+                                    style="padding: 8px; color: #666;">
+                                    No entropy PNG files found.
+                                </div>
+                                <div v-for="file in entropyInfo.files" :key="file"
+                                    @click="openEntropyImage(file)"
+                                    style="padding: 6px 8px; border-bottom: 1px solid #eee; cursor: pointer; color: #1a73e8; word-break: break-all;">
+                                    {{ file }}
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -664,6 +707,35 @@
                 <help-popup></help-popup>
             </div>
         </div>
+        <div v-if="selectedEntropyImage" @click.self="closeEntropyImage" style="
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        ">
+            <div style="
+                background: white;
+                padding: 12px;
+                border-radius: 8px;
+                width: min(90vw, 1000px);
+                max-height: 90vh;
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+            ">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <strong>{{ selectedEntropyImage.name }}</strong>
+                    <button @click="closeEntropyImage">Close</button>
+                </div>
+                <div style="overflow: auto; text-align: center;">
+                    <img :src="selectedEntropyImage.src" :alt="selectedEntropyImage.name"
+                        style="max-width: 100%; max-height: 75vh; object-fit: contain;">
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -688,6 +760,12 @@
                         table_header: [],
                         table_data: [],
                     },
+                    entropyInfo: {
+                        dir: null,
+                        files: [],
+                        count_excluding_all_genes: 0,
+                    },
+                    selectedEntropyImage: null,
                     tabs: {
                         "info": true,
                         "help": false,
@@ -727,6 +805,8 @@
                     extraMeta1Names: [],
                     extraMeta2Names: [],
                     extraMeta3Names: [],
+                    currentZoomTransform: null,
+                    highlightNodeIds: [],
 
 
                 };
@@ -739,13 +819,10 @@
                         this.collectPieValues(this.root_tree, newValue, pieCategories);
                         this.main_color_map = this.color_cache_map[newValue].colorMap;
 
-                        this.meta_names.forEach((meta) => {
-                            if (meta !== newValue) {
-                                this.extraMeta1Names.push(meta);
-                                this.extraMeta2Names.push(meta);
-                                this.extraMeta3Names.push(meta);
-                            }
-                        });
+                        const extraMetaNames = this.meta_names.filter(meta => meta !== newValue);
+                        this.extraMeta1Names = [...extraMetaNames];
+                        this.extraMeta2Names = [...extraMetaNames];
+                        this.extraMeta3Names = [...extraMetaNames];
 
                         this.drawTree();
                     }
@@ -805,10 +882,22 @@
                     const url = URL.createObjectURL(svgBlob);
                     const link = document.createElement("a");
                     link.href = url;
-                    link.download = "read2treeview.svg";
+                    link.download = "omni2treeview.svg";
                     document.body.appendChild(link);
                     link.click();
                     document.body.removeChild(link);
+                },
+
+                openEntropyImage(fileName) {
+                    if (!this.entropyInfo.dir || !fileName) return;
+                    this.selectedEntropyImage = {
+                        name: fileName,
+                        src: `${this.entropyInfo.dir}/${fileName}`
+                    };
+                },
+
+                closeEntropyImage() {
+                    this.selectedEntropyImage = null;
                 },
 
 
@@ -894,6 +983,40 @@
                     if (newPage >= 1 && newPage <= this.totalPages) {
                         this.currentPage = newPage;
                     }
+                },
+
+                getSubtreeNodeIds(nodeId) {
+                    if (!nodeId || !this.root_tree) return [];
+                    const targetNode = this.root_tree.descendants().find(node => node.data.id === nodeId);
+                    if (!targetNode) return [];
+                    return targetNode.descendants().map(node => node.data.id);
+                },
+
+                highlightSelectedSubtree() {
+                    if (!this.selectedNode) return;
+                    this.highlightNodeIds = this.getSubtreeNodeIds(this.selectedNode.id);
+                    this.drawTree();
+                },
+
+                toggleSelectedSubtreeHighlight(checked) {
+                    if (checked) {
+                        this.highlightSelectedSubtree();
+                    } else {
+                        this.resetHighlight();
+                    }
+                },
+
+                isSelectedSubtreeHighlighted() {
+                    if (!this.selectedNode || !this.highlightNodeIds.length) return false;
+                    const subtreeNodeIds = this.getSubtreeNodeIds(this.selectedNode.id);
+                    if (subtreeNodeIds.length !== this.highlightNodeIds.length) return false;
+                    const highlightSet = new Set(this.highlightNodeIds);
+                    return subtreeNodeIds.every(nodeId => highlightSet.has(nodeId));
+                },
+
+                resetHighlight() {
+                    this.highlightNodeIds = [];
+                    this.drawTree();
                 },
 
 
@@ -1093,6 +1216,9 @@
                 drawTree() {
 
                     const vueThis = this;
+                    const preservedTransform = this.currentZoomTransform || d3.zoomIdentity.translate(80, 80);
+                    const highlightNodeIdSet = new Set(this.highlightNodeIds || []);
+                    const isHighlightMode = highlightNodeIdSet.size > 0;
 
                     this.svg.selectAll("*").remove();
 
@@ -1104,15 +1230,16 @@
 
                     this.svg.attr("viewBox", `0 0 ${width + 160} ${height + 160}`);
 
-                    const g = this.svg.append("g").attr("transform", "translate(80,80)");
+                    const g = this.svg.append("g");
 
                     const zoom = d3.zoom()
                         .scaleExtent([0.3, 15])
                         .on("zoom", (event) => {
                             g.attr("transform", event.transform);
+                            vueThis.currentZoomTransform = event.transform;
                         });
 
-                    this.svg.call(zoom).call(zoom.transform, d3.zoomIdentity.translate(80, 80));
+                    this.svg.call(zoom).call(zoom.transform, preservedTransform);
 
 
 
@@ -1138,6 +1265,12 @@
 
                     function renderNodes(group, root, colors) {
                         vueThis.num_leaf_nodes = 0;
+
+                        function shouldGrayNode(node) {
+                            if (!node.passed) return true;
+                            if (!isHighlightMode) return false;
+                            return !highlightNodeIdSet.has(node.data.id);
+                        }
 
                         const nodes = group.selectAll(".node")
                             .data(root.descendants())
@@ -1184,7 +1317,7 @@
                                     .attr("y", -side / 2)
                                     .attr("width", unit * 7)
                                     .attr("height", unit * 7)
-                                    .attr("fill", d.passed ? d.data.color : "#D3D3D3")
+                                    .attr("fill", shouldGrayNode(d) ? "#D3D3D3" : d.data.color)
                                     .attr("stroke", "#ccc")
                                     .attr("stroke-width", strokeWidth);
 
@@ -1198,7 +1331,7 @@
                                     .attr("width", unit * 3)
                                     .attr("height", unit * 7)
                                     .attr("fill", () => {
-                                        if (!d.passed) {
+                                        if (shouldGrayNode(d)) {
                                             return "#D3D3D3";
                                         }
                                         else {
@@ -1223,7 +1356,7 @@
                                     .attr("width", unit * 7)
                                     .attr("height", unit * 3)
                                     .attr("fill", () => {
-                                        if (!d.passed) {
+                                        if (shouldGrayNode(d)) {
                                             return "#D3D3D3";
                                         }
                                         else {
@@ -1248,7 +1381,7 @@
                                     .attr("width", unit * 3)
                                     .attr("height", unit * 3)
                                     .attr("fill", () => {
-                                        if (!d.passed) {
+                                        if (shouldGrayNode(d)) {
                                             return "#D3D3D3";
                                         }
                                         else {
@@ -1286,7 +1419,7 @@
                                     .attr("d", arc)
                                     .attr("fill", sec => {
                                         // console.log(d);
-                                        if (d.passed) {
+                                        if (!shouldGrayNode(d)) {
                                             return sec.data.color;
                                         } else {
                                             return "#D3D3D3";
@@ -1322,6 +1455,12 @@
                     renderLinks(g, root);
                     renderNodes(g, root, this.main_color_map);
 
+                    if (this.highlightedNodeId !== null) {
+                        d3.select(`#node-${this.highlightedNodeId} .outline`)
+                            .attr("stroke", "red")
+                            .attr("stroke-width", 2);
+                    }
+
                     this.node_list = root.descendants().map(d => {
                         // console.log(d);
                         return {
@@ -1350,6 +1489,11 @@
                     console.log(tree);
                     this.root_tree = tree;
                     this.meta_keys = tree_meta;
+                    this.entropyInfo = tree_meta["entropy"] || {
+                        dir: null,
+                        files: [],
+                        count_excluding_all_genes: 0,
+                    };
 
                     Object.values(tree_meta["meta_keys"]).forEach((item) => {
                         let data = {
@@ -1799,15 +1943,15 @@
         box-shadow: 0 4px 8px rgba(0,0,0,0.2);
       ">
         <div style="display: flex; justify-content: space-between; align-items: center;">
-          <h3 style="margin: 0;">Read2TreeView Help</h3>
+          <h3 style="margin: 0;">Omni2TreeView Help</h3>
           <button @click="toggleHelp" style="background-color: #FB8C00;">Close</button>
         </div>
         <hr />
 <div>
-  <h2>Read2TreeView Documentation</h2>
+  <h2>Omni2TreeView Documentation</h2>
 
   <h3>Layout Overview</h3>
-  <p>The Read2TreeView application is structured into four primary layout regions:</p>
+  <p>The Omni2TreeView application is structured into four primary layout regions:</p>
   <ul>
     <li><strong>Header:</strong> Contains palette configuration controls and metadata selectors.</li>
     <li><strong>Left Panel:</strong> Displays tree information and metadata-based filters.</li>

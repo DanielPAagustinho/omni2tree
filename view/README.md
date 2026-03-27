@@ -22,8 +22,12 @@ cd omni2tree/view
 To generate an interactive tree view, use the following command:
 
 ```bash
-
-python3  omni2treeview.py  -n demo/hcmv_tree.nwk -m demo/hcmv_meta.csv -c demo/hcmv_five_letter_taxon.tsv  -t template_v5.html -l hcmv  -o  demo/omni2treeview_hcmv
+python3 ./omni2treeview.py \
+  -n demo2/data/concat_merge_view_aa.phy.treefile \
+  -m demo2/data/metadata_o2t_view.csv \
+  -t template_v5.html \
+  -l demo2 \
+  -o demo2/output/omni2treeview_demo2
 ```
 
 This command will create an HTML file in the specified output directory that visualizes the phylogenetic tree along with the provided metadata.
@@ -31,7 +35,6 @@ This command will create an HTML file in the specified output directory that vis
 Options:
 - `-n`: Path to the Newick tree file.
 - `-m`: Path to the metadata CSV file.
-- `-c`: (Optional) Path to the taxon mapping file.
 - `-t`: Path to the HTML template file.
 - `-l`: Label for the dataset.
 - `-o`: Output prefix for the generated HTML file and other related files. 
@@ -41,9 +44,9 @@ Options:
 
 **Newick tree file (.nwk):** output from Omni2tree.
 
-**Metadata CSV file (.csv):** Metadata in CSV format for each sample. the first column should match the leaf names in the Newick tree file.
+**Metadata CSV file (.csv):** Metadata in CSV format for each sample. The first column should be `sample_id`, the second column should be `label`, and the `label` values should match the leaf names in the Newick tree file.
 
-**Taxon mapping file (.tsv) (optional):** A TSV file mapping sample IDs to taxon names, if needed. the first column should match the metadata CSV file's first column, the second column should be the name in the tree.
+**Entropy folder (optional):** If a folder named `entropy` exists beside the Newick tree file, Omni2treeView will automatically copy it to the output directory and expose the PNG files in the HTML entropy panel.
 
 **HTML template file (.html):** An HTML template file for rendering the tree view.
 

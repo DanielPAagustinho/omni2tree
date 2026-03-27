@@ -2,3 +2,6 @@
 **/test*
 **/*.zip
 /.venv/
+*.bak
+*_backup
+__pycache__/

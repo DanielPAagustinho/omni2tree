@@ -8,6 +8,8 @@ from collections import defaultdict
 from typing import Dict, Any
 from typing import Tuple
 import logging
+import os
+import shutil
 
 
 
@@ -33,21 +35,14 @@ def parse_newick_to_csv(nwk_file: str):
             internal_counter += 1
             node_names[id(clade)] = f'Internal-{internal_counter}'
 
-
-
     if tree.root.name is None:
         internal_counter += 1
         tree.root.name = f'Internal-{internal_counter}'
         node_names[id(tree.root)] = tree.root.name
     
     def clean_leaf_name(name: str) -> str:
-        """ leaf name has strucure like prefix_name_suffix, we only keep name part """
-        nn = name.split("_")
-        # print(nn)
-        if len(nn) > 1:
-            return nn[1]
-        else:
-            return name
+        """Keep the original leaf name so it can match the metadata label column."""
+        return name
         
     def traverse(clade, parent_name):
         node_name = node_names[id(clade)]
@@ -85,12 +80,17 @@ def load_meta(meta_file: str):
     meta_dict = {
         "header": [],
         "col_type": [],
-        "rows": []
+        "rows": [],
+        "label_lookup": {}
     }
     with open(meta_file, 'r') as f:
         reader = csv.DictReader(f)
         uniq_ids = set()
+        uniq_labels = set()
         meta_dict["header"] = reader.fieldnames
+        if meta_dict["header"] is None or len(meta_dict["header"]) < 2:
+            logging.error("Metadata file must contain at least two columns: sample_id and label. Exiting...")
+            exit(1)
         # first row to determine column types
         first_row = next(reader)
         for key, value in first_row.items():
@@ -110,6 +110,11 @@ def load_meta(meta_file: str):
                 logging.error(f"Duplicate sample_id {sample_id} found in metadata. exiting...")
                 exit(1)
             uniq_ids.add(sample_id)
+            sample_label = row[meta_dict["header"][1]]
+            if sample_label in uniq_labels:
+                logging.error(f"Duplicate label {sample_label} found in metadata. exiting...")
+                exit(1)
+            uniq_labels.add(sample_label)
 
             # fill in missing columns with NA
             for key in meta_dict["header"]:
@@ -117,10 +122,12 @@ def load_meta(meta_file: str):
                     row[key] = 'NA'
 
             meta_dict[sample_id] = row
+            meta_dict["label_lookup"][sample_label] = sample_id
+            meta_dict["rows"].append(sample_id)
 
     # validate the values based on col_type
     for sample_id, row in meta_dict.items():
-        if sample_id in ['header', 'col_type', 'rows']:
+        if sample_id in ['header', 'col_type', 'rows', 'label_lookup']:
             continue
         for idx, key in enumerate(meta_dict["header"]):
             value = row[key]
@@ -147,32 +154,6 @@ def load_meta(meta_file: str):
             # character type does not need validation
     # print(meta_dict)
     return meta_dict
-
-def load_code(code_file: str):
-
-
-    code_dict = {}
-    
-    if code_file is None:
-        return code_dict
-    
-    internal_acc_set = set()
-    with open(code_file, 'r') as f:
-        for line in f:
-            line = line.strip()
-            if line == '' or line.startswith('#'):
-                continue
-            parts = line.split('\t')
-            if len(parts) != 2:
-                logging.error(f"Invalid line in code file: {line}. exiting...")
-                exit(1)
-            acc, internal_acc = parts
-            if internal_acc in internal_acc_set:
-                logging.error(f"Duplicate internal accession {internal_acc} found in code file. exiting...")
-                exit(1)
-            internal_acc_set.add(internal_acc)
-            code_dict[internal_acc] = acc
-    return code_dict
 
 def parse_csv_to_tree(input_file: str,tree_name: str) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     nodes = {}
@@ -306,7 +287,42 @@ def estimate_tree_dimensions(tree: Dict[str, Any]) -> Dict[str, int]:
         "estimated_height": leaf_count
     }
 
-def main(input_file: str, out_prefix: str, html_template: str, tree_name: str):
+def prepare_entropy_assets(nwk_file: str, out_prefix: str) -> Dict[str, Any]:
+    entropy_src_dir = os.path.join(os.path.dirname(os.path.abspath(nwk_file)), "entropy")
+    entropy_info = {
+        "dir": None,
+        "files": [],
+        "count_excluding_all_genes": 0
+    }
+
+    if not os.path.isdir(entropy_src_dir):
+        logging.info(f"> No entropy directory found beside Newick file: {entropy_src_dir}")
+        return entropy_info
+
+    png_files = sorted([
+        fname for fname in os.listdir(entropy_src_dir)
+        if fname.lower().endswith(".png")
+    ])
+
+    output_dir = os.path.dirname(os.path.abspath(out_prefix)) or os.getcwd()
+    output_name = os.path.basename(out_prefix)
+    entropy_dst_name = f"{output_name}_entropy"
+    entropy_dst_dir = os.path.join(output_dir, entropy_dst_name)
+
+    if os.path.exists(entropy_dst_dir):
+        shutil.rmtree(entropy_dst_dir)
+    shutil.copytree(entropy_src_dir, entropy_dst_dir)
+
+    entropy_info["dir"] = entropy_dst_name
+    entropy_info["files"] = png_files
+    entropy_info["count_excluding_all_genes"] = max(
+        0,
+        len(png_files) - sum(1 for fname in png_files if fname == "entropy_all_genes.png")
+    )
+    logging.info(f"> Copied entropy assets to {entropy_dst_dir}")
+    return entropy_info
+
+def main(input_file: str, out_prefix: str, html_template: str, tree_name: str, nwk_file: str):
     tree,tree_meta = parse_csv_to_tree(input_file, tree_name)
 
 
@@ -322,6 +338,7 @@ def main(input_file: str, out_prefix: str, html_template: str, tree_name: str):
     dimensions = estimate_tree_dimensions(tree)
     tree_meta["estimated_width"] = dimensions["estimated_width"]
     tree_meta["estimated_height"] = dimensions["estimated_height"]
+    tree_meta["entropy"] = prepare_entropy_assets(nwk_file, out_prefix)
 
 
     out_html = out_prefix + ".html"
@@ -341,8 +358,6 @@ def main(input_file: str, out_prefix: str, html_template: str, tree_name: str):
         f2.write(template.replace("[/*inject_data*/]", tree_str))
 
 
-
-
 if __name__ == "__main__":
 
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -350,7 +365,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Convert Newick tree to CSV format.')
     parser.add_argument('-n', '--nwk_file', type=str, help='Input Newick file')
     parser.add_argument('-m', '--meta', type=str, help='Metadata file')
-    parser.add_argument('-c', '--code', type=str, help='conversion code file',default=None)
     parser.add_argument('-o', '--output', type=str, help='Output prefix, without extension')
     parser.add_argument("-t","--template",required=True, help="Path to input HTML template")
     parser.add_argument("-l","--name",required=True, help="Name of the tree",default="omnitreeview")
@@ -378,12 +392,9 @@ if __name__ == "__main__":
 
     meta_dict = load_meta(args.meta)
 
-    code_dict = load_code(args.code)
-
-
-    final_header = tree_csv["header"] + meta_dict["header"][1:]  # skip sample_id column in meta
+    final_header = tree_csv["header"] + meta_dict["header"][2:]  # skip sample_id and label columns in meta
     final_header = [x.capitalize() for x in final_header]
-    final_col_type = ['integer','integer','numeric','character','numeric'] + meta_dict["col_type"][1:]
+    final_col_type = ['integer','integer','numeric','character','numeric'] + meta_dict["col_type"][2:]
     logging.info(f"> Final header and column types ({len(final_header)}):")
     for idx, col in enumerate(final_header):
         logging.info(f"  {col} --> {final_col_type[idx]}")
@@ -396,24 +407,25 @@ if __name__ == "__main__":
     # print(meta_dict["header"])
 
     logging.info(f"> Generating merged CSV with metadata to {output_base}.meta.csv")
-    all_meta_sample_ids = set(meta_dict.keys()) - set(["header", "col_type", "rows"])
+    all_meta_sample_ids = set(meta_dict["rows"])
     for row in tree_csv["rows_final"]:
         node_name = row[3]
-        # first try check meta dict, then code dict
+        # first try sample_id, then the label column stored in metadata
         if node_name in meta_dict:
             meta_row = meta_dict[node_name]
             all_meta_sample_ids.discard(node_name)
-        elif node_name in code_dict and code_dict[node_name] in meta_dict:
-            meta_row = meta_dict[code_dict[node_name]]
-            all_meta_sample_ids.discard(code_dict[node_name])
+        elif node_name in meta_dict["label_lookup"]:
+            sample_id = meta_dict["label_lookup"][node_name]
+            meta_row = meta_dict[sample_id]
+            all_meta_sample_ids.discard(sample_id)
         else:
             # print warnings
             if not node_name.startswith("Internal-"):
-                logging.warning(f"No metadata found for node '{node_name}'. Filling with NA. If this is not intentional, please check your metadata file and code file for consistency with the tree node names(second field after splitted by '_').")
+                logging.warning(f"No metadata found for node '{node_name}'. Filling with NA. If this is not intentional, please check the metadata sample_id/label columns for consistency with the tree node names.")
             # fill with NA
             meta_row = {key: 'NA' for key in meta_dict["header"]}
-        # remove sample_id column
-        meta_values = [meta_row[key] for key in meta_dict["header"][1:]]
+        # remove sample_id and label columns
+        meta_values = [meta_row[key] for key in meta_dict["header"][2:]]
         # print(row)
         final_row = row + meta_values
         writer.writerow(final_row)
@@ -422,7 +434,7 @@ if __name__ == "__main__":
     out_fh.close()
 
     logging.info("> Generating tree and HTML output...")
-    main(output_base+".meta.csv", output_base, args.template, args.name)
+    main(output_base+".meta.csv", output_base, args.template, args.name, args.nwk_file)
     logging.info("> Done.")
     logging.info("> Outputs generated:")
     logging.info(f" {output_base}.meta.csv")

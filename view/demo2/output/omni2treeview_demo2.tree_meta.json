@@ -1,0 +1,48 @@
+{
+  "name": "demo2",
+  "node_count": 16,
+  "leaf_count": 9,
+  "internal_count": 7,
+  "meta_keys": {
+    "Source": {
+      "type": "character",
+      "std_type": "cate",
+      "name": "Source",
+      "NA_count": 7,
+      "min": null,
+      "max": null,
+      "categories": [
+        "Reference",
+        "Readset"
+      ]
+    },
+    "Genotype": {
+      "type": "character",
+      "std_type": "cate",
+      "name": "Genotype",
+      "NA_count": 7,
+      "min": null,
+      "max": null,
+      "categories": [
+        "GT1",
+        "GT2"
+      ]
+    }
+  },
+  "estimated_width": 6,
+  "estimated_height": 9,
+  "entropy": {
+    "dir": "omni2treeview_demo2_entropy",
+    "files": [
+      "entropy_HA.png",
+      "entropy_M1.png",
+      "entropy_M2.png",
+      "entropy_NP.png",
+      "entropy_NS1.png",
+      "entropy_NS2.png",
+      "entropy_PA.png",
+      "entropy_all_genes.png"
+    ],
+    "count_excluding_all_genes": 7
+  }
+}
