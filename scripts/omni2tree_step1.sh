@@ -11,6 +11,10 @@ done
 MAIN_DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)" # .../repo/scripts
 REPO_ROOT="$(cd "$MAIN_DIR/.." && pwd)"               # .../repo
 SCRIPTS_DIR="$REPO_ROOT/utils"                     # .../repo/utils
+STATS_DIR="stats"
+STATS_ENTROPY_DIR="${STATS_DIR}/entropy"
+STATS_REFERENCES_CDS_DIR="${STATS_DIR}/References_CDS"
+STATS_REFERENCES_OGS_DIR="${STATS_DIR}/References_OGs"
 WORK_DIR=""
 #OMA="${MAIN_DIR}/../oma/bin"
 PARAMETERS_FILE="parameters.drw"
@@ -523,8 +527,8 @@ generate_og_gene_tsv() {
       }' "$file" > "${dest_dir}/${final_name}"
     done
 
-    mkdir -p "stats/entropy"
-    entropy_output_file="stats/entropy/OG_genes_entropy.csv"
+    mkdir -p "$STATS_ENTROPY_DIR"
+    entropy_output_file="${STATS_ENTROPY_DIR}/OG_genes_entropy.csv"
     if [[ ! -f "$entropy_script" ]]; then
       log_error "Entropy OG-gene mapping script not found: $entropy_script"
       exit 1
@@ -555,7 +559,7 @@ generate_og_gene_tsv() {
 
 select_marker_genes_by_fraction() {
     local frac="$1"                     # e.g., 0.8
-    local unique="stats/OG_genes-unique.tsv"
+    local unique="${STATS_REFERENCES_OGS_DIR}/OG_genes-unique.tsv"
     local oma_dir="Output/OrthologousGroupsFasta"
     local out_dir="marker_genes"
 
@@ -578,7 +582,8 @@ select_marker_genes_by_fraction() {
 
     local og_taxa="$TEMP_DIR/og_taxa.tsv"
     local og_counts="$TEMP_DIR/og_counts.tsv"
-    local og_fraction="stats/OG_taxa.tsv"
+    local og_fraction="${STATS_REFERENCES_OGS_DIR}/OG_taxa.tsv"
+    mkdir -p "$(dirname "$og_fraction")"
 
     # Build paires  OG \t taxon based on the last column (list ;-separated)
     tail -n +2 "$unique" \
@@ -745,14 +750,14 @@ if [[ "$RES_DOWN" == true ]]; then
       log_info "Removing Output directory: $(realpath "Output/")"
       rm -rf "Output/"
     fi
-    # Remove and tell you removed the following files que contengan OG: OG_genes-unique.tsv  OG_genes.tsv  taxon_OG.tsv
-    if [[ -e "stats/OG_genes-unique.tsv" || -e "stats/OG_genes.tsv" || -e "stats/taxon_OG.tsv" || -e "stats/OG_taxa.tsv" ]]; then
-      log_info "Removing OG-related stats files (if present): stats/OG_genes-unique.tsv, stats/OG_genes.tsv, stats/taxon_OG.tsv, stats/OG_taxa.tsv"
-      rm -f "stats/OG_genes-unique.tsv" "stats/OG_genes.tsv" "stats/taxon_OG.tsv" "stats/OG_taxa.tsv"
+    # Remove and tell you removed the following OG-related stats outputs
+    if [[ -e "${STATS_REFERENCES_OGS_DIR}/OG_genes-unique.tsv" || -e "${STATS_REFERENCES_OGS_DIR}/OG_genes.tsv" || -e "${STATS_REFERENCES_OGS_DIR}/taxon_OG.tsv" || -e "${STATS_REFERENCES_OGS_DIR}/OG_taxa.tsv" || -e "${STATS_REFERENCES_OGS_DIR}/og_taxa_per_og.tsv" || -e "${STATS_REFERENCES_OGS_DIR}/og_taxa_per_og_frequency.tsv" || -e "${STATS_REFERENCES_OGS_DIR}/og_taxa_per_og_distribution.png" ]]; then
+      log_info "Removing OG-related stats files (if present) from ${STATS_REFERENCES_OGS_DIR}"
+      rm -f "${STATS_REFERENCES_OGS_DIR}/OG_genes-unique.tsv" "${STATS_REFERENCES_OGS_DIR}/OG_genes.tsv" "${STATS_REFERENCES_OGS_DIR}/taxon_OG.tsv" "${STATS_REFERENCES_OGS_DIR}/OG_taxa.tsv" "${STATS_REFERENCES_OGS_DIR}/og_taxa_per_og.tsv" "${STATS_REFERENCES_OGS_DIR}/og_taxa_per_og_frequency.tsv" "${STATS_REFERENCES_OGS_DIR}/og_taxa_per_og_distribution.png"
     fi
-    if [[ -d "stats/entropy" ]]; then
-      log_info "Removing stats/entropy directory: $(realpath "stats/entropy")"
-      rm -rf "stats/entropy"
+    if [[ -d "$STATS_ENTROPY_DIR" ]]; then
+      log_info "Removing ${STATS_ENTROPY_DIR} directory: $(realpath "$STATS_ENTROPY_DIR")"
+      rm -rf "$STATS_ENTROPY_DIR"
     fi
 else
   # error if dna ref.fa or five_letter taxon already exist
@@ -976,14 +981,14 @@ if [[ "$RES_DOWN_VOID" == false ]]; then
   if [[ "$NCBI_DOWNLOAD_COUNT" -gt 0 ]]; then
     # Si resume download es true, elimino stats directory para evitar sobreescribir los archivos
     if [[ "$RES_DOWN" == true ]]; then
-      if [[ -d "stats" ]]; then
-        log_info "Removing stats directory: $(realpath "stats/")"
-        rm -rf "stats/"
+      if [[ -d "$STATS_DIR" ]]; then
+        log_info "Removing stats directory: $(realpath "${STATS_DIR}/")"
+        rm -rf "${STATS_DIR}/"
       fi
     fi
 
     log_info "Generating CDS counts table and histogram..."
-    python3 "${SCRIPTS_DIR}/cds_accessions_statistics.py" --db-dir "${WORK_DIR}/db" --out-dir stats --prefix cds_count_per_accession
+    python3 "${SCRIPTS_DIR}/cds_accessions_statistics.py" --db-dir "${WORK_DIR}/db" --out-dir "${STATS_REFERENCES_CDS_DIR}" --prefix cds_count_per_accession
   else
     log_info "No new downloads -> skipping CDS counts/histogram."
   fi
@@ -1085,7 +1090,9 @@ log_info "========== Step 1.7: Gathering OG-Gene statistics =========="
 #Now it does not make sense to check if Output/Orth...*.fa exists
 log_info "========== Generating summary OG-gene TSV files =========="
 ###Create tsv, added dir stats
-generate_og_gene_tsv db Output/OrthologousGroupsFasta stats/OG_genes.tsv
+generate_og_gene_tsv db Output/OrthologousGroupsFasta "${STATS_REFERENCES_OGS_DIR}/OG_genes.tsv"
+log_info "Generating OG taxa counts table and histogram..."
+python3 "${SCRIPTS_DIR}/og_taxa_statistics.py" --input "${STATS_REFERENCES_OGS_DIR}/OG_genes-unique.tsv" --out-dir "${STATS_REFERENCES_OGS_DIR}" --prefix og_taxa_per_og
 mkdir -p marker_genes
 #####cat Output/OrthologousGroupsFasta/*.fa > dna_ref.fa
 if [[ -n "$OG_MIN_FRAC" ]]; then
