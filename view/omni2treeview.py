@@ -10,6 +10,7 @@ from typing import Tuple
 import logging
 import os
 import shutil
+import zipfile
 
 
 
@@ -322,6 +323,34 @@ def prepare_entropy_assets(nwk_file: str, out_prefix: str) -> Dict[str, Any]:
     logging.info(f"> Copied entropy assets to {entropy_dst_dir}")
     return entropy_info
 
+def create_output_zip(out_prefix: str) -> str:
+    output_dir = os.path.dirname(os.path.abspath(out_prefix)) or os.getcwd()
+    output_name = os.path.basename(out_prefix)
+    zip_path = out_prefix + ".zip"
+
+    output_files = [
+        out_prefix + ".meta.csv",
+        out_prefix + ".tree.json",
+        out_prefix + ".tree_meta.json",
+        out_prefix + ".html",
+    ]
+    entropy_dir = os.path.join(output_dir, f"{output_name}_entropy")
+
+    with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as zip_fh:
+        for file_path in output_files:
+            if os.path.exists(file_path):
+                zip_fh.write(file_path, arcname=os.path.basename(file_path))
+
+        if os.path.isdir(entropy_dir):
+            for root, _, files in os.walk(entropy_dir):
+                for file_name in files:
+                    file_path = os.path.join(root, file_name)
+                    arcname = os.path.relpath(file_path, output_dir)
+                    zip_fh.write(file_path, arcname=arcname)
+
+    logging.info(f"> Packaged outputs into {zip_path}")
+    return zip_path
+
 def main(input_file: str, out_prefix: str, html_template: str, tree_name: str, nwk_file: str):
     tree,tree_meta = parse_csv_to_tree(input_file, tree_name)
 
@@ -435,9 +464,11 @@ if __name__ == "__main__":
 
     logging.info("> Generating tree and HTML output...")
     main(output_base+".meta.csv", output_base, args.template, args.name, args.nwk_file)
+    zip_output = create_output_zip(output_base)
     logging.info("> Done.")
     logging.info("> Outputs generated:")
     logging.info(f" {output_base}.meta.csv")
     logging.info(f" {output_base}.tree.json")
     logging.info(f" {output_base}.tree_meta.json")
     logging.info(f" {output_base}.html")
+    logging.info(f" {zip_output}")
