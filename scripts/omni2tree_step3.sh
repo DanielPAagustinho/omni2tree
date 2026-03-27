@@ -553,22 +553,6 @@ run_cmd "${PREP_META_CMD[@]}"
 
 LABEL_SAFE="$(sanitize_label_id "$LABEL")"
 VIEW_OUT_PREFIX="visualization/omni2treeview_${LABEL_SAFE}"
-# NOTE (intentional, no changes applied to omni2treeview.py):
-# - The generated metadata uses sample_id=accession and keeps label/source as metadata variables.
-# - omni2treeview.py matches tree nodes mainly via sample_id (and may treat 'label' as a regular variable).
-# - If the tree is relabeled with long labels, omni2treeview.py can still truncate/transform node names
-#   depending on its internal leaf-name parsing. The viewer code itself is NOT modified here.
-# - What would need changing (if desired later): omni2treeview.py matching logic and/or leaf-name parsing.
-# - What is NOT affected: step3 combine/iqtree/entropy table generation.
-log_warn "Viewer invocation note: omni2treeview.py is intentionally unmodified."
-log_warn "With sample_id=accession, 'label' may be treated as metadata (not unique ID), and relabeled Newick names may be truncated by viewer parsing."
-OMNIVIEW_CMD=(python3 "$VIEW_DIR/omni2treeview.py"
-  -n "$VIEW_TREE_OUTPUT"
-  -m "$VIEW_META_OUTPUT"
-  -t "$VIEW_DIR/template_v5.html"
-  -l "$LABEL"
-  -o "$VIEW_OUT_PREFIX")
-run_cmd "${OMNIVIEW_CMD[@]}"
 
 log_info "========== Step 3.5: Entropy Step 1 (MSA -> position table) =========="
 MSA_DIR="$OUT_DIR/06_align_merge_${SEQ_LC}"
@@ -628,6 +612,16 @@ if [[ -n "$ADD_DOMAIN_FILE" ]]; then
   PLOT_CMD+=("$ADD_DOMAIN_FILE")
 fi
 run_cmd "${PLOT_CMD[@]}"
+
+log_info "========== Step 3.8: Generating Omni2tree view =========="
+OMNIVIEW_CMD=(python3 "$VIEW_DIR/omni2treeview.py"
+  -n "$VIEW_TREE_OUTPUT"
+  -m "$VIEW_META_OUTPUT"
+  -t "$VIEW_DIR/template_v5.html"
+  -l "$LABEL"
+  --entropy_dir "$ENTROPY_PLOTS_DIR"
+  -o "$VIEW_OUT_PREFIX")
+run_cmd "${OMNIVIEW_CMD[@]}"
 
 log_info "Step 3 completed successfully."
 log_info "Main outputs:"
