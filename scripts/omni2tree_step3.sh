@@ -17,6 +17,7 @@ ROOT_DIR=""
 OUT_DIR=""
 THREADS=4
 BOOTSTRAP=1000
+REDO=false
 SEQ_MODE="aa"
 SEQ_LC="aa"
 SEQ_UC="AA"
@@ -81,6 +82,8 @@ General Optional:
   --seq_type <aa|dna>                           Selects concatenated alignment used by IQ-TREE and entropy input [default: aa]
   -T, --threads <int>                           Threads for iqtree [default: 4]
   --bootstrap <int>                             IQ-TREE ultrafast bootstrap replicates (0 or >=1000) [default: 1000]
+  -r, --redo                                    Allow rerunning step3 in the same output directory.
+                                                Adds -redo to IQ-TREE; other step3 outputs are overwritten directly.
   --temp_dir <dir>                              Optional temp dir. If relative, it will be relative to o2t_out.
   --debug                                       Keep temp dir and print extra messages
   -h, --help                                    Show this help
@@ -113,6 +116,8 @@ Expected inputs from previous steps (inside --o2t_out):
 
 Examples:
   $PROGNAME -o virus2tree_rsv -m metadata.csv
+
+  $PROGNAME -o virus2tree_rsv -m metadata.csv --seq_type aa --redo
 
   $PROGNAME -o virus2tree_rsv -l RSV_Run -m metadata.csv \\
     --seq_type aa --exclude_pattern s0 --group_by subgroup time_phase --exclude_gaps
@@ -370,6 +375,10 @@ while [[ $# -gt 0 ]]; do
       BOOTSTRAP="$2"
       shift 2
       ;;
+    -r|--redo)
+      REDO=true
+      shift
+      ;;
     --temp_dir)
       TEMP_DIR="${2%/}"
       shift 2
@@ -523,6 +532,10 @@ log_info "========== Step 3.3: Running IQ-TREE =========="
 CONCAT_PHY="$(detect_concat_phy "$SEQ_LC")"
 require_file "$CONCAT_PHY" "Concatenated alignment not found"
 IQTREE_CMD=(iqtree -T "$THREADS" -s "$CONCAT_PHY" -bb "$BOOTSTRAP")
+if [[ "$REDO" == true ]]; then
+  IQTREE_CMD+=( -redo )
+  log_info "Redo mode enabled: IQ-TREE will rerun even if previous outputs already exist for this alignment"
+fi
 IQTREE_CMD+=( -pre "$CONCAT_PHY" )
 run_cmd "${IQTREE_CMD[@]}"
 
