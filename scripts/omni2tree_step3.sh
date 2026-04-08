@@ -619,7 +619,7 @@ OMNIVIEW_CMD=(python3 "$VIEW_DIR/omni2treeview.py"
   -m "$VIEW_META_OUTPUT"
   -t "$VIEW_DIR/template_v5.html"
   -l "$LABEL"
-  --entropy_dir "$ENTROPY_PLOTS_DIR"
+  --entropy "$ENTROPY_PLOTS_DIR"
   -o "$VIEW_OUT_PREFIX")
 run_cmd "${OMNIVIEW_CMD[@]}"
 
