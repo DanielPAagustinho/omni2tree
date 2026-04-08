@@ -362,6 +362,7 @@ This last step executes the following workflow:
 | `--seq_type` | Sequence mode: `aa` or `dna`. Selects the concatenated alignment used by IQ-TREE and entropy inputs. **Default:** `aa`. |
 | `-T, --threads` | Threads for IQ-TREE. **Default:** `4`. |
 | `--bootstrap` | IQ-TREE ultrafast bootstrap replicates. **Default:** `1000`. |
+| `-r`, `--redo` | Allow rerunning step 3 in the same output directory. |
 | `--temp_dir` | Optional temp directory. |
 | `--debug` | Keep temporary files. |
 | `-l, --label` | Optional visualization label. **Default:** `Omni2tree_Tree`. |
