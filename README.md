@@ -365,7 +365,7 @@ This last step executes the following workflow:
 | `--temp_dir` | Optional temp directory. |
 | `--debug` | Keep temporary files. |
 | `-l, --label` | Optional visualization label. **Default:** `Omni2tree_Tree`. |
-| `--exclude_pattern` | Regex to exclude sample IDs during entropy table generation. |
+| `--exclude_pattern` | Regex to exclude sample IDs during entropy table generation. Examples: `s0`, `RespiratorysyncytialvirusA`, `MinION_18_SRR33779449`, or a regex such as `^(MinION|NextSeq)_` to match multiple readsets. |
 | `--filter_column` | Metadata column used to filter samples in entropy step 1 (requires `--filter_value`). |
 | `--filter_value` | Metadata value kept in entropy step 1 (requires `--filter_column`). |
 | `--group_by` | One or more metadata columns to group entropy calculations. |
