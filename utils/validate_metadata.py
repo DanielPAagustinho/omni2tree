@@ -245,6 +245,7 @@ def validate_output_constraints(meta: MetadataInput, labelkey_to_code: Dict[str,
     seen_sample_ids: set[str] = set()
     seen_raw_labels: set[str] = set()
     seen_label_keys: Dict[str, str] = {}
+    sanitized_labels: Dict[str, Tuple[str, str]] = {}
     ref_count = 0
     read_count = 0
 
@@ -270,11 +271,22 @@ def validate_output_constraints(meta: MetadataInput, labelkey_to_code: Dict[str,
                 f"'{raw_label}' collides with '{seen_label_keys[collision_key]}'"
             )
         seen_label_keys[collision_key] = raw_label
+        sanitized_labels[accession] = (label_final, raw_label)
 
         if label_key in labelkey_to_code:
             ref_count += 1
         else:
             read_count += 1
+
+    for accession, (label_final, raw_label) in sanitized_labels.items():
+        if label_final in sanitized_labels and label_final != accession:
+            other_raw_label = sanitized_labels[label_final][1]
+            raise ValueError(
+                "Ambiguous omni2treeview metadata after label sanitization: "
+                f"label '{label_final}' (from metadata label '{raw_label}', accession '{accession}') "
+                f"matches sample_id/accession '{label_final}' from another row "
+                f"(metadata label '{other_raw_label}'). Rename the conflicting input label or accession."
+            )
 
     log_info(
         "Validated metadata output constraints: "
