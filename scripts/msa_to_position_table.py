@@ -102,6 +102,38 @@ def normalize_msa_id(sample_id):
     return re.sub(r'(_R[12]|_[12])$', '', normalized)
 
 
+def sanitize_view_label(text):
+    """Apply the same label sanitization used for Omni2tree view metadata."""
+    sanitized = re.sub(r'_(1|2)$', '', '' if pd.isna(text) else str(text))
+    sanitized = re.sub(r'[^A-Za-z0-9_]+', '_', sanitized)
+    sanitized = re.sub(r'_+', '_', sanitized).strip('_')
+    return re.sub(r'[^A-Za-z0-9_]', '', sanitized) or 'NA'
+
+
+def apply_exclude_pattern(df, pattern, stage_label, sanitize_labels=False):
+    """Exclude rows whose sample_id matches the provided regex pattern."""
+    if not pattern or df.empty:
+        return df
+
+    sample_ids = df['sample_id'].astype(str)
+    match_mask = sample_ids.str.contains(pattern, regex=True, na=False)
+
+    if sanitize_labels:
+        sanitized_ids = sample_ids.map(sanitize_view_label)
+        match_mask |= sanitized_ids.str.contains(pattern, regex=True, na=False)
+
+        # If the user passed a plain label string, also try its sanitized form.
+        if re.search(r'[.^$*+?{}\[\]\\|()]', pattern) is None:
+            sanitized_pattern = re.escape(sanitize_view_label(pattern))
+            match_mask |= sanitized_ids.str.contains(sanitized_pattern, regex=True, na=False)
+
+    before_count = sample_ids.nunique()
+    df = df[~match_mask]
+    after_count = df['sample_id'].nunique()
+    print(f"    Excluded {before_count - after_count} samples matching '{pattern}' {stage_label}")
+    return df
+
+
 def maybe_drop_metadata_type_row(metadata):
     """
     Drop type row (character/numeric/...) if present as first data row.
@@ -332,12 +364,9 @@ Examples:
             print(f"    Warning: No data extracted from {msa_file}", file=sys.stderr)
             continue
         
-        # Filter by exclude pattern
+        # Filter by exclude pattern on raw MSA IDs for backward compatibility.
         if args.exclude_pattern:
-            before_count = df['sample_id'].nunique()
-            df = df[~df['sample_id'].str.contains(args.exclude_pattern)]
-            after_count = df['sample_id'].nunique()
-            print(f"    Excluded {before_count - after_count} samples matching '{args.exclude_pattern}'")
+            df = apply_exclude_pattern(df, args.exclude_pattern, "before label mapping")
         
         # Clean sample IDs (remove _R1/_R2 and _1/_2 suffixes)
         df['sample_id'] = df['sample_id'].apply(normalize_msa_id)
@@ -350,6 +379,15 @@ Examples:
             if not df.empty:
                 # Output keeps human-readable labels exactly as provided in metadata.
                 df['sample_id'] = df['sample_id'].map(metadata_label_lookup)
+                # Apply the same pattern again on final mapped labels, including
+                # the sanitized label form used by Omni2tree view metadata.
+                if args.exclude_pattern:
+                    df = apply_exclude_pattern(
+                        df,
+                        args.exclude_pattern,
+                        "after label mapping",
+                        sanitize_labels=True,
+                    )
             print(f"    Filtered to {after_count}/{before_count} samples using metadata")
         
         all_positions.append(df)
