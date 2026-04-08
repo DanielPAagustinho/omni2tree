@@ -5,7 +5,7 @@ import csv
 import json
 import argparse
 from collections import defaultdict
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from typing import Tuple
 import logging
 import os
@@ -288,8 +288,12 @@ def estimate_tree_dimensions(tree: Dict[str, Any]) -> Dict[str, int]:
         "estimated_height": leaf_count
     }
 
-def prepare_entropy_assets(nwk_file: str, out_prefix: str) -> Dict[str, Any]:
-    entropy_src_dir = os.path.join(os.path.dirname(os.path.abspath(nwk_file)), "entropy")
+def prepare_entropy_assets(nwk_file: str, out_prefix: str, entropy_dir: Optional[str] = None) -> Dict[str, Any]:
+    entropy_src_dir = (
+        os.path.abspath(entropy_dir)
+        if entropy_dir is not None
+        else os.path.join(os.path.dirname(os.path.abspath(nwk_file)), "entropy")
+    )
     entropy_info = {
         "dir": None,
         "files": [],
@@ -297,7 +301,7 @@ def prepare_entropy_assets(nwk_file: str, out_prefix: str) -> Dict[str, Any]:
     }
 
     if not os.path.isdir(entropy_src_dir):
-        logging.info(f"> No entropy directory found beside Newick file: {entropy_src_dir}")
+        logging.info(f"> No entropy directory found: {entropy_src_dir}")
         return entropy_info
 
     png_files = sorted([
@@ -351,7 +355,7 @@ def create_output_zip(out_prefix: str) -> str:
     logging.info(f"> Packaged outputs into {zip_path}")
     return zip_path
 
-def main(input_file: str, out_prefix: str, html_template: str, tree_name: str, nwk_file: str):
+def main(input_file: str, out_prefix: str, html_template: str, tree_name: str, nwk_file: str, entropy_dir: Optional[str]):
     tree,tree_meta = parse_csv_to_tree(input_file, tree_name)
 
 
@@ -367,7 +371,7 @@ def main(input_file: str, out_prefix: str, html_template: str, tree_name: str, n
     dimensions = estimate_tree_dimensions(tree)
     tree_meta["estimated_width"] = dimensions["estimated_width"]
     tree_meta["estimated_height"] = dimensions["estimated_height"]
-    tree_meta["entropy"] = prepare_entropy_assets(nwk_file, out_prefix)
+    tree_meta["entropy"] = prepare_entropy_assets(nwk_file, out_prefix, entropy_dir)
 
 
     out_html = out_prefix + ".html"
@@ -394,6 +398,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Convert Newick tree to CSV format.')
     parser.add_argument('-n', '--nwk_file', type=str, help='Input Newick file')
     parser.add_argument('-m', '--meta', type=str, help='Metadata file')
+    parser.add_argument('-e', '--entropy', type=str,default=None, help='Entropy directory (optional, will look for "entropy" folder beside the Newick file if not provided)')
     parser.add_argument('-o', '--output', type=str, help='Output prefix, without extension')
     parser.add_argument("-t","--template",required=True, help="Path to input HTML template")
     parser.add_argument("-l","--name",required=True, help="Name of the tree",default="omnitreeview")
@@ -417,6 +422,12 @@ if __name__ == "__main__":
         output_base = '.'.join(output_base.split('.')[:-1])
     
     
+    #create output directory if it does not exist
+    output_dir = os.path.dirname(os.path.abspath(output_base))
+    if output_dir and not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+        logging.info(f"Created output directory: {output_dir}")
+
     tree_csv = parse_newick_to_csv(args.nwk_file)
 
     meta_dict = load_meta(args.meta)
@@ -463,7 +474,7 @@ if __name__ == "__main__":
     out_fh.close()
 
     logging.info("> Generating tree and HTML output...")
-    main(output_base+".meta.csv", output_base, args.template, args.name, args.nwk_file)
+    main(output_base+".meta.csv", output_base, args.template, args.name, args.nwk_file, args.entropy)
     zip_output = create_output_zip(output_base)
     logging.info("> Done.")
     logging.info("> Outputs generated:")

@@ -1,5 +1,5 @@
 {
-  "id": "4",
+  "id": "1",
   "name": "Internal-8",
   "branch_length": 0.0,
   "meta": {
@@ -9,7 +9,7 @@
   "confidence": "NA",
   "children": [
     {
-      "id": "10",
+      "id": "13",
       "name": "ASM3791705v1",
       "branch_length": 0.01569,
       "meta": {
@@ -20,7 +20,7 @@
       "children": []
     },
     {
-      "id": "14",
+      "id": "5",
       "name": "Internal-2",
       "branch_length": 0.0026,
       "meta": {
@@ -30,7 +30,7 @@
       "confidence": "NA",
       "children": [
         {
-          "id": "6",
+          "id": "12",
           "name": "ASM3794015v1",
           "branch_length": 0.01367,
           "meta": {
@@ -41,7 +41,7 @@
           "children": []
         },
         {
-          "id": "11",
+          "id": "15",
           "name": "puerto_rico",
           "branch_length": 0.1275,
           "meta": {
@@ -54,7 +54,7 @@
       ]
     },
     {
-      "id": "5",
+      "id": "6",
       "name": "Internal-3",
       "branch_length": 0.00945,
       "meta": {
@@ -64,7 +64,7 @@
       "confidence": "NA",
       "children": [
         {
-          "id": "3",
+          "id": "2",
           "name": "Internal-4",
           "branch_length": 0.00714,
           "meta": {
@@ -74,7 +74,7 @@
           "confidence": "NA",
           "children": [
             {
-              "id": "15",
+              "id": "3",
               "name": "Internal-5",
               "branch_length": 0.00767,
               "meta": {
@@ -84,7 +84,7 @@
               "confidence": "NA",
               "children": [
                 {
-                  "id": "13",
+                  "id": "8",
                   "name": "ASM3828429v1",
                   "branch_length": 0.02409,
                   "meta": {
@@ -95,7 +95,7 @@
                   "children": []
                 },
                 {
-                  "id": "2",
+                  "id": "10",
                   "name": "Internal-6",
                   "branch_length": 0.01688,
                   "meta": {
@@ -105,7 +105,7 @@
                   "confidence": "NA",
                   "children": [
                     {
-                      "id": "7",
+                      "id": "4",
                       "name": "ASM3885575v1",
                       "branch_length": 0.01826,
                       "meta": {
@@ -116,7 +116,7 @@
                       "children": []
                     },
                     {
-                      "id": "8",
+                      "id": "7",
                       "name": "Influenza_A_virus_LBM330",
                       "branch_length": 0.00888,
                       "meta": {
@@ -131,7 +131,7 @@
               ]
             },
             {
-              "id": "0",
+              "id": "11",
               "name": "MinION_18_SRR33779449",
               "branch_length": 0.04895,
               "meta": {
@@ -144,7 +144,7 @@
           ]
         },
         {
-          "id": "1",
+          "id": "9",
           "name": "Internal-7",
           "branch_length": 0.00729,
           "meta": {
@@ -154,7 +154,7 @@
           "confidence": "NA",
           "children": [
             {
-              "id": "9",
+              "id": "0",
               "name": "MinION_29_SRR33880304",
               "branch_length": 0.0231,
               "meta": {
@@ -165,7 +165,7 @@
               "children": []
             },
             {
-              "id": "12",
+              "id": "14",
               "name": "NextSeq_22_SRR34709337",
               "branch_length": 0.01439,
               "meta": {
