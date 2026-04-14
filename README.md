@@ -1,7 +1,7 @@
 
 # Welcome to Omni2tree!!
 
-This new version of read2tree enables the creation of a reference database via OMA Standalone using as input coding sequences from NCBI assemblies. The final tree combines the presence of assemblies (that is, the reference) and the read samples. It also supports read deduplication with czid-dedup and downsampling with rasusa, among other functionalities.
+Omni2tree is a new version of Read2tree that consists of an end-to-end workflow to (i) create a reference database via OMA Standalone from coding sequences retrieved from NCBI accessions, (ii) process read samples with optional deduplication and downsampling, and (iii) generate phylogenetic trees that combine the reference assemblies with the read-derived samples. Moreover, it includes metadata integration with an interactive HTML visualization using Omni2treeView, Shannon entropy analysis and plotting from the merged MSAs, and a utility to bulk-download SRA runs or experiments.
 
 ## Table of Contents
 
@@ -143,6 +143,7 @@ Finally, check your installation with:
 ```bash
 which o2t-step1 && o2t-step1 --help
 which o2t-step2 && o2t-step2 --help
+which o2t-step3 && o2t-step3 --help
 which o2t-sra   && o2t-sra   --help
 ```
 
