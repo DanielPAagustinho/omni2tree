@@ -1,7 +1,7 @@
 
 # Welcome to Omni2tree!!
 
-Omni2tree is a new version of Read2tree that consists of an end-to-end workflow to (i) create a reference database via OMA Standalone from coding sequences retrieved from NCBI accessions, (ii) process read samples with optional deduplication and downsampling, and (iii) generate phylogenetic trees that combine the reference assemblies with the read-derived samples. Moreover, it includes metadata integration with an interactive HTML visualization using Omni2treeView, Shannon entropy analysis and plotting from the merged MSAs, and a utility to bulk-download SRA runs or experiments.
+Omni2tree is a new version of Read2tree that consists of an end-to-end workflow to (i) create a reference database via OMA Standalone from coding sequences retrieved from NCBI accessions, (ii) process read samples with optional deduplication and downsampling, and (iii) generate phylogenetic trees that combine the reference assemblies with consensus sequences derived from the read samples. Moreover, it includes metadata integration with an interactive HTML visualization using Omni2treeView, Shannon entropy analysis and plotting from the merged MSAs, and a utility to bulk-download SRA runs or experiments.
 
 ## Table of Contents
 
