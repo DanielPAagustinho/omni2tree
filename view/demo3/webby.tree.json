@@ -1,0 +1,1983 @@
+{
+  "id": "59",
+  "name": "Internal-64",
+  "sample_id": "NA",
+  "branch_length": 0.0,
+  "meta": {
+    "Host": "NA",
+    "Host_group": "NA",
+    "Host_type": "NA",
+    "Collection_state": "NA",
+    "Year": "NA"
+  },
+  "confidence": "NA",
+  "children": [
+    {
+      "id": "35",
+      "name": "3101259_749278",
+      "sample_id": "3101259_749278",
+      "branch_length": 0.0133370634,
+      "meta": {
+        "Host": "Black bear",
+        "Host_group": "Other mammal",
+        "Host_type": "Mammalian",
+        "Collection_state": "North Carolina",
+        "Year": "2024"
+      },
+      "confidence": "NA",
+      "children": []
+    },
+    {
+      "id": "111",
+      "name": "Internal-2",
+      "sample_id": "NA",
+      "branch_length": 2.6808e-06,
+      "meta": {
+        "Host": "NA",
+        "Host_group": "NA",
+        "Host_type": "NA",
+        "Collection_state": "NA",
+        "Year": "NA"
+      },
+      "confidence": "NA",
+      "children": [
+        {
+          "id": "39",
+          "name": "Internal-3",
+          "sample_id": "NA",
+          "branch_length": 2.9015e-06,
+          "meta": {
+            "Host": "NA",
+            "Host_group": "NA",
+            "Host_type": "NA",
+            "Collection_state": "NA",
+            "Year": "NA"
+          },
+          "confidence": "NA",
+          "children": [
+            {
+              "id": "102",
+              "name": "Internal-4",
+              "sample_id": "NA",
+              "branch_length": 1e-06,
+              "meta": {
+                "Host": "NA",
+                "Host_group": "NA",
+                "Host_type": "NA",
+                "Collection_state": "NA",
+                "Year": "NA"
+              },
+              "confidence": "NA",
+              "children": [
+                {
+                  "id": "113",
+                  "name": "Internal-5",
+                  "sample_id": "NA",
+                  "branch_length": 1e-06,
+                  "meta": {
+                    "Host": "NA",
+                    "Host_group": "NA",
+                    "Host_type": "NA",
+                    "Collection_state": "NA",
+                    "Year": "NA"
+                  },
+                  "confidence": "NA",
+                  "children": [
+                    {
+                      "id": "57",
+                      "name": "Internal-6",
+                      "sample_id": "NA",
+                      "branch_length": 1e-06,
+                      "meta": {
+                        "Host": "NA",
+                        "Host_group": "NA",
+                        "Host_type": "NA",
+                        "Collection_state": "NA",
+                        "Year": "NA"
+                      },
+                      "confidence": "NA",
+                      "children": [
+                        {
+                          "id": "109",
+                          "name": "Internal-7",
+                          "sample_id": "NA",
+                          "branch_length": 0.0002068876,
+                          "meta": {
+                            "Host": "NA",
+                            "Host_group": "NA",
+                            "Host_type": "NA",
+                            "Collection_state": "NA",
+                            "Year": "NA"
+                          },
+                          "confidence": "NA",
+                          "children": [
+                            {
+                              "id": "30",
+                              "name": "Internal-8",
+                              "sample_id": "NA",
+                              "branch_length": 0.0006215665,
+                              "meta": {
+                                "Host": "NA",
+                                "Host_group": "NA",
+                                "Host_type": "NA",
+                                "Collection_state": "NA",
+                                "Year": "NA"
+                              },
+                              "confidence": "NA",
+                              "children": [
+                                {
+                                  "id": "7",
+                                  "name": "Internal-9",
+                                  "sample_id": "NA",
+                                  "branch_length": 0.0008290536,
+                                  "meta": {
+                                    "Host": "NA",
+                                    "Host_group": "NA",
+                                    "Host_type": "NA",
+                                    "Collection_state": "NA",
+                                    "Year": "NA"
+                                  },
+                                  "confidence": "NA",
+                                  "children": [
+                                    {
+                                      "id": "76",
+                                      "name": "Internal-10",
+                                      "sample_id": "NA",
+                                      "branch_length": 0.0010258843,
+                                      "meta": {
+                                        "Host": "NA",
+                                        "Host_group": "NA",
+                                        "Host_type": "NA",
+                                        "Collection_state": "NA",
+                                        "Year": "NA"
+                                      },
+                                      "confidence": "NA",
+                                      "children": [
+                                        {
+                                          "id": "98",
+                                          "name": "Internal-11",
+                                          "sample_id": "NA",
+                                          "branch_length": 0.0014404886,
+                                          "meta": {
+                                            "Host": "NA",
+                                            "Host_group": "NA",
+                                            "Host_type": "NA",
+                                            "Collection_state": "NA",
+                                            "Year": "NA"
+                                          },
+                                          "confidence": "NA",
+                                          "children": [
+                                            {
+                                              "id": "19",
+                                              "name": "Internal-12",
+                                              "sample_id": "NA",
+                                              "branch_length": 0.0032979585,
+                                              "meta": {
+                                                "Host": "NA",
+                                                "Host_group": "NA",
+                                                "Host_type": "NA",
+                                                "Collection_state": "NA",
+                                                "Year": "NA"
+                                              },
+                                              "confidence": "NA",
+                                              "children": [
+                                                {
+                                                  "id": "47",
+                                                  "name": "Internal-13",
+                                                  "sample_id": "NA",
+                                                  "branch_length": 0.0029564146,
+                                                  "meta": {
+                                                    "Host": "NA",
+                                                    "Host_group": "NA",
+                                                    "Host_type": "NA",
+                                                    "Collection_state": "NA",
+                                                    "Year": "NA"
+                                                  },
+                                                  "confidence": "NA",
+                                                  "children": [
+                                                    {
+                                                      "id": "117",
+                                                      "name": "Internal-14",
+                                                      "sample_id": "NA",
+                                                      "branch_length": 0.0014582336,
+                                                      "meta": {
+                                                        "Host": "NA",
+                                                        "Host_group": "NA",
+                                                        "Host_type": "NA",
+                                                        "Collection_state": "NA",
+                                                        "Year": "NA"
+                                                      },
+                                                      "confidence": "NA",
+                                                      "children": [
+                                                        {
+                                                          "id": "26",
+                                                          "name": "Internal-15",
+                                                          "sample_id": "NA",
+                                                          "branch_length": 0.0017630887,
+                                                          "meta": {
+                                                            "Host": "NA",
+                                                            "Host_group": "NA",
+                                                            "Host_type": "NA",
+                                                            "Collection_state": "NA",
+                                                            "Year": "NA"
+                                                          },
+                                                          "confidence": "NA",
+                                                          "children": [
+                                                            {
+                                                              "id": "72",
+                                                              "name": "Internal-16",
+                                                              "sample_id": "NA",
+                                                              "branch_length": 0.0074034399,
+                                                              "meta": {
+                                                                "Host": "NA",
+                                                                "Host_group": "NA",
+                                                                "Host_type": "NA",
+                                                                "Collection_state": "NA",
+                                                                "Year": "NA"
+                                                              },
+                                                              "confidence": "NA",
+                                                              "children": [
+                                                                {
+                                                                  "id": "22",
+                                                                  "name": "Internal-17",
+                                                                  "sample_id": "NA",
+                                                                  "branch_length": 0.0007137252,
+                                                                  "meta": {
+                                                                    "Host": "NA",
+                                                                    "Host_group": "NA",
+                                                                    "Host_type": "NA",
+                                                                    "Collection_state": "NA",
+                                                                    "Year": "NA"
+                                                                  },
+                                                                  "confidence": "NA",
+                                                                  "children": [
+                                                                    {
+                                                                      "id": "55",
+                                                                      "name": "Internal-18",
+                                                                      "sample_id": "NA",
+                                                                      "branch_length": 0.0005084273,
+                                                                      "meta": {
+                                                                        "Host": "NA",
+                                                                        "Host_group": "NA",
+                                                                        "Host_type": "NA",
+                                                                        "Collection_state": "NA",
+                                                                        "Year": "NA"
+                                                                      },
+                                                                      "confidence": "NA",
+                                                                      "children": [
+                                                                        {
+                                                                          "id": "65",
+                                                                          "name": "Internal-19",
+                                                                          "sample_id": "NA",
+                                                                          "branch_length": 0.0006143391,
+                                                                          "meta": {
+                                                                            "Host": "NA",
+                                                                            "Host_group": "NA",
+                                                                            "Host_type": "NA",
+                                                                            "Collection_state": "NA",
+                                                                            "Year": "NA"
+                                                                          },
+                                                                          "confidence": "NA",
+                                                                          "children": [
+                                                                            {
+                                                                              "id": "21",
+                                                                              "name": "Internal-20",
+                                                                              "sample_id": "NA",
+                                                                              "branch_length": 0.0004089498,
+                                                                              "meta": {
+                                                                                "Host": "NA",
+                                                                                "Host_group": "NA",
+                                                                                "Host_type": "NA",
+                                                                                "Collection_state": "NA",
+                                                                                "Year": "NA"
+                                                                              },
+                                                                              "confidence": "NA",
+                                                                              "children": [
+                                                                                {
+                                                                                  "id": "90",
+                                                                                  "name": "Internal-21",
+                                                                                  "sample_id": "NA",
+                                                                                  "branch_length": 0.0028388604,
+                                                                                  "meta": {
+                                                                                    "Host": "NA",
+                                                                                    "Host_group": "NA",
+                                                                                    "Host_type": "NA",
+                                                                                    "Collection_state": "NA",
+                                                                                    "Year": "NA"
+                                                                                  },
+                                                                                  "confidence": "NA",
+                                                                                  "children": [
+                                                                                    {
+                                                                                      "id": "64",
+                                                                                      "name": "Internal-22",
+                                                                                      "sample_id": "NA",
+                                                                                      "branch_length": 2.7341e-06,
+                                                                                      "meta": {
+                                                                                        "Host": "NA",
+                                                                                        "Host_group": "NA",
+                                                                                        "Host_type": "NA",
+                                                                                        "Collection_state": "NA",
+                                                                                        "Year": "NA"
+                                                                                      },
+                                                                                      "confidence": "NA",
+                                                                                      "children": [
+                                                                                        {
+                                                                                          "id": "41",
+                                                                                          "name": "762140-OP",
+                                                                                          "sample_id": "762140-OP",
+                                                                                          "branch_length": 2.8434e-06,
+                                                                                          "meta": {
+                                                                                            "Host": "Horned grebe",
+                                                                                            "Host_group": "Other bird",
+                                                                                            "Host_type": "Avian",
+                                                                                            "Collection_state": "Virginia",
+                                                                                            "Year": "2024"
+                                                                                          },
+                                                                                          "confidence": "NA",
+                                                                                          "children": []
+                                                                                        },
+                                                                                        {
+                                                                                          "id": "61",
+                                                                                          "name": "762143-OP",
+                                                                                          "sample_id": "762143-OP",
+                                                                                          "branch_length": 0.0012849308,
+                                                                                          "meta": {
+                                                                                            "Host": "Horned grebe",
+                                                                                            "Host_group": "Other bird",
+                                                                                            "Host_type": "Avian",
+                                                                                            "Collection_state": "Virginia",
+                                                                                            "Year": "2024"
+                                                                                          },
+                                                                                          "confidence": "NA",
+                                                                                          "children": []
+                                                                                        }
+                                                                                      ]
+                                                                                    },
+                                                                                    {
+                                                                                      "id": "103",
+                                                                                      "name": "Internal-23",
+                                                                                      "sample_id": "NA",
+                                                                                      "branch_length": 0.0004334549,
+                                                                                      "meta": {
+                                                                                        "Host": "NA",
+                                                                                        "Host_group": "NA",
+                                                                                        "Host_type": "NA",
+                                                                                        "Collection_state": "NA",
+                                                                                        "Year": "NA"
+                                                                                      },
+                                                                                      "confidence": "NA",
+                                                                                      "children": [
+                                                                                        {
+                                                                                          "id": "31",
+                                                                                          "name": "762141-OP",
+                                                                                          "sample_id": "762141-OP",
+                                                                                          "branch_length": 0.0013074855,
+                                                                                          "meta": {
+                                                                                            "Host": "Horned grebe",
+                                                                                            "Host_group": "Other bird",
+                                                                                            "Host_type": "Avian",
+                                                                                            "Collection_state": "Virginia",
+                                                                                            "Year": "2024"
+                                                                                          },
+                                                                                          "confidence": "NA",
+                                                                                          "children": []
+                                                                                        },
+                                                                                        {
+                                                                                          "id": "115",
+                                                                                          "name": "762142-OP",
+                                                                                          "sample_id": "762142-OP",
+                                                                                          "branch_length": 0.0026043608,
+                                                                                          "meta": {
+                                                                                            "Host": "Horned grebe",
+                                                                                            "Host_group": "Other bird",
+                                                                                            "Host_type": "Avian",
+                                                                                            "Collection_state": "Virginia",
+                                                                                            "Year": "2024"
+                                                                                          },
+                                                                                          "confidence": "NA",
+                                                                                          "children": []
+                                                                                        }
+                                                                                      ]
+                                                                                    }
+                                                                                  ]
+                                                                                },
+                                                                                {
+                                                                                  "id": "88",
+                                                                                  "name": "Internal-24",
+                                                                                  "sample_id": "NA",
+                                                                                  "branch_length": 2.386e-06,
+                                                                                  "meta": {
+                                                                                    "Host": "NA",
+                                                                                    "Host_group": "NA",
+                                                                                    "Host_type": "NA",
+                                                                                    "Collection_state": "NA",
+                                                                                    "Year": "NA"
+                                                                                  },
+                                                                                  "confidence": "NA",
+                                                                                  "children": [
+                                                                                    {
+                                                                                      "id": "116",
+                                                                                      "name": "3101261_749191_E1",
+                                                                                      "sample_id": "3101261_749191_E1",
+                                                                                      "branch_length": 0.001230366,
+                                                                                      "meta": {
+                                                                                        "Host": "Ross's goose",
+                                                                                        "Host_group": "Goose",
+                                                                                        "Host_type": "Avian",
+                                                                                        "Collection_state": "Kansas",
+                                                                                        "Year": "2023"
+                                                                                      },
+                                                                                      "confidence": "NA",
+                                                                                      "children": []
+                                                                                    },
+                                                                                    {
+                                                                                      "id": "87",
+                                                                                      "name": "3101240_750551",
+                                                                                      "sample_id": "3101240_750551",
+                                                                                      "branch_length": 0.0035430901,
+                                                                                      "meta": {
+                                                                                        "Host": "Red-tailed hawk",
+                                                                                        "Host_group": "Raptor",
+                                                                                        "Host_type": "Avian",
+                                                                                        "Collection_state": "South Carolina",
+                                                                                        "Year": "2024"
+                                                                                      },
+                                                                                      "confidence": "NA",
+                                                                                      "children": []
+                                                                                    }
+                                                                                  ]
+                                                                                }
+                                                                              ]
+                                                                            },
+                                                                            {
+                                                                              "id": "127",
+                                                                              "name": "3101266_749259",
+                                                                              "sample_id": "3101266_749259",
+                                                                              "branch_length": 0.0026941587,
+                                                                              "meta": {
+                                                                                "Host": "Wood duck",
+                                                                                "Host_group": "Duck",
+                                                                                "Host_type": "Avian",
+                                                                                "Collection_state": "South Carolina",
+                                                                                "Year": "2023"
+                                                                              },
+                                                                              "confidence": "NA",
+                                                                              "children": []
+                                                                            }
+                                                                          ]
+                                                                        },
+                                                                        {
+                                                                          "id": "13",
+                                                                          "name": "Internal-25",
+                                                                          "sample_id": "NA",
+                                                                          "branch_length": 2.2078e-06,
+                                                                          "meta": {
+                                                                            "Host": "NA",
+                                                                            "Host_group": "NA",
+                                                                            "Host_type": "NA",
+                                                                            "Collection_state": "NA",
+                                                                            "Year": "NA"
+                                                                          },
+                                                                          "confidence": "NA",
+                                                                          "children": [
+                                                                            {
+                                                                              "id": "67",
+                                                                              "name": "Internal-26",
+                                                                              "sample_id": "NA",
+                                                                              "branch_length": 2.9824e-06,
+                                                                              "meta": {
+                                                                                "Host": "NA",
+                                                                                "Host_group": "NA",
+                                                                                "Host_type": "NA",
+                                                                                "Collection_state": "NA",
+                                                                                "Year": "NA"
+                                                                              },
+                                                                              "confidence": "NA",
+                                                                              "children": [
+                                                                                {
+                                                                                  "id": "106",
+                                                                                  "name": "Internal-27",
+                                                                                  "sample_id": "NA",
+                                                                                  "branch_length": 2.4211e-06,
+                                                                                  "meta": {
+                                                                                    "Host": "NA",
+                                                                                    "Host_group": "NA",
+                                                                                    "Host_type": "NA",
+                                                                                    "Collection_state": "NA",
+                                                                                    "Year": "NA"
+                                                                                  },
+                                                                                  "confidence": "NA",
+                                                                                  "children": [
+                                                                                    {
+                                                                                      "id": "51",
+                                                                                      "name": "Internal-28",
+                                                                                      "sample_id": "NA",
+                                                                                      "branch_length": 2.7072e-06,
+                                                                                      "meta": {
+                                                                                        "Host": "NA",
+                                                                                        "Host_group": "NA",
+                                                                                        "Host_type": "NA",
+                                                                                        "Collection_state": "NA",
+                                                                                        "Year": "NA"
+                                                                                      },
+                                                                                      "confidence": "NA",
+                                                                                      "children": [
+                                                                                        {
+                                                                                          "id": "86",
+                                                                                          "name": "3101257_749274",
+                                                                                          "sample_id": "3101257_749274",
+                                                                                          "branch_length": 0.0106195866,
+                                                                                          "meta": {
+                                                                                            "Host": "Bald eagle",
+                                                                                            "Host_group": "Raptor",
+                                                                                            "Host_type": "Avian",
+                                                                                            "Collection_state": "South Carolina",
+                                                                                            "Year": "2023"
+                                                                                          },
+                                                                                          "confidence": "NA",
+                                                                                          "children": []
+                                                                                        },
+                                                                                        {
+                                                                                          "id": "96",
+                                                                                          "name": "Internal-29",
+                                                                                          "sample_id": "NA",
+                                                                                          "branch_length": 0.0003744535,
+                                                                                          "meta": {
+                                                                                            "Host": "NA",
+                                                                                            "Host_group": "NA",
+                                                                                            "Host_type": "NA",
+                                                                                            "Collection_state": "NA",
+                                                                                            "Year": "NA"
+                                                                                          },
+                                                                                          "confidence": "NA",
+                                                                                          "children": [
+                                                                                            {
+                                                                                              "id": "16",
+                                                                                              "name": "761880-OP",
+                                                                                              "sample_id": "761880-OP",
+                                                                                              "branch_length": 0.0018875318,
+                                                                                              "meta": {
+                                                                                                "Host": "Mountain lion",
+                                                                                                "Host_group": "Other mammal",
+                                                                                                "Host_type": "Mammalian",
+                                                                                                "Collection_state": "Nebraska",
+                                                                                                "Year": "2024"
+                                                                                              },
+                                                                                              "confidence": "NA",
+                                                                                              "children": []
+                                                                                            },
+                                                                                            {
+                                                                                              "id": "4",
+                                                                                              "name": "3101251_749255",
+                                                                                              "sample_id": "3101251_749255",
+                                                                                              "branch_length": 0.0023906319,
+                                                                                              "meta": {
+                                                                                                "Host": "Red-tailed hawk",
+                                                                                                "Host_group": "Raptor",
+                                                                                                "Host_type": "Avian",
+                                                                                                "Collection_state": "Kansas",
+                                                                                                "Year": "2023"
+                                                                                              },
+                                                                                              "confidence": "NA",
+                                                                                              "children": []
+                                                                                            }
+                                                                                          ]
+                                                                                        }
+                                                                                      ]
+                                                                                    },
+                                                                                    {
+                                                                                      "id": "2",
+                                                                                      "name": "3101271_749133",
+                                                                                      "sample_id": "3101271_749133",
+                                                                                      "branch_length": 0.0037878825,
+                                                                                      "meta": {
+                                                                                        "Host": "Snow goose",
+                                                                                        "Host_group": "Goose",
+                                                                                        "Host_type": "Avian",
+                                                                                        "Collection_state": "Kansas",
+                                                                                        "Year": "2023"
+                                                                                      },
+                                                                                      "confidence": "NA",
+                                                                                      "children": []
+                                                                                    }
+                                                                                  ]
+                                                                                },
+                                                                                {
+                                                                                  "id": "48",
+                                                                                  "name": "3101265_749256",
+                                                                                  "sample_id": "3101265_749256",
+                                                                                  "branch_length": 0.003062878,
+                                                                                  "meta": {
+                                                                                    "Host": "Great-horned owl",
+                                                                                    "Host_group": "Raptor",
+                                                                                    "Host_type": "Avian",
+                                                                                    "Collection_state": "Kansas",
+                                                                                    "Year": "2023"
+                                                                                  },
+                                                                                  "confidence": "NA",
+                                                                                  "children": []
+                                                                                }
+                                                                              ]
+                                                                            },
+                                                                            {
+                                                                              "id": "81",
+                                                                              "name": "Internal-30",
+                                                                              "sample_id": "NA",
+                                                                              "branch_length": 0.0005118334,
+                                                                              "meta": {
+                                                                                "Host": "NA",
+                                                                                "Host_group": "NA",
+                                                                                "Host_type": "NA",
+                                                                                "Collection_state": "NA",
+                                                                                "Year": "NA"
+                                                                              },
+                                                                              "confidence": "NA",
+                                                                              "children": [
+                                                                                {
+                                                                                  "id": "40",
+                                                                                  "name": "3101272_749187",
+                                                                                  "sample_id": "3101272_749187",
+                                                                                  "branch_length": 0.0018655695,
+                                                                                  "meta": {
+                                                                                    "Host": "Snow goose",
+                                                                                    "Host_group": "Goose",
+                                                                                    "Host_type": "Avian",
+                                                                                    "Collection_state": "Kansas",
+                                                                                    "Year": "2023"
+                                                                                  },
+                                                                                  "confidence": "NA",
+                                                                                  "children": []
+                                                                                },
+                                                                                {
+                                                                                  "id": "12",
+                                                                                  "name": "Internal-31",
+                                                                                  "sample_id": "NA",
+                                                                                  "branch_length": 1e-06,
+                                                                                  "meta": {
+                                                                                    "Host": "NA",
+                                                                                    "Host_group": "NA",
+                                                                                    "Host_type": "NA",
+                                                                                    "Collection_state": "NA",
+                                                                                    "Year": "NA"
+                                                                                  },
+                                                                                  "confidence": "NA",
+                                                                                  "children": [
+                                                                                    {
+                                                                                      "id": "122",
+                                                                                      "name": "762144-OP",
+                                                                                      "sample_id": "762144-OP",
+                                                                                      "branch_length": 0.0035135782,
+                                                                                      "meta": {
+                                                                                        "Host": "Peregrine falcon",
+                                                                                        "Host_group": "Raptor",
+                                                                                        "Host_type": "Avian",
+                                                                                        "Collection_state": "Virginia",
+                                                                                        "Year": "2024"
+                                                                                      },
+                                                                                      "confidence": "NA",
+                                                                                      "children": []
+                                                                                    },
+                                                                                    {
+                                                                                      "id": "95",
+                                                                                      "name": "3101263_749194_E1",
+                                                                                      "sample_id": "3101263_749194_E1",
+                                                                                      "branch_length": 0.0015393616,
+                                                                                      "meta": {
+                                                                                        "Host": "Snow goose",
+                                                                                        "Host_group": "Goose",
+                                                                                        "Host_type": "Avian",
+                                                                                        "Collection_state": "Kansas",
+                                                                                        "Year": "2023"
+                                                                                      },
+                                                                                      "confidence": "NA",
+                                                                                      "children": []
+                                                                                    }
+                                                                                  ]
+                                                                                }
+                                                                              ]
+                                                                            }
+                                                                          ]
+                                                                        }
+                                                                      ]
+                                                                    },
+                                                                    {
+                                                                      "id": "34",
+                                                                      "name": "Internal-32",
+                                                                      "sample_id": "NA",
+                                                                      "branch_length": 0.0037920588,
+                                                                      "meta": {
+                                                                        "Host": "NA",
+                                                                        "Host_group": "NA",
+                                                                        "Host_type": "NA",
+                                                                        "Collection_state": "NA",
+                                                                        "Year": "NA"
+                                                                      },
+                                                                      "confidence": "NA",
+                                                                      "children": [
+                                                                        {
+                                                                          "id": "126",
+                                                                          "name": "Internal-33",
+                                                                          "sample_id": "NA",
+                                                                          "branch_length": 2.503e-06,
+                                                                          "meta": {
+                                                                            "Host": "NA",
+                                                                            "Host_group": "NA",
+                                                                            "Host_type": "NA",
+                                                                            "Collection_state": "NA",
+                                                                            "Year": "NA"
+                                                                          },
+                                                                          "confidence": "NA",
+                                                                          "children": [
+                                                                            {
+                                                                              "id": "84",
+                                                                              "name": "Internal-34",
+                                                                              "sample_id": "NA",
+                                                                              "branch_length": 1e-06,
+                                                                              "meta": {
+                                                                                "Host": "NA",
+                                                                                "Host_group": "NA",
+                                                                                "Host_type": "NA",
+                                                                                "Collection_state": "NA",
+                                                                                "Year": "NA"
+                                                                              },
+                                                                              "confidence": "NA",
+                                                                              "children": [
+                                                                                {
+                                                                                  "id": "80",
+                                                                                  "name": "Internal-35",
+                                                                                  "sample_id": "NA",
+                                                                                  "branch_length": 1e-06,
+                                                                                  "meta": {
+                                                                                    "Host": "NA",
+                                                                                    "Host_group": "NA",
+                                                                                    "Host_type": "NA",
+                                                                                    "Collection_state": "NA",
+                                                                                    "Year": "NA"
+                                                                                  },
+                                                                                  "confidence": "NA",
+                                                                                  "children": [
+                                                                                    {
+                                                                                      "id": "54",
+                                                                                      "name": "Internal-36",
+                                                                                      "sample_id": "NA",
+                                                                                      "branch_length": 1e-06,
+                                                                                      "meta": {
+                                                                                        "Host": "NA",
+                                                                                        "Host_group": "NA",
+                                                                                        "Host_type": "NA",
+                                                                                        "Collection_state": "NA",
+                                                                                        "Year": "NA"
+                                                                                      },
+                                                                                      "confidence": "NA",
+                                                                                      "children": [
+                                                                                        {
+                                                                                          "id": "120",
+                                                                                          "name": "Internal-37",
+                                                                                          "sample_id": "NA",
+                                                                                          "branch_length": 1e-06,
+                                                                                          "meta": {
+                                                                                            "Host": "NA",
+                                                                                            "Host_group": "NA",
+                                                                                            "Host_type": "NA",
+                                                                                            "Collection_state": "NA",
+                                                                                            "Year": "NA"
+                                                                                          },
+                                                                                          "confidence": "NA",
+                                                                                          "children": [
+                                                                                            {
+                                                                                              "id": "125",
+                                                                                              "name": "Internal-38",
+                                                                                              "sample_id": "NA",
+                                                                                              "branch_length": 1e-06,
+                                                                                              "meta": {
+                                                                                                "Host": "NA",
+                                                                                                "Host_group": "NA",
+                                                                                                "Host_type": "NA",
+                                                                                                "Collection_state": "NA",
+                                                                                                "Year": "NA"
+                                                                                              },
+                                                                                              "confidence": "NA",
+                                                                                              "children": [
+                                                                                                {
+                                                                                                  "id": "6",
+                                                                                                  "name": "Internal-39",
+                                                                                                  "sample_id": "NA",
+                                                                                                  "branch_length": 2.7409e-06,
+                                                                                                  "meta": {
+                                                                                                    "Host": "NA",
+                                                                                                    "Host_group": "NA",
+                                                                                                    "Host_type": "NA",
+                                                                                                    "Collection_state": "NA",
+                                                                                                    "Year": "NA"
+                                                                                                  },
+                                                                                                  "confidence": "NA",
+                                                                                                  "children": [
+                                                                                                    {
+                                                                                                      "id": "20",
+                                                                                                      "name": "2024_USA_comm.milk",
+                                                                                                      "sample_id": "2024_USA_comm.milk",
+                                                                                                      "branch_length": 0.0006378065,
+                                                                                                      "meta": {
+                                                                                                        "Host": "Bovine",
+                                                                                                        "Host_group": "Bovine",
+                                                                                                        "Host_type": "Mammalian",
+                                                                                                        "Collection_state": "Texas",
+                                                                                                        "Year": "2024"
+                                                                                                      },
+                                                                                                      "confidence": "NA",
+                                                                                                      "children": []
+                                                                                                    },
+                                                                                                    {
+                                                                                                      "id": "45",
+                                                                                                      "name": "Internal-40",
+                                                                                                      "sample_id": "NA",
+                                                                                                      "branch_length": 0.0002030698,
+                                                                                                      "meta": {
+                                                                                                        "Host": "NA",
+                                                                                                        "Host_group": "NA",
+                                                                                                        "Host_type": "NA",
+                                                                                                        "Collection_state": "NA",
+                                                                                                        "Year": "NA"
+                                                                                                      },
+                                                                                                      "confidence": "NA",
+                                                                                                      "children": [
+                                                                                                        {
+                                                                                                          "id": "36",
+                                                                                                          "name": "760836-E1",
+                                                                                                          "sample_id": "760836-E1",
+                                                                                                          "branch_length": 1e-06,
+                                                                                                          "meta": {
+                                                                                                            "Host": "Bovine",
+                                                                                                            "Host_group": "Bovine",
+                                                                                                            "Host_type": "Mammalian",
+                                                                                                            "Collection_state": "Ohio",
+                                                                                                            "Year": "2024"
+                                                                                                          },
+                                                                                                          "confidence": "NA",
+                                                                                                          "children": []
+                                                                                                        },
+                                                                                                        {
+                                                                                                          "id": "32",
+                                                                                                          "name": "761881-OP",
+                                                                                                          "sample_id": "761881-OP",
+                                                                                                          "branch_length": 0.0019082713,
+                                                                                                          "meta": {
+                                                                                                            "Host": "Bald eagle",
+                                                                                                            "Host_group": "Raptor",
+                                                                                                            "Host_type": "Avian",
+                                                                                                            "Collection_state": "Georgia",
+                                                                                                            "Year": "2024"
+                                                                                                          },
+                                                                                                          "confidence": "NA",
+                                                                                                          "children": []
+                                                                                                        }
+                                                                                                      ]
+                                                                                                    }
+                                                                                                  ]
+                                                                                                },
+                                                                                                {
+                                                                                                  "id": "83",
+                                                                                                  "name": "Internal-41",
+                                                                                                  "sample_id": "NA",
+                                                                                                  "branch_length": 1e-06,
+                                                                                                  "meta": {
+                                                                                                    "Host": "NA",
+                                                                                                    "Host_group": "NA",
+                                                                                                    "Host_type": "NA",
+                                                                                                    "Collection_state": "NA",
+                                                                                                    "Year": "NA"
+                                                                                                  },
+                                                                                                  "confidence": "NA",
+                                                                                                  "children": [
+                                                                                                    {
+                                                                                                      "id": "53",
+                                                                                                      "name": "Internal-42",
+                                                                                                      "sample_id": "NA",
+                                                                                                      "branch_length": 1e-06,
+                                                                                                      "meta": {
+                                                                                                        "Host": "NA",
+                                                                                                        "Host_group": "NA",
+                                                                                                        "Host_type": "NA",
+                                                                                                        "Collection_state": "NA",
+                                                                                                        "Year": "NA"
+                                                                                                      },
+                                                                                                      "confidence": "NA",
+                                                                                                      "children": [
+                                                                                                        {
+                                                                                                          "id": "62",
+                                                                                                          "name": "Internal-43",
+                                                                                                          "sample_id": "NA",
+                                                                                                          "branch_length": 0.0002162976,
+                                                                                                          "meta": {
+                                                                                                            "Host": "NA",
+                                                                                                            "Host_group": "NA",
+                                                                                                            "Host_type": "NA",
+                                                                                                            "Collection_state": "NA",
+                                                                                                            "Year": "NA"
+                                                                                                          },
+                                                                                                          "confidence": "NA",
+                                                                                                          "children": [
+                                                                                                            {
+                                                                                                              "id": "28",
+                                                                                                              "name": "Internal-44",
+                                                                                                              "sample_id": "NA",
+                                                                                                              "branch_length": 1e-06,
+                                                                                                              "meta": {
+                                                                                                                "Host": "NA",
+                                                                                                                "Host_group": "NA",
+                                                                                                                "Host_type": "NA",
+                                                                                                                "Collection_state": "NA",
+                                                                                                                "Year": "NA"
+                                                                                                              },
+                                                                                                              "confidence": "NA",
+                                                                                                              "children": [
+                                                                                                                {
+                                                                                                                  "id": "108",
+                                                                                                                  "name": "Internal-45",
+                                                                                                                  "sample_id": "NA",
+                                                                                                                  "branch_length": 1e-06,
+                                                                                                                  "meta": {
+                                                                                                                    "Host": "NA",
+                                                                                                                    "Host_group": "NA",
+                                                                                                                    "Host_type": "NA",
+                                                                                                                    "Collection_state": "NA",
+                                                                                                                    "Year": "NA"
+                                                                                                                  },
+                                                                                                                  "confidence": "NA",
+                                                                                                                  "children": [
+                                                                                                                    {
+                                                                                                                      "id": "123",
+                                                                                                                      "name": "760707-E1",
+                                                                                                                      "sample_id": "760707-E1",
+                                                                                                                      "branch_length": 1e-06,
+                                                                                                                      "meta": {
+                                                                                                                        "Host": "Bovine",
+                                                                                                                        "Host_group": "Bovine",
+                                                                                                                        "Host_type": "Mammalian",
+                                                                                                                        "Collection_state": "Ohio",
+                                                                                                                        "Year": "2024"
+                                                                                                                      },
+                                                                                                                      "confidence": "NA",
+                                                                                                                      "children": []
+                                                                                                                    },
+                                                                                                                    {
+                                                                                                                      "id": "94",
+                                                                                                                      "name": "760803-E1",
+                                                                                                                      "sample_id": "760803-E1",
+                                                                                                                      "branch_length": 1e-06,
+                                                                                                                      "meta": {
+                                                                                                                        "Host": "Bovine",
+                                                                                                                        "Host_group": "Bovine",
+                                                                                                                        "Host_type": "Mammalian",
+                                                                                                                        "Collection_state": "Ohio",
+                                                                                                                        "Year": "2024"
+                                                                                                                      },
+                                                                                                                      "confidence": "NA",
+                                                                                                                      "children": []
+                                                                                                                    }
+                                                                                                                  ]
+                                                                                                                },
+                                                                                                                {
+                                                                                                                  "id": "8",
+                                                                                                                  "name": "760908-E1",
+                                                                                                                  "sample_id": "760908-E1",
+                                                                                                                  "branch_length": 1e-06,
+                                                                                                                  "meta": {
+                                                                                                                    "Host": "Bovine",
+                                                                                                                    "Host_group": "Bovine",
+                                                                                                                    "Host_type": "Mammalian",
+                                                                                                                    "Collection_state": "Ohio",
+                                                                                                                    "Year": "2024"
+                                                                                                                  },
+                                                                                                                  "confidence": "NA",
+                                                                                                                  "children": []
+                                                                                                                }
+                                                                                                              ]
+                                                                                                            },
+                                                                                                            {
+                                                                                                              "id": "17",
+                                                                                                              "name": "Internal-46",
+                                                                                                              "sample_id": "NA",
+                                                                                                              "branch_length": 2.3646e-06,
+                                                                                                              "meta": {
+                                                                                                                "Host": "NA",
+                                                                                                                "Host_group": "NA",
+                                                                                                                "Host_type": "NA",
+                                                                                                                "Collection_state": "NA",
+                                                                                                                "Year": "NA"
+                                                                                                              },
+                                                                                                              "confidence": "NA",
+                                                                                                              "children": [
+                                                                                                                {
+                                                                                                                  "id": "29",
+                                                                                                                  "name": "760793-E1",
+                                                                                                                  "sample_id": "760793-E1",
+                                                                                                                  "branch_length": 0.0004093083,
+                                                                                                                  "meta": {
+                                                                                                                    "Host": "Bovine",
+                                                                                                                    "Host_group": "Bovine",
+                                                                                                                    "Host_type": "Mammalian",
+                                                                                                                    "Collection_state": "Ohio",
+                                                                                                                    "Year": "2024"
+                                                                                                                  },
+                                                                                                                  "confidence": "NA",
+                                                                                                                  "children": []
+                                                                                                                },
+                                                                                                                {
+                                                                                                                  "id": "37",
+                                                                                                                  "name": "864",
+                                                                                                                  "sample_id": "864",
+                                                                                                                  "branch_length": 0.0039255573,
+                                                                                                                  "meta": {
+                                                                                                                    "Host": "Bovine",
+                                                                                                                    "Host_group": "Bovine",
+                                                                                                                    "Host_type": "Mammalian",
+                                                                                                                    "Collection_state": "Ohio",
+                                                                                                                    "Year": "2024"
+                                                                                                                  },
+                                                                                                                  "confidence": "NA",
+                                                                                                                  "children": []
+                                                                                                                }
+                                                                                                              ]
+                                                                                                            }
+                                                                                                          ]
+                                                                                                        },
+                                                                                                        {
+                                                                                                          "id": "93",
+                                                                                                          "name": "760880-E1",
+                                                                                                          "sample_id": "760880-E1",
+                                                                                                          "branch_length": 0.0002057689,
+                                                                                                          "meta": {
+                                                                                                            "Host": "Bovine",
+                                                                                                            "Host_group": "Bovine",
+                                                                                                            "Host_type": "Mammalian",
+                                                                                                            "Collection_state": "Ohio",
+                                                                                                            "Year": "2024"
+                                                                                                          },
+                                                                                                          "confidence": "NA",
+                                                                                                          "children": []
+                                                                                                        }
+                                                                                                      ]
+                                                                                                    },
+                                                                                                    {
+                                                                                                      "id": "119",
+                                                                                                      "name": "760748-E1",
+                                                                                                      "sample_id": "760748-E1",
+                                                                                                      "branch_length": 1e-06,
+                                                                                                      "meta": {
+                                                                                                        "Host": "Bovine",
+                                                                                                        "Host_group": "Bovine",
+                                                                                                        "Host_type": "Mammalian",
+                                                                                                        "Collection_state": "Ohio",
+                                                                                                        "Year": "2024"
+                                                                                                      },
+                                                                                                      "confidence": "NA",
+                                                                                                      "children": []
+                                                                                                    }
+                                                                                                  ]
+                                                                                                }
+                                                                                              ]
+                                                                                            },
+                                                                                            {
+                                                                                              "id": "97",
+                                                                                              "name": "761223-E1",
+                                                                                              "sample_id": "761223-E1",
+                                                                                              "branch_length": 1e-06,
+                                                                                              "meta": {
+                                                                                                "Host": "Bovine",
+                                                                                                "Host_group": "Bovine",
+                                                                                                "Host_type": "Mammalian",
+                                                                                                "Collection_state": "Ohio",
+                                                                                                "Year": "2024"
+                                                                                              },
+                                                                                              "confidence": "NA",
+                                                                                              "children": []
+                                                                                            }
+                                                                                          ]
+                                                                                        },
+                                                                                        {
+                                                                                          "id": "38",
+                                                                                          "name": "760811-E1",
+                                                                                          "sample_id": "760811-E1",
+                                                                                          "branch_length": 1e-06,
+                                                                                          "meta": {
+                                                                                            "Host": "Bovine",
+                                                                                            "Host_group": "Bovine",
+                                                                                            "Host_type": "Mammalian",
+                                                                                            "Collection_state": "Ohio",
+                                                                                            "Year": "2024"
+                                                                                          },
+                                                                                          "confidence": "NA",
+                                                                                          "children": []
+                                                                                        }
+                                                                                      ]
+                                                                                    },
+                                                                                    {
+                                                                                      "id": "63",
+                                                                                      "name": "760916-E1",
+                                                                                      "sample_id": "760916-E1",
+                                                                                      "branch_length": 0.0002057377,
+                                                                                      "meta": {
+                                                                                        "Host": "Bovine",
+                                                                                        "Host_group": "Bovine",
+                                                                                        "Host_type": "Mammalian",
+                                                                                        "Collection_state": "Ohio",
+                                                                                        "Year": "2024"
+                                                                                      },
+                                                                                      "confidence": "NA",
+                                                                                      "children": []
+                                                                                    }
+                                                                                  ]
+                                                                                },
+                                                                                {
+                                                                                  "id": "118",
+                                                                                  "name": "871",
+                                                                                  "sample_id": "871",
+                                                                                  "branch_length": 1e-06,
+                                                                                  "meta": {
+                                                                                    "Host": "Bovine",
+                                                                                    "Host_group": "Bovine",
+                                                                                    "Host_type": "Mammalian",
+                                                                                    "Collection_state": "Ohio",
+                                                                                    "Year": "2024"
+                                                                                  },
+                                                                                  "confidence": "NA",
+                                                                                  "children": []
+                                                                                }
+                                                                              ]
+                                                                            },
+                                                                            {
+                                                                              "id": "79",
+                                                                              "name": "760919-E1",
+                                                                              "sample_id": "760919-E1",
+                                                                              "branch_length": 0.0002058177,
+                                                                              "meta": {
+                                                                                "Host": "Bovine",
+                                                                                "Host_group": "Bovine",
+                                                                                "Host_type": "Mammalian",
+                                                                                "Collection_state": "Ohio",
+                                                                                "Year": "2024"
+                                                                              },
+                                                                              "confidence": "NA",
+                                                                              "children": []
+                                                                            }
+                                                                          ]
+                                                                        },
+                                                                        {
+                                                                          "id": "70",
+                                                                          "name": "869",
+                                                                          "sample_id": "869",
+                                                                          "branch_length": 0.0002062493,
+                                                                          "meta": {
+                                                                            "Host": "Bovine",
+                                                                            "Host_group": "Bovine",
+                                                                            "Host_type": "Mammalian",
+                                                                            "Collection_state": "Ohio",
+                                                                            "Year": "2024"
+                                                                          },
+                                                                          "confidence": "NA",
+                                                                          "children": []
+                                                                        }
+                                                                      ]
+                                                                    }
+                                                                  ]
+                                                                },
+                                                                {
+                                                                  "id": "71",
+                                                                  "name": "3101262_749193_E1",
+                                                                  "sample_id": "3101262_749193_E1",
+                                                                  "branch_length": 0.0027474382,
+                                                                  "meta": {
+                                                                    "Host": "Snow goose",
+                                                                    "Host_group": "Goose",
+                                                                    "Host_type": "Avian",
+                                                                    "Collection_state": "Kansas",
+                                                                    "Year": "2023"
+                                                                  },
+                                                                  "confidence": "NA",
+                                                                  "children": []
+                                                                }
+                                                              ]
+                                                            },
+                                                            {
+                                                              "id": "18",
+                                                              "name": "2023_USA_Chicken",
+                                                              "sample_id": "2023_USA_Chicken",
+                                                              "branch_length": 0.006733548,
+                                                              "meta": {
+                                                                "Host": "Chicken",
+                                                                "Host_group": "Reference",
+                                                                "Host_type": "Avian",
+                                                                "Collection_state": "USA",
+                                                                "Year": "2023"
+                                                              },
+                                                              "confidence": "NA",
+                                                              "children": []
+                                                            }
+                                                          ]
+                                                        },
+                                                        {
+                                                          "id": "0",
+                                                          "name": "Internal-47",
+                                                          "sample_id": "NA",
+                                                          "branch_length": 0.0023933889,
+                                                          "meta": {
+                                                            "Host": "NA",
+                                                            "Host_group": "NA",
+                                                            "Host_type": "NA",
+                                                            "Collection_state": "NA",
+                                                            "Year": "NA"
+                                                          },
+                                                          "confidence": "NA",
+                                                          "children": [
+                                                            {
+                                                              "id": "66",
+                                                              "name": "Internal-48",
+                                                              "sample_id": "NA",
+                                                              "branch_length": 0.0087844521,
+                                                              "meta": {
+                                                                "Host": "NA",
+                                                                "Host_group": "NA",
+                                                                "Host_type": "NA",
+                                                                "Collection_state": "NA",
+                                                                "Year": "NA"
+                                                              },
+                                                              "confidence": "NA",
+                                                              "children": [
+                                                                {
+                                                                  "id": "23",
+                                                                  "name": "3101253_749266",
+                                                                  "sample_id": "3101253_749266",
+                                                                  "branch_length": 0.0213316719,
+                                                                  "meta": {
+                                                                    "Host": "Raccoon",
+                                                                    "Host_group": "Other mammal",
+                                                                    "Host_type": "Mammalian",
+                                                                    "Collection_state": "Kentucky",
+                                                                    "Year": "2023"
+                                                                  },
+                                                                  "confidence": "NA",
+                                                                  "children": []
+                                                                },
+                                                                {
+                                                                  "id": "114",
+                                                                  "name": "3101258_749276",
+                                                                  "sample_id": "3101258_749276",
+                                                                  "branch_length": 2.1736e-06,
+                                                                  "meta": {
+                                                                    "Host": "Bonaparte's gull",
+                                                                    "Host_group": "Other bird",
+                                                                    "Host_type": "Avian",
+                                                                    "Collection_state": "South Carolina",
+                                                                    "Year": "2024"
+                                                                  },
+                                                                  "confidence": "NA",
+                                                                  "children": []
+                                                                }
+                                                              ]
+                                                            },
+                                                            {
+                                                              "id": "56",
+                                                              "name": "Internal-49",
+                                                              "sample_id": "NA",
+                                                              "branch_length": 0.0232805857,
+                                                              "meta": {
+                                                                "Host": "NA",
+                                                                "Host_group": "NA",
+                                                                "Host_type": "NA",
+                                                                "Collection_state": "NA",
+                                                                "Year": "NA"
+                                                              },
+                                                              "confidence": "NA",
+                                                              "children": [
+                                                                {
+                                                                  "id": "124",
+                                                                  "name": "2002_HongKong_Goose",
+                                                                  "sample_id": "2002_HongKong_Goose",
+                                                                  "branch_length": 0.0049885406,
+                                                                  "meta": {
+                                                                    "Host": "Goose",
+                                                                    "Host_group": "Reference",
+                                                                    "Host_type": "Avian",
+                                                                    "Collection_state": "Hong Kong",
+                                                                    "Year": "2002"
+                                                                  },
+                                                                  "confidence": "NA",
+                                                                  "children": []
+                                                                },
+                                                                {
+                                                                  "id": "82",
+                                                                  "name": "2009_Egypt_Chicken",
+                                                                  "sample_id": "2009_Egypt_Chicken",
+                                                                  "branch_length": 0.016682522,
+                                                                  "meta": {
+                                                                    "Host": "Chicken",
+                                                                    "Host_group": "Reference",
+                                                                    "Host_type": "Avian",
+                                                                    "Collection_state": "Egypt",
+                                                                    "Year": "2009"
+                                                                  },
+                                                                  "confidence": "NA",
+                                                                  "children": []
+                                                                }
+                                                              ]
+                                                            }
+                                                          ]
+                                                        }
+                                                      ]
+                                                    },
+                                                    {
+                                                      "id": "14",
+                                                      "name": "3101255_749268",
+                                                      "sample_id": "3101255_749268",
+                                                      "branch_length": 0.0393843137,
+                                                      "meta": {
+                                                        "Host": "Canada goose",
+                                                        "Host_group": "Goose",
+                                                        "Host_type": "Avian",
+                                                        "Collection_state": "North Carolina",
+                                                        "Year": "2023"
+                                                      },
+                                                      "confidence": "NA",
+                                                      "children": []
+                                                    }
+                                                  ]
+                                                },
+                                                {
+                                                  "id": "104",
+                                                  "name": "Internal-50",
+                                                  "sample_id": "NA",
+                                                  "branch_length": 0.014416736,
+                                                  "meta": {
+                                                    "Host": "NA",
+                                                    "Host_group": "NA",
+                                                    "Host_type": "NA",
+                                                    "Collection_state": "NA",
+                                                    "Year": "NA"
+                                                  },
+                                                  "confidence": "NA",
+                                                  "children": [
+                                                    {
+                                                      "id": "69",
+                                                      "name": "3101254_749267",
+                                                      "sample_id": "3101254_749267",
+                                                      "branch_length": 0.0094120177,
+                                                      "meta": {
+                                                        "Host": "Raccoon",
+                                                        "Host_group": "Other mammal",
+                                                        "Host_type": "Mammalian",
+                                                        "Collection_state": "Kentucky",
+                                                        "Year": "2023"
+                                                      },
+                                                      "confidence": "NA",
+                                                      "children": []
+                                                    },
+                                                    {
+                                                      "id": "5",
+                                                      "name": "3101256_749273",
+                                                      "sample_id": "3101256_749273",
+                                                      "branch_length": 0.0010116212,
+                                                      "meta": {
+                                                        "Host": "Wood duck",
+                                                        "Host_group": "Duck",
+                                                        "Host_type": "Avian",
+                                                        "Collection_state": "Georgia",
+                                                        "Year": "2024"
+                                                      },
+                                                      "confidence": "NA",
+                                                      "children": []
+                                                    }
+                                                  ]
+                                                }
+                                              ]
+                                            },
+                                            {
+                                              "id": "105",
+                                              "name": "3101270_749272",
+                                              "sample_id": "3101270_749272",
+                                              "branch_length": 0.0018517292,
+                                              "meta": {
+                                                "Host": "Wood duck",
+                                                "Host_group": "Duck",
+                                                "Host_type": "Avian",
+                                                "Collection_state": "Georgia",
+                                                "Year": "2024"
+                                              },
+                                              "confidence": "NA",
+                                              "children": []
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "id": "100",
+                                          "name": "Internal-51",
+                                          "sample_id": "NA",
+                                          "branch_length": 0.0002042298,
+                                          "meta": {
+                                            "Host": "NA",
+                                            "Host_group": "NA",
+                                            "Host_type": "NA",
+                                            "Collection_state": "NA",
+                                            "Year": "NA"
+                                          },
+                                          "confidence": "NA",
+                                          "children": [
+                                            {
+                                              "id": "91",
+                                              "name": "Internal-52",
+                                              "sample_id": "NA",
+                                              "branch_length": 0.001512357,
+                                              "meta": {
+                                                "Host": "NA",
+                                                "Host_group": "NA",
+                                                "Host_type": "NA",
+                                                "Collection_state": "NA",
+                                                "Year": "NA"
+                                              },
+                                              "confidence": "NA",
+                                              "children": [
+                                                {
+                                                  "id": "50",
+                                                  "name": "Internal-53",
+                                                  "sample_id": "NA",
+                                                  "branch_length": 0.0019465263,
+                                                  "meta": {
+                                                    "Host": "NA",
+                                                    "Host_group": "NA",
+                                                    "Host_type": "NA",
+                                                    "Collection_state": "NA",
+                                                    "Year": "NA"
+                                                  },
+                                                  "confidence": "NA",
+                                                  "children": [
+                                                    {
+                                                      "id": "11",
+                                                      "name": "Internal-54",
+                                                      "sample_id": "NA",
+                                                      "branch_length": 2.9526e-06,
+                                                      "meta": {
+                                                        "Host": "NA",
+                                                        "Host_group": "NA",
+                                                        "Host_type": "NA",
+                                                        "Collection_state": "NA",
+                                                        "Year": "NA"
+                                                      },
+                                                      "confidence": "NA",
+                                                      "children": [
+                                                        {
+                                                          "id": "89",
+                                                          "name": "3101252_749265",
+                                                          "sample_id": "3101252_749265",
+                                                          "branch_length": 1e-06,
+                                                          "meta": {
+                                                            "Host": "Raccoon",
+                                                            "Host_group": "Other mammal",
+                                                            "Host_type": "Mammalian",
+                                                            "Collection_state": "Kentucky",
+                                                            "Year": "2023"
+                                                          },
+                                                          "confidence": "NA",
+                                                          "children": []
+                                                        },
+                                                        {
+                                                          "id": "92",
+                                                          "name": "Internal-55",
+                                                          "sample_id": "NA",
+                                                          "branch_length": 0.0006450011,
+                                                          "meta": {
+                                                            "Host": "NA",
+                                                            "Host_group": "NA",
+                                                            "Host_type": "NA",
+                                                            "Collection_state": "NA",
+                                                            "Year": "NA"
+                                                          },
+                                                          "confidence": "NA",
+                                                          "children": [
+                                                            {
+                                                              "id": "49",
+                                                              "name": "Internal-56",
+                                                              "sample_id": "NA",
+                                                              "branch_length": 2.0754e-06,
+                                                              "meta": {
+                                                                "Host": "NA",
+                                                                "Host_group": "NA",
+                                                                "Host_type": "NA",
+                                                                "Collection_state": "NA",
+                                                                "Year": "NA"
+                                                              },
+                                                              "confidence": "NA",
+                                                              "children": [
+                                                                {
+                                                                  "id": "15",
+                                                                  "name": "Internal-57",
+                                                                  "sample_id": "NA",
+                                                                  "branch_length": 0.0004111304,
+                                                                  "meta": {
+                                                                    "Host": "NA",
+                                                                    "Host_group": "NA",
+                                                                    "Host_type": "NA",
+                                                                    "Collection_state": "NA",
+                                                                    "Year": "NA"
+                                                                  },
+                                                                  "confidence": "NA",
+                                                                  "children": [
+                                                                    {
+                                                                      "id": "58",
+                                                                      "name": "3101249_750561",
+                                                                      "sample_id": "3101249_750561",
+                                                                      "branch_length": 0.0002198403,
+                                                                      "meta": {
+                                                                        "Host": "Bovine",
+                                                                        "Host_group": "Bovine",
+                                                                        "Host_type": "Mammalian",
+                                                                        "Collection_state": "Ohio",
+                                                                        "Year": "2024"
+                                                                      },
+                                                                      "confidence": "NA",
+                                                                      "children": []
+                                                                    },
+                                                                    {
+                                                                      "id": "112",
+                                                                      "name": "3101248_750560",
+                                                                      "sample_id": "3101248_750560",
+                                                                      "branch_length": 1e-06,
+                                                                      "meta": {
+                                                                        "Host": "Redhead",
+                                                                        "Host_group": "Duck",
+                                                                        "Host_type": "Avian",
+                                                                        "Collection_state": "North Carolina",
+                                                                        "Year": "2024"
+                                                                      },
+                                                                      "confidence": "NA",
+                                                                      "children": []
+                                                                    }
+                                                                  ]
+                                                                },
+                                                                {
+                                                                  "id": "60",
+                                                                  "name": "3101237_750561_E1",
+                                                                  "sample_id": "3101237_750561_E1",
+                                                                  "branch_length": 1e-06,
+                                                                  "meta": {
+                                                                    "Host": "Bovine",
+                                                                    "Host_group": "Bovine",
+                                                                    "Host_type": "Mammalian",
+                                                                    "Collection_state": "Ohio",
+                                                                    "Year": "2024"
+                                                                  },
+                                                                  "confidence": "NA",
+                                                                  "children": []
+                                                                }
+                                                              ]
+                                                            },
+                                                            {
+                                                              "id": "107",
+                                                              "name": "3101236_750560_E1",
+                                                              "sample_id": "3101236_750560_E1",
+                                                              "branch_length": 2.5913e-06,
+                                                              "meta": {
+                                                                "Host": "Redhead",
+                                                                "Host_group": "Duck",
+                                                                "Host_type": "Avian",
+                                                                "Collection_state": "North Carolina",
+                                                                "Year": "2024"
+                                                              },
+                                                              "confidence": "NA",
+                                                              "children": []
+                                                            }
+                                                          ]
+                                                        }
+                                                      ]
+                                                    },
+                                                    {
+                                                      "id": "75",
+                                                      "name": "3101250_750562",
+                                                      "sample_id": "3101250_750562",
+                                                      "branch_length": 0.0010814758,
+                                                      "meta": {
+                                                        "Host": "Mallard",
+                                                        "Host_group": "Duck",
+                                                        "Host_type": "Avian",
+                                                        "Collection_state": "North Carolina",
+                                                        "Year": "2024"
+                                                      },
+                                                      "confidence": "NA",
+                                                      "children": []
+                                                    }
+                                                  ]
+                                                },
+                                                {
+                                                  "id": "43",
+                                                  "name": "3101244_750555",
+                                                  "sample_id": "3101244_750555",
+                                                  "branch_length": 0.0027451874,
+                                                  "meta": {
+                                                    "Host": "Canada goose",
+                                                    "Host_group": "Goose",
+                                                    "Host_type": "Avian",
+                                                    "Collection_state": "North Carolina",
+                                                    "Year": "2024"
+                                                  },
+                                                  "confidence": "NA",
+                                                  "children": []
+                                                }
+                                              ]
+                                            },
+                                            {
+                                              "id": "44",
+                                              "name": "Internal-58",
+                                              "sample_id": "NA",
+                                              "branch_length": 2.4243e-06,
+                                              "meta": {
+                                                "Host": "NA",
+                                                "Host_group": "NA",
+                                                "Host_type": "NA",
+                                                "Collection_state": "NA",
+                                                "Year": "NA"
+                                              },
+                                              "confidence": "NA",
+                                              "children": [
+                                                {
+                                                  "id": "3",
+                                                  "name": "Internal-59",
+                                                  "sample_id": "NA",
+                                                  "branch_length": 0.0002338511,
+                                                  "meta": {
+                                                    "Host": "NA",
+                                                    "Host_group": "NA",
+                                                    "Host_type": "NA",
+                                                    "Collection_state": "NA",
+                                                    "Year": "NA"
+                                                  },
+                                                  "confidence": "NA",
+                                                  "children": [
+                                                    {
+                                                      "id": "25",
+                                                      "name": "Internal-60",
+                                                      "sample_id": "NA",
+                                                      "branch_length": 0.0006355412,
+                                                      "meta": {
+                                                        "Host": "NA",
+                                                        "Host_group": "NA",
+                                                        "Host_type": "NA",
+                                                        "Collection_state": "NA",
+                                                        "Year": "NA"
+                                                      },
+                                                      "confidence": "NA",
+                                                      "children": [
+                                                        {
+                                                          "id": "1",
+                                                          "name": "3101267_749261",
+                                                          "sample_id": "3101267_749261",
+                                                          "branch_length": 0.0026456518,
+                                                          "meta": {
+                                                            "Host": "Wood duck",
+                                                            "Host_group": "Duck",
+                                                            "Host_type": "Avian",
+                                                            "Collection_state": "South Carolina",
+                                                            "Year": "2023"
+                                                          },
+                                                          "confidence": "NA",
+                                                          "children": []
+                                                        },
+                                                        {
+                                                          "id": "85",
+                                                          "name": "3101268_749263",
+                                                          "sample_id": "3101268_749263",
+                                                          "branch_length": 0.0017749959,
+                                                          "meta": {
+                                                            "Host": "Wood duck",
+                                                            "Host_group": "Duck",
+                                                            "Host_type": "Avian",
+                                                            "Collection_state": "South Carolina",
+                                                            "Year": "2023"
+                                                          },
+                                                          "confidence": "NA",
+                                                          "children": []
+                                                        }
+                                                      ]
+                                                    },
+                                                    {
+                                                      "id": "73",
+                                                      "name": "3101269_749271",
+                                                      "sample_id": "3101269_749271",
+                                                      "branch_length": 0.0014213732,
+                                                      "meta": {
+                                                        "Host": "Wood duck",
+                                                        "Host_group": "Duck",
+                                                        "Host_type": "Avian",
+                                                        "Collection_state": "Georgia",
+                                                        "Year": "2023"
+                                                      },
+                                                      "confidence": "NA",
+                                                      "children": []
+                                                    }
+                                                  ]
+                                                },
+                                                {
+                                                  "id": "46",
+                                                  "name": "3101264_749196_E1",
+                                                  "sample_id": "3101264_749196_E1",
+                                                  "branch_length": 0.0016644068,
+                                                  "meta": {
+                                                    "Host": "Wood duck",
+                                                    "Host_group": "Duck",
+                                                    "Host_type": "Avian",
+                                                    "Collection_state": "South Carolina",
+                                                    "Year": "2023"
+                                                  },
+                                                  "confidence": "NA",
+                                                  "children": []
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "id": "121",
+                                      "name": "Internal-61",
+                                      "sample_id": "NA",
+                                      "branch_length": 0.0004159544,
+                                      "meta": {
+                                        "Host": "NA",
+                                        "Host_group": "NA",
+                                        "Host_type": "NA",
+                                        "Collection_state": "NA",
+                                        "Year": "NA"
+                                      },
+                                      "confidence": "NA",
+                                      "children": [
+                                        {
+                                          "id": "27",
+                                          "name": "3101232_750553_E1",
+                                          "sample_id": "3101232_750553_E1",
+                                          "branch_length": 1e-06,
+                                          "meta": {
+                                            "Host": "Canada goose",
+                                            "Host_group": "Goose",
+                                            "Host_type": "Avian",
+                                            "Collection_state": "North Carolina",
+                                            "Year": "2024"
+                                          },
+                                          "confidence": "NA",
+                                          "children": []
+                                        },
+                                        {
+                                          "id": "52",
+                                          "name": "Internal-62",
+                                          "sample_id": "NA",
+                                          "branch_length": 1e-06,
+                                          "meta": {
+                                            "Host": "NA",
+                                            "Host_group": "NA",
+                                            "Host_type": "NA",
+                                            "Collection_state": "NA",
+                                            "Year": "NA"
+                                          },
+                                          "confidence": "NA",
+                                          "children": [
+                                            {
+                                              "id": "33",
+                                              "name": "3101242_750553",
+                                              "sample_id": "3101242_750553",
+                                              "branch_length": 0.0009554899,
+                                              "meta": {
+                                                "Host": "Canada goose",
+                                                "Host_group": "Goose",
+                                                "Host_type": "Avian",
+                                                "Collection_state": "North Carolina",
+                                                "Year": "2024"
+                                              },
+                                              "confidence": "NA",
+                                              "children": []
+                                            },
+                                            {
+                                              "id": "77",
+                                              "name": "3101241_750552",
+                                              "sample_id": "3101241_750552",
+                                              "branch_length": 0.0007410533,
+                                              "meta": {
+                                                "Host": "Canada goose",
+                                                "Host_group": "Goose",
+                                                "Host_type": "Avian",
+                                                "Collection_state": "North Carolina",
+                                                "Year": "2024"
+                                              },
+                                              "confidence": "NA",
+                                              "children": []
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                },
+                                {
+                                  "id": "42",
+                                  "name": "Internal-63",
+                                  "sample_id": "NA",
+                                  "branch_length": 0.0006327082,
+                                  "meta": {
+                                    "Host": "NA",
+                                    "Host_group": "NA",
+                                    "Host_type": "NA",
+                                    "Collection_state": "NA",
+                                    "Year": "NA"
+                                  },
+                                  "confidence": "NA",
+                                  "children": [
+                                    {
+                                      "id": "24",
+                                      "name": "3101247_750559",
+                                      "sample_id": "3101247_750559",
+                                      "branch_length": 0.0002150648,
+                                      "meta": {
+                                        "Host": "American white pelican",
+                                        "Host_group": "Other bird",
+                                        "Host_type": "Avian",
+                                        "Collection_state": "North Carolina",
+                                        "Year": "2024"
+                                      },
+                                      "confidence": "NA",
+                                      "children": []
+                                    },
+                                    {
+                                      "id": "99",
+                                      "name": "3101235_750559_E1",
+                                      "sample_id": "3101235_750559_E1",
+                                      "branch_length": 0.000632613,
+                                      "meta": {
+                                        "Host": "American white pelican",
+                                        "Host_group": "Other bird",
+                                        "Host_type": "Avian",
+                                        "Collection_state": "North Carolina",
+                                        "Year": "2024"
+                                      },
+                                      "confidence": "NA",
+                                      "children": []
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "id": "110",
+                              "name": "3101245_750557",
+                              "sample_id": "3101245_750557",
+                              "branch_length": 1e-06,
+                              "meta": {
+                                "Host": "Redhead",
+                                "Host_group": "Duck",
+                                "Host_type": "Avian",
+                                "Collection_state": "North Carolina",
+                                "Year": "2024"
+                              },
+                              "confidence": "NA",
+                              "children": []
+                            }
+                          ]
+                        },
+                        {
+                          "id": "78",
+                          "name": "3101246_750558",
+                          "sample_id": "3101246_750558",
+                          "branch_length": 1e-06,
+                          "meta": {
+                            "Host": "Redhead",
+                            "Host_group": "Duck",
+                            "Host_type": "Avian",
+                            "Collection_state": "North Carolina",
+                            "Year": "2024"
+                          },
+                          "confidence": "NA",
+                          "children": []
+                        }
+                      ]
+                    },
+                    {
+                      "id": "74",
+                      "name": "3101233_750557_E1",
+                      "sample_id": "3101233_750557_E1",
+                      "branch_length": 1e-06,
+                      "meta": {
+                        "Host": "Redhead",
+                        "Host_group": "Duck",
+                        "Host_type": "Avian",
+                        "Collection_state": "North Carolina",
+                        "Year": "2024"
+                      },
+                      "confidence": "NA",
+                      "children": []
+                    }
+                  ]
+                },
+                {
+                  "id": "10",
+                  "name": "3101234_750558_E1",
+                  "sample_id": "3101234_750558_E1",
+                  "branch_length": 1e-06,
+                  "meta": {
+                    "Host": "Redhead",
+                    "Host_group": "Duck",
+                    "Host_type": "Avian",
+                    "Collection_state": "North Carolina",
+                    "Year": "2024"
+                  },
+                  "confidence": "NA",
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "101",
+              "name": "3101238_750825",
+              "sample_id": "3101238_750825",
+              "branch_length": 0.0002214458,
+              "meta": {
+                "Host": "Redhead",
+                "Host_group": "Duck",
+                "Host_type": "Avian",
+                "Collection_state": "North Carolina",
+                "Year": "2024"
+              },
+              "confidence": "NA",
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": "68",
+          "name": "3101243_750554",
+          "sample_id": "3101243_750554",
+          "branch_length": 0.0056656318,
+          "meta": {
+            "Host": "Mallard",
+            "Host_group": "Duck",
+            "Host_type": "Avian",
+            "Collection_state": "North Carolina",
+            "Year": "2024"
+          },
+          "confidence": "NA",
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "9",
+      "name": "3101239_750826",
+      "sample_id": "3101239_750826",
+      "branch_length": 0.0002118576,
+      "meta": {
+        "Host": "Redhead",
+        "Host_group": "Duck",
+        "Host_type": "Avian",
+        "Collection_state": "North Carolina",
+        "Year": "2024"
+      },
+      "confidence": "NA",
+      "children": []
+    }
+  ]
+}

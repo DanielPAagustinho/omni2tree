@@ -1,0 +1,70 @@
+sample_id,label,Host,Host_Group,Host_Type,Collection_State,Year
+character,character,character,character,character,character,date
+432,432,Bovine,Bovine,Mammalian,Ohio,2024
+439,439,Bovine,Bovine,Mammalian,Ohio,2024
+864,864,Bovine,Bovine,Mammalian,Ohio,2024
+869,869,Bovine,Bovine,Mammalian,Ohio,2024
+871,871,Bovine,Bovine,Mammalian,Ohio,2024
+3101271_749133,3101271_749133,Snow goose,Goose,Avian,Kansas,2023
+3101272_749187,3101272_749187,Snow goose,Goose,Avian,Kansas,2023
+3101261_749191_E1,3101261_749191_E1,Ross's goose,Goose,Avian,Kansas,2023
+3101262_749193_E1,3101262_749193_E1,Snow goose,Goose,Avian,Kansas,2023
+3101263_749194_E1,3101263_749194_E1,Snow goose,Goose,Avian,Kansas,2023
+3101264_749196_E1,3101264_749196_E1,Wood duck,Duck,Avian,South Carolina,2023
+3101251_749255,3101251_749255,Red-tailed hawk,Raptor,Avian,Kansas,2023
+3101265_749256,3101265_749256,Great-horned owl,Raptor,Avian,Kansas,2023
+3101266_749259,3101266_749259,Wood duck,Duck,Avian,South Carolina,2023
+3101267_749261,3101267_749261,Wood duck,Duck,Avian,South Carolina,2023
+3101268_749263,3101268_749263,Wood duck,Duck,Avian,South Carolina,2023
+3101252_749265,3101252_749265,Raccoon,Other mammal,Mammalian,Kentucky,2023
+3101253_749266,3101253_749266,Raccoon,Other mammal,Mammalian,Kentucky,2023
+3101254_749267,3101254_749267,Raccoon,Other mammal,Mammalian,Kentucky,2023
+3101255_749268,3101255_749268,Canada goose,Goose,Avian,North Carolina,2023
+3101269_749271,3101269_749271,Wood duck,Duck,Avian,Georgia,2023
+3101270_749272,3101270_749272,Wood duck,Duck,Avian,Georgia,2024
+3101256_749273,3101256_749273,Wood duck,Duck,Avian,Georgia,2024
+3101257_749274,3101257_749274,Bald eagle,Raptor,Avian,South Carolina,2023
+3101258_749276,3101258_749276,Bonaparte's gull,Other bird,Avian,South Carolina,2024
+3101259_749278,3101259_749278,Black bear,Other mammal,Mammalian,North Carolina,2024
+3101260_749279,3101260_749279,Black bear,Other mammal,Mammalian,North Carolina,2024
+3101240_750551,3101240_750551,Red-tailed hawk,Raptor,Avian,South Carolina,2024
+3101241_750552,3101241_750552,Canada goose,Goose,Avian,North Carolina,2024
+3101232_750553_E1,3101232_750553_E1,Canada goose,Goose,Avian,North Carolina,2024
+3101242_750553,3101242_750553,Canada goose,Goose,Avian,North Carolina,2024
+3101243_750554,3101243_750554,Mallard,Duck,Avian,North Carolina,2024
+3101244_750555,3101244_750555,Canada goose,Goose,Avian,North Carolina,2024
+3101233_750557_E1,3101233_750557_E1,Redhead,Duck,Avian,North Carolina,2024
+3101245_750557,3101245_750557,Redhead,Duck,Avian,North Carolina,2024
+3101234_750558_E1,3101234_750558_E1,Redhead,Duck,Avian,North Carolina,2024
+3101246_750558,3101246_750558,Redhead,Duck,Avian,North Carolina,2024
+3101235_750559_E1,3101235_750559_E1,American white pelican,Other bird,Avian,North Carolina,2024
+3101247_750559,3101247_750559,American white pelican,Other bird,Avian,North Carolina,2024
+3101236_750560_E1,3101236_750560_E1,Redhead,Duck,Avian,North Carolina,2024
+3101248_750560,3101248_750560,Redhead,Duck,Avian,North Carolina,2024
+3101237_750561_E1,3101237_750561_E1,Bovine,Bovine,Mammalian,Ohio,2024
+3101249_750561,3101249_750561,Bovine,Bovine,Mammalian,Ohio,2024
+3101250_750562,3101250_750562,Mallard,Duck,Avian,North Carolina,2024
+3101238_750825,3101238_750825,Redhead,Duck,Avian,North Carolina,2024
+3101239_750826,3101239_750826,Redhead,Duck,Avian,North Carolina,2024
+760707-E1,760707-E1,Bovine,Bovine,Mammalian,Ohio,2024
+760748-E1,760748-E1,Bovine,Bovine,Mammalian,Ohio,2024
+760793-E1,760793-E1,Bovine,Bovine,Mammalian,Ohio,2024
+760803-E1,760803-E1,Bovine,Bovine,Mammalian,Ohio,2024
+760811-E1,760811-E1,Bovine,Bovine,Mammalian,Ohio,2024
+760836-E1,760836-E1,Bovine,Bovine,Mammalian,Ohio,2024
+760880-E1,760880-E1,Bovine,Bovine,Mammalian,Ohio,2024
+760908-E1,760908-E1,Bovine,Bovine,Mammalian,Ohio,2024
+760916-E1,760916-E1,Bovine,Bovine,Mammalian,Ohio,2024
+760919-E1,760919-E1,Bovine,Bovine,Mammalian,Ohio,2024
+761223-E1,761223-E1,Bovine,Bovine,Mammalian,Ohio,2024
+761880-OP,761880-OP,Mountain lion,Other mammal,Mammalian,Nebraska,2024
+761881-OP,761881-OP,Bald eagle,Raptor,Avian,Georgia,2024
+762140-OP,762140-OP,Horned grebe,Other bird,Avian,Virginia,2024
+762141-OP,762141-OP,Horned grebe,Other bird,Avian,Virginia,2024
+762142-OP,762142-OP,Horned grebe,Other bird,Avian,Virginia,2024
+762143-OP,762143-OP,Horned grebe,Other bird,Avian,Virginia,2024
+762144-OP,762144-OP,Peregrine falcon,Raptor,Avian,Virginia,2024
+2024_USA_comm.milk,2024_USA_comm.milk,Bovine,Bovine,Mammalian,Texas,2024
+2023_USA_Chicken,2023_USA_Chicken,Chicken,Reference,Avian,USA,2023
+2009_Egypt_Chicken,2009_Egypt_Chicken,Chicken,Reference,Avian,Egypt,2009
+2002_HongKong_Goose,2002_HongKong_Goose,Goose,Reference,Avian,Hong Kong,2002

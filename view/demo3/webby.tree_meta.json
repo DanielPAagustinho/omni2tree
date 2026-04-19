@@ -1,0 +1,109 @@
+{
+  "name": "webby",
+  "node_count": 128,
+  "leaf_count": 65,
+  "internal_count": 63,
+  "meta_keys": {
+    "Host": {
+      "type": "character",
+      "std_type": "cate",
+      "name": "Host",
+      "NA_count": 63,
+      "min": null,
+      "max": null,
+      "categories": [
+        "Black bear",
+        "Horned grebe",
+        "Ross's goose",
+        "Red-tailed hawk",
+        "Wood duck",
+        "Bald eagle",
+        "Mountain lion",
+        "Snow goose",
+        "Great-horned owl",
+        "Peregrine falcon",
+        "Bovine",
+        "Chicken",
+        "Raccoon",
+        "Bonaparte's gull",
+        "Goose",
+        "Canada goose",
+        "Redhead",
+        "Mallard",
+        "American white pelican"
+      ]
+    },
+    "Host_group": {
+      "type": "character",
+      "std_type": "cate",
+      "name": "Host_group",
+      "NA_count": 63,
+      "min": null,
+      "max": null,
+      "categories": [
+        "Other mammal",
+        "Other bird",
+        "Goose",
+        "Raptor",
+        "Duck",
+        "Bovine",
+        "Reference"
+      ]
+    },
+    "Host_type": {
+      "type": "character",
+      "std_type": "cate",
+      "name": "Host_type",
+      "NA_count": 63,
+      "min": null,
+      "max": null,
+      "categories": [
+        "Mammalian",
+        "Avian"
+      ]
+    },
+    "Collection_state": {
+      "type": "character",
+      "std_type": "cate",
+      "name": "Collection_state",
+      "NA_count": 63,
+      "min": null,
+      "max": null,
+      "categories": [
+        "North Carolina",
+        "Virginia",
+        "Kansas",
+        "South Carolina",
+        "Nebraska",
+        "Texas",
+        "Ohio",
+        "Georgia",
+        "USA",
+        "Kentucky",
+        "Hong Kong",
+        "Egypt"
+      ]
+    },
+    "Year": {
+      "type": "date",
+      "std_type": "cate",
+      "name": "Year",
+      "NA_count": 63,
+      "min": null,
+      "max": null,
+      "categories": [
+        "2024",
+        "2023",
+        "2002",
+        "2009"
+      ]
+    }
+  },
+  "estimated_width": 30,
+  "estimated_height": 65,
+  "entropy": {
+    "dir": null,
+    "files": [],
+    "count_excluding_all_genes": 0
+  }
+}
