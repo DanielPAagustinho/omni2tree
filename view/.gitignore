@@ -6,3 +6,4 @@
 *_backup
 __pycache__/
 **/.DS_Store
+test/

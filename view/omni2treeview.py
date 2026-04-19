@@ -163,7 +163,7 @@ def parse_csv_to_tree(input_file: str,tree_name: str) -> Tuple[Dict[str, Any], D
     children_map = defaultdict(list)
     # meta_keys = {}
 
-    common_header = ["parent", "node", "branch.length", "label","confidence"]
+    common_header = ["parent", "node", "branch.length", "label", "confidence", "sample_id"]
     common_header = [ h.capitalize() for h in common_header]
 
     with open(input_file, newline='') as csvfile:
@@ -227,6 +227,7 @@ def parse_csv_to_tree(input_file: str,tree_name: str) -> Tuple[Dict[str, Any], D
             nodes[node_id] = {
                 "id": node_id,
                 "name": row["Label"],
+                "sample_id": row.get("Sample_id", "NA"),
                 "branch_length": brlen,
                 "meta": meta,
                 "confidence": row["Confidence"],
@@ -432,9 +433,9 @@ if __name__ == "__main__":
 
     meta_dict = load_meta(args.meta)
 
-    final_header = tree_csv["header"] + meta_dict["header"][2:]  # skip sample_id and label columns in meta
+    final_header = tree_csv["header"] + [meta_dict["header"][0]] + meta_dict["header"][2:]  # keep sample_id, skip label
     final_header = [x.capitalize() for x in final_header]
-    final_col_type = ['integer','integer','numeric','character','numeric'] + meta_dict["col_type"][2:]
+    final_col_type = ['integer','integer','numeric','character','numeric'] + [meta_dict["col_type"][0]] + meta_dict["col_type"][2:]
     logging.info(f"> Final header and column types ({len(final_header)}):")
     for idx, col in enumerate(final_header):
         logging.info(f"  {col} --> {final_col_type[idx]}")
@@ -464,8 +465,8 @@ if __name__ == "__main__":
                 logging.warning(f"No metadata found for node '{node_name}'. Filling with NA. If this is not intentional, please check the metadata sample_id/label columns for consistency with the tree node names.")
             # fill with NA
             meta_row = {key: 'NA' for key in meta_dict["header"]}
-        # remove sample_id and label columns
-        meta_values = [meta_row[key] for key in meta_dict["header"][2:]]
+        # keep sample_id for display, skip label because it is already represented as the node name
+        meta_values = [meta_row[meta_dict["header"][0]]] + [meta_row[key] for key in meta_dict["header"][2:]]
         # print(row)
         final_row = row + meta_values
         writer.writerow(final_row)

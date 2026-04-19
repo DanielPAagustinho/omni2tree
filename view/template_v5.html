@@ -497,7 +497,7 @@
                                             <div><strong>Node type:</strong> {{ isLeafNode2Label(selectedNode) }}</div>
                                             <div><strong>Branch Length:</strong> {{ selectedNode &&
                                                 selectedNode.branch_length || null }}</div>
-                                            <div><strong>Sample szie:</strong> {{getSampleSize(selectedNode)}} <helper
+                                            <div><strong>Sample size:</strong> {{getSampleSize(selectedNode)}} <helper
                                                     :color="'#000'">
                                                     Sample Size only count the samples(leaf nodes). Non-leaf nodes will be
                                                     ignored.</helper>
@@ -586,7 +586,7 @@
                                                     </tr>
                                                 </thead>
                                                 <tbody>
-                                                    <tr v-for="row in pagedTableData" :key="row['Sample Name']">
+                                                    <tr v-for="row in pagedTableData" :key="row['sample_id'] + '-' + row['Label']">
                                                         <td v-for="header in selectedNodeChildrenMata.table_header"
                                                             :key="header" style="padding: 4px;">
                                                             {{ row[header] }}
@@ -1260,7 +1260,15 @@
                             .enter()
                             .append("path")
                             .attr("class", "link")
-                            .attr("d", d => `M${d.source.x},${d.source.y}V${d.target.y}H${d.target.x}`);
+                            .attr("d", d => `M${d.source.x},${d.source.y}V${d.target.y}H${d.target.x}`)
+                            .style("stroke-width", d => {
+                                if (!isHighlightMode) return 1.5;
+                                return (highlightNodeIdSet.has(d.source.data.id) && highlightNodeIdSet.has(d.target.data.id)) ? 8 : 1.5;
+                            })
+                            .style("stroke", d => {
+                                if (!isHighlightMode) return "#AFAFAF";
+                                return (highlightNodeIdSet.has(d.source.data.id) && highlightNodeIdSet.has(d.target.data.id)) ? "#AFAFAF" : "#AFAFAF";
+                            });
                     }
 
                     function renderNodes(group, root, colors) {
@@ -1284,6 +1292,9 @@
                         nodes.each(function (d) {
                             const r = d.data.radius || 3;
                             const nodeGroup = d3.select(this);
+                            const isSubtreeHighlightedNode = highlightNodeIdSet.has(d.data.id);
+                            const outlineStroke = isSubtreeHighlightedNode ? "red" : "black";
+                            const outlineStrokeWidth = isSubtreeHighlightedNode ? 2 : 0;
 
                             // capture the click event on the node group
                             nodeGroup.on("click", () => {
@@ -1308,8 +1319,8 @@
                                     .attr("width", side)
                                     .attr("height", side)
                                     .attr("fill", "none")
-                                    .attr("stroke", "black")
-                                    .attr("stroke-width", 0);
+                                    .attr("stroke", outlineStroke)
+                                    .attr("stroke-width", outlineStrokeWidth);
 
                                 // left top (7x7)
                                 nodeGroup.append("rect")
@@ -1407,8 +1418,8 @@
                                     .attr("class", "outline")
                                     .attr("r", r)
                                     .attr("fill", "none")
-                                    .attr("stroke", "black")
-                                    .attr("stroke-width", 0);
+                                    .attr("stroke", outlineStroke)
+                                    .attr("stroke-width", outlineStrokeWidth);
 
                                 const pie = d3.pie().value(d => d.value)(pieData);
                                 const arc = d3.arc().innerRadius(0).outerRadius(r);
@@ -1458,7 +1469,7 @@
                     if (this.highlightedNodeId !== null) {
                         d3.select(`#node-${this.highlightedNodeId} .outline`)
                             .attr("stroke", "red")
-                            .attr("stroke-width", 2);
+                            .attr("stroke-width", 3);
                     }
 
                     this.node_list = root.descendants().map(d => {
@@ -1549,9 +1560,12 @@
                         const metaKeys = firstWithMeta ? Object.keys(firstWithMeta.data.meta || {}) : [];
 
                         d.data.cached_leaf_table = {
-                            table_header: ["Sample Name", ...metaKeys],
+                            table_header: ["sample_id", "Label", ...metaKeys],
                             table_data: leaves.map(n => {
-                                const row = { "Sample Name": n.data.name || "(unnamed)" };
+                                const row = {
+                                    "sample_id": n.data.sample_id || "NA",
+                                    "Label": n.data.name || "(unnamed)"
+                                };
                                 for (const k of metaKeys) {
                                     row[k] = n.data.meta ? n.data.meta[k] : null;
                                 }
