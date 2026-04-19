@@ -292,18 +292,33 @@
                                         <strong>Current canvas size:</strong> {{ svgwidth }} × {{ svgheight }}
                                     </div>
 
-                                    <div style="display: flex; flex-direction: column; align-items: center; gap: 10px;">
-                                        <div style="display: flex; gap: 10px;">
-                                            <button @click="changeCanvasReDrawTree('width', 500)">Increase
-                                                Width</button>
-                                            <button @click="changeCanvasReDrawTree('width', -500)">Decrease
-                                                Width</button>
+                                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                                        <div>
+                                            <div style="font-weight: bold; margin-bottom: 6px;">Adjust canvas size</div>
+                                            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                                <input v-model.number="canvasWidthInput" type="number" min="200" step="10"
+                                                    style="width: 70px; padding: 4px 6px; border: 1px solid #ccc; border-radius: 4px;">
+                                                <span>×</span>
+                                                <input v-model.number="canvasHeightInput" type="number" min="200" step="10"
+                                                    style="width: 70px; padding: 4px 6px; border: 1px solid #ccc; border-radius: 4px;">
+                                                <button @click="applyCanvasResize">apply</button>
+                                                <button @click="resetCanvasResize">reset</button>
+                                            </div>
                                         </div>
-                                        <div style="display: flex; gap: 10px;">
-                                            <button @click="changeCanvasReDrawTree('height', 500)">Increase
-                                                Height</button>
-                                            <button @click="changeCanvasReDrawTree('height', -500)">Decrease
-                                                Height</button>
+                                        <div>
+                                            <div style="font-weight: bold; margin-bottom: 6px;">Adjust node size</div>
+                                            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                                <input v-model.number="nodeSizeFactorInput" type="number" min="0.1" step="0.1"
+                                                    style="width: 80px; padding: 4px 6px; border: 1px solid #ccc; border-radius: 4px;">
+                                                <input v-model.number="minNodeSizeInput" type="number" min="0.1" step="0.1"
+                                                    style="width: 80px; padding: 4px 6px; border: 1px solid #ccc; border-radius: 4px;"
+                                                    placeholder="min size">
+                                                <input v-model.number="maxNodeSizeInput" type="number" min="0.1" step="0.1"
+                                                    style="width: 80px; padding: 4px 6px; border: 1px solid #ccc; border-radius: 4px;"
+                                                    placeholder="max size">
+                                                <button @click="applyNodeSizeSettings">apply</button>
+                                                <button @click="resetNodeSizeSettings">reset</button>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -783,6 +798,16 @@
                     meta_keys: {},
                     svgwidth: 1500,
                     svgheight: 900,
+                    defaultSvgwidth: 1500,
+                    defaultSvgheight: 900,
+                    canvasWidthInput: 1500,
+                    canvasHeightInput: 900,
+                    nodeSizeFactor: 1,
+                    nodeSizeFactorInput: 1,
+                    minNodeSize: 3,
+                    maxNodeSize: 10,
+                    minNodeSizeInput: 3,
+                    maxNodeSizeInput: 10,
                     currentPage: 1,
                     pageSize: 10,
                     color_cache_map: {},
@@ -967,14 +992,67 @@
                 },
 
 
-                changeCanvasReDrawTree(direction, operation) {
-                    if (direction === "width") {
-                        this.svgwidth += operation;
+                applyCanvasResize() {
+                    const nextWidth = Number(this.canvasWidthInput);
+                    const nextHeight = Number(this.canvasHeightInput);
 
-                    } else if (direction === "height") {
-                        this.svgheight += operation;
-                    }
+                    if (!Number.isFinite(nextWidth) || !Number.isFinite(nextHeight)) return;
+
+                    this.svgwidth = Math.max(200, Math.round(nextWidth));
+                    this.svgheight = Math.max(200, Math.round(nextHeight));
+                    this.canvasWidthInput = this.svgwidth;
+                    this.canvasHeightInput = this.svgheight;
                     this.svg.attr("viewBox", `0 0 ${this.svgwidth} ${this.svgheight}`);
+                    this.drawTree();
+                },
+
+                resetCanvasResize() {
+                    this.svgwidth = this.defaultSvgwidth;
+                    this.svgheight = this.defaultSvgheight;
+                    this.canvasWidthInput = this.defaultSvgwidth;
+                    this.canvasHeightInput = this.defaultSvgheight;
+                    this.svg.attr("viewBox", `0 0 ${this.svgwidth} ${this.svgheight}`);
+                    this.drawTree();
+                },
+
+                updateNodeRadii() {
+                    if (!this.root_tree) return;
+                    const scaledMinRadius = this.minNodeSize * this.nodeSizeFactor;
+                    const scaledMaxRadius = this.maxNodeSize * this.nodeSizeFactor;
+                    const radiusScaler = this.createRadiusScaler(this.root_tree, scaledMinRadius, scaledMaxRadius);
+                    this.root_tree.descendants().forEach(d => {
+                        d.data.radius = radiusScaler(d.data.nchild);
+                    });
+                },
+
+                applyNodeSizeSettings() {
+                    const nextFactor = Number(this.nodeSizeFactorInput);
+                    const nextMinNodeSize = Number(this.minNodeSizeInput);
+                    const nextMaxNodeSize = Number(this.maxNodeSizeInput);
+
+                    if (!Number.isFinite(nextFactor) || nextFactor <= 0) return;
+                    if (!Number.isFinite(nextMinNodeSize) || nextMinNodeSize <= 0) return;
+                    if (!Number.isFinite(nextMaxNodeSize) || nextMaxNodeSize <= 0) return;
+                    if (nextMaxNodeSize < nextMinNodeSize) return;
+
+                    this.nodeSizeFactor = nextFactor;
+                    this.minNodeSize = nextMinNodeSize;
+                    this.maxNodeSize = nextMaxNodeSize;
+                    this.nodeSizeFactorInput = this.nodeSizeFactor;
+                    this.minNodeSizeInput = this.minNodeSize;
+                    this.maxNodeSizeInput = this.maxNodeSize;
+                    this.updateNodeRadii();
+                    this.drawTree();
+                },
+
+                resetNodeSizeSettings() {
+                    this.nodeSizeFactor = 1;
+                    this.minNodeSize = 3;
+                    this.maxNodeSize = 10;
+                    this.nodeSizeFactorInput = 1;
+                    this.minNodeSizeInput = 3;
+                    this.maxNodeSizeInput = 10;
+                    this.updateNodeRadii();
                     this.drawTree();
                 },
 
@@ -1179,13 +1257,16 @@
                     return count;
                 },
 
-                createRadiusScaler(root) {
+                createRadiusScaler(root, minRadius = 3, maxRadius = 10) {
                     const counts = root.descendants().map(d => d.data.nchild);
                     const min = Math.sqrt(Math.min(...counts) + 1);
                     const max = Math.sqrt(Math.max(...counts) + 1);
+                    if (max === min) {
+                        return () => (minRadius + maxRadius) / 2;
+                    }
                     return (n) => {
                         const scaled = Math.sqrt(n + 1);
-                        return ((scaled - min) / (max - min)) * (10 - 3) + 3;
+                        return ((scaled - min) / (max - min)) * (maxRadius - minRadius) + minRadius;
                     };
                 },
 
@@ -1263,7 +1344,7 @@
                             .attr("d", d => `M${d.source.x},${d.source.y}V${d.target.y}H${d.target.x}`)
                             .style("stroke-width", d => {
                                 if (!isHighlightMode) return 1.5;
-                                return (highlightNodeIdSet.has(d.source.data.id) && highlightNodeIdSet.has(d.target.data.id)) ? 8 : 1.5;
+                                return (highlightNodeIdSet.has(d.source.data.id) && highlightNodeIdSet.has(d.target.data.id)) ? 4 : 1.5;
                             })
                             .style("stroke", d => {
                                 if (!isHighlightMode) return "#AFAFAF";
@@ -1524,6 +1605,16 @@
                     const estimatedWidth = this.meta_keys["estimated_width"] || 100;
                     this.svgwidth = Math.min(Math.max(estimatedWidth * 80, 1000), 5000);
                     this.svgheight = Math.min(Math.max(estimatedWidth * 2, 1300), 4000);
+                    this.defaultSvgwidth = this.svgwidth;
+                    this.defaultSvgheight = this.svgheight;
+                    this.canvasWidthInput = this.svgwidth;
+                    this.canvasHeightInput = this.svgheight;
+                    this.nodeSizeFactor = 1;
+                    this.nodeSizeFactorInput = 1;
+                    this.minNodeSize = 3;
+                    this.maxNodeSize = 10;
+                    this.minNodeSizeInput = 3;
+                    this.maxNodeSizeInput = 10;
                     // console.log(this.meta_names);
                     let color_cache_map = {}
                     this.meta_names.map(k => {
@@ -1575,8 +1666,7 @@
                     });
 
                     this.assign_nchildren(this.root_tree);
-                    const radiusScaler = this.createRadiusScaler(this.root_tree);
-                    this.root_tree.descendants().forEach(d => d.data.radius = radiusScaler(d.data.nchild));
+                    this.updateNodeRadii();
                     Object.keys(color_cache_map).forEach((key) => {
                         let item = color_cache_map[key];
                         const colorMap = this.getColors(Array.from(item.categories));
