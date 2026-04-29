@@ -1,7 +1,7 @@
 
 # Welcome to Omni2tree!!
 
-Omni2tree is a new version of Read2tree that consists of an end-to-end workflow to (i) create a reference database via OMA Standalone from coding sequences retrieved from NCBI accessions, (ii) process read samples with optional deduplication and downsampling, and (iii) generate phylogenetic trees that combine the reference assemblies with consensus sequences derived from the read samples. Moreover, it includes metadata integration with an interactive HTML visualization using Omni2treeView, Shannon entropy analysis and plotting from the merged MSAs, and a utility to bulk-download SRA runs or experiments.
+Omni2tree is a new version of Read2tree that consists of an end-to-end workflow to (i) create a reference database via OMA Standalone from coding sequences retrieved from NCBI accessions, (ii) process read samples with optional deduplication and downsampling, and (iii) generate phylogenetic trees that combine the reference assemblies with consensus sequences derived from the read samples. For segmented viruses, Omni2tree can be run on individual segments or selected subsets of segments, enabling users to investigate reassortment patterns or focus on specific genomic regions. Moreover, it includes metadata integration with an interactive HTML visualization using Omni2treeView, Shannon entropy analysis and plotting from the merged MSAs, and a utility to bulk-download SRA runs or experiments.
 
 ## Table of Contents
 
@@ -209,6 +209,8 @@ The accession file must be a comma-separated values (CSV) text file, with the fi
 3. **Third and onward (required):** One or more accession numbers (comma-separated) to obtain coding sequences. Accepts NCBI Nucleotide database accessions and assembly identifiers (GCF_/GCA_). Header: accession(s).
 
 Commented lines starting with `#` are ignored.
+
+For segmented viruses, include only the accessions corresponding to the segment(s) of interest if the goal is to analyze reassortment or focus on a subset of the genome.
 
 #### **Example Input Files**
 
