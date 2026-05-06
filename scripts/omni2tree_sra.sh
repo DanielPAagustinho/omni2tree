@@ -364,7 +364,7 @@ for line in "${lines[@]}"; do
 
             # Convert to FASTQ
       log_info "   Converting to FASTQ..."
-      cmd=(fasterq-dump)
+      cmd=(fasterq-dump --temp "$species_outdir")
       [[ "$layout" == "PAIRED" ]] && cmd+=(--split-files)
       if "${cmd[@]}" "$SRA_PATH" -O "$species_outdir" </dev/null; then
         moved=0
@@ -448,7 +448,7 @@ for line in "${lines[@]}"; do
         fi
 
         log_info "      Converting .sra to FASTQ..."
-        cmd=(fasterq-dump)
+        cmd=(fasterq-dump --temp "$species_outdir")
         [[ "$layout" == "PAIRED" ]] && cmd+=(--split-files)
         if "${cmd[@]}" "$SRA_PATH" -O "$species_outdir" </dev/null; then
           moved=0
