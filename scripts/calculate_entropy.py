@@ -60,6 +60,28 @@ def process_entropy(position_df):
         'most_common_char': most_common
     })
 
+
+def select_position_column(pos_df, use_reference_positions):
+    """Choose the coordinate column for entropy grouping."""
+    if use_reference_positions:
+        if 'position_reference' not in pos_df.columns:
+            print("\nError: --use_reference_positions specified but position_reference column not found", file=sys.stderr)
+            print("       Run msa_to_position_table.py with --reference_id to generate reference positions.", file=sys.stderr)
+            sys.exit(1)
+        print("\n*** Using reference-based positions (position_reference column) ***")
+        print("This provides ungapped positions in the selected reference sequence")
+        return 'position_reference'
+
+    if 'position' not in pos_df.columns:
+        print("Error: Position table does not contain required 'position' column", file=sys.stderr)
+        sys.exit(1)
+
+    if 'position_reference' in pos_df.columns:
+        print("\n*** Using alignment positions (position column) ***")
+        print("  Reference positions are available; pass --use_reference_positions to use them")
+
+    return 'position'
+
 def main():
     parser = argparse.ArgumentParser(
         description='Calculate Shannon entropy from position table',
@@ -76,6 +98,8 @@ def main():
                         help='Columns to group by (must be in metadata)')
     parser.add_argument('--min_samples', type=int, default=5,
                         help='Minimum samples per position (default: 5)')
+    parser.add_argument('--use_reference_positions', action='store_true',
+                        help='Use position_reference instead of alignment position. Requires msa_to_position_table.py --reference_id.')
     parser.add_argument('--exclude_gaps', action='store_true',
                         help='Exclude gaps (-) from entropy calculation')
     
@@ -93,6 +117,19 @@ def main():
     print(f"  Records: {len(pos_df):,}")
     print(f"  Samples: {pos_df['label'].nunique()}")
     print(f"  Genes: {pos_df['gene'].nunique()}")
+
+    position_col = select_position_column(pos_df, args.use_reference_positions)
+
+    if args.use_reference_positions:
+        before = len(pos_df)
+        pos_df = pos_df[pos_df[position_col].notna()]
+        filtered = before - len(pos_df)
+        if filtered > 0:
+            print(f"  Filtered {filtered:,} records at gap positions in the reference sequence")
+        print(f"  Remaining records: {len(pos_df):,}")
+        if pos_df.empty:
+            print("Error: No records remain after filtering reference-gap positions", file=sys.stderr)
+            sys.exit(1)
     
     # Load and merge metadata if provided
     if args.metadata:
@@ -118,7 +155,7 @@ def main():
         print(f"Excluded {before - len(pos_df):,} gaps")
     
     # Set up grouping columns
-    group_cols = ['gene', 'og', 'position', 'seq_type']
+    group_cols = ['gene', 'og', position_col, 'seq_type']
     if args.group_by:
         group_cols = args.group_by + group_cols
     
@@ -127,6 +164,8 @@ def main():
     
     # Calculate entropy
     entropy_df = pos_df.groupby(group_cols).apply(process_entropy).reset_index()
+    if position_col != 'position':
+        entropy_df = entropy_df.rename(columns={position_col: 'position'})
     
     # Filter by minimum samples
     before = len(entropy_df)
@@ -134,6 +173,9 @@ def main():
     filtered = before - len(entropy_df)
     if filtered > 0:
         print(f"  Filtered {filtered} positions with < {args.min_samples} samples")
+    if entropy_df.empty:
+        print("Error: Entropy table is empty after applying --min_samples", file=sys.stderr)
+        sys.exit(1)
     
     # Sort
     sort_cols = ['gene', 'position']
