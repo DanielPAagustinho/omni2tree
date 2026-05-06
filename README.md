@@ -369,13 +369,14 @@ This last step executes the following workflow:
 | `--temp_dir` | Optional temp directory. |
 | `--debug` | Keep temporary files. |
 | `-l, --label` | Optional visualization label. **Default:** `Omni2tree_Tree`. |
+| `--reference_id` | Optional reference sequence ID or metadata label for entropy coordinates. When set, Step 3 maps alignment columns to ungapped reference positions and calculates entropy on those positions. |
 | `--exclude_pattern` | Regex to exclude sample IDs during entropy table generation. Examples: `s0`, `RespiratorysyncytialvirusA`, `MinION_18_SRR33779449`, or a regex such as `^(MinION|NextSeq)_` to match multiple readsets. |
 | `--filter_column` | Metadata column used to filter samples in entropy step 1 (requires `--filter_value`). |
 | `--filter_value` | Metadata value kept in entropy step 1 (requires `--filter_column`). |
 | `--group_by` | One or more metadata columns to group entropy calculations. |
 | `--min_samples` | Minimum samples per position for entropy. |
 | `--exclude_gaps` | Exclude gap character (`-`) before entropy calculation. |
-| `--add_domain` | Optional domain CSV (`gene,domain,start,end`) to add domain ranges to per-gene entropy plots. The `gene` value must match the `gene` column in `stats/entropy/OG_genes_entropy.csv` generated in step 1 from `stats/References_OGs/OG_genes.tsv`. |
+| `--add_domain` | Optional domain CSV (`gene,domain,start,end`) to add domain ranges to per-gene entropy plots. Coordinates are interpreted in the entropy coordinate system: alignment positions by default, reference positions with `--reference_id`. The `gene` value must match the `gene` column in `stats/entropy/OG_genes_entropy.csv` generated in step 1 from `stats/References_OGs/OG_genes.tsv`. |
 | `-h, --help` | Show help. |
 
 ### **Metadata Input Format (`-m`)**
@@ -637,6 +638,19 @@ python msa_to_position_table.py \
     --exclude_pattern s0
 ```
 
+#### Reference-Based Coordinates
+
+To calculate entropy on biologically meaningful positions, provide the reference sequence ID or the metadata label used in the Step 3 visualization metadata:
+
+```bash
+python msa_to_position_table.py \
+    --msa_dir MSA/hepc/AA \
+    --og_table hepc_ogs.csv \
+    --output hepc_aa_positions.csv \
+    --seq_type AA \
+    --reference_id s0337
+```
+
 #### Filter by Metadata
 
 Process only samples from a specific genotype:
@@ -660,6 +674,7 @@ python msa_to_position_table.py \
     --og_table hepc_ogs.csv         # OG to gene mapping
     --output positions.csv          # Output file
     --seq_type AA                   # AA or DNA
+    --reference_id s0337            # Add reference-coordinate mapping (optional)
     --exclude_pattern s0            # Pattern to exclude (optional)
     --include_all                   # Override exclusion (optional)
     --metadata metadata.csv         # Metadata for filtering (optional)
@@ -670,6 +685,8 @@ python msa_to_position_table.py \
 **Output:** CSV with columns:
 - `label` - Sample identifier
 - `position` - Position in alignment (1-indexed)
+- `position_alignment` - Alignment position when `--reference_id` is used
+- `position_reference` - Ungapped reference position when `--reference_id` is used
 - `character` - Amino acid or nucleotide at this position
 - `og` - Ortholog group (e.g., OG1)
 - `gene` - Gene/protein name (e.g., NS3)
@@ -722,13 +739,14 @@ python calculate_entropy.py \
     --metadata metadata.csv          # Metadata for grouping
     --group_by genotype              # Group by column(s)
     --min_samples 10                 # Min samples per position (default: 5)
+    --use_reference_positions        # Use position_reference from --reference_id
     --exclude_gaps                   # Exclude gaps from calculation
 ```
 
 **Output:** CSV with columns:
 - `gene` - Gene/protein name
 - `og` - Ortholog group
-- `position` - Position in alignment
+- `position` - Position used for entropy (`alignment` by default, reference coordinate with `--use_reference_positions`)
 - `seq_type` - AA or DNA
 - `entropy` - Shannon entropy (bits)
 - `n_samples` - Number of samples at this position
