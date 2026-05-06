@@ -35,7 +35,58 @@ def read_phylip_msa(filepath):
         print(f"Error reading {filepath}: {e}", file=sys.stderr)
         return None
 
-def parse_msa_to_dataframe(msa_file, og_name, gene_name, seq_type):
+def map_alignment_to_reference_positions(alignment, reference_id, metadata_label_lookup=None):
+    """
+    Map alignment positions to ungapped positions in a reference sequence.
+
+    The reference can be matched by raw MSA ID, normalized MSA ID, sanitized
+    label, or metadata label when label mapping is active.
+    """
+    reference_query = str(reference_id).strip()
+    reference_query_sanitized = sanitize_view_label(reference_query)
+    reference_seq = None
+    matched_id = None
+
+    for record in alignment:
+        raw_id = record.id.strip()
+        normalized_id = normalize_msa_id(raw_id)
+        candidate_ids = {
+            raw_id,
+            normalized_id,
+            sanitize_view_label(raw_id),
+            sanitize_view_label(normalized_id),
+        }
+
+        if metadata_label_lookup:
+            mapped_label = metadata_label_lookup.get(normalized_id) or metadata_label_lookup.get(raw_id)
+            if mapped_label:
+                mapped_label = str(mapped_label).strip()
+                candidate_ids.add(mapped_label)
+                candidate_ids.add(sanitize_view_label(mapped_label))
+
+        if reference_query in candidate_ids or reference_query_sanitized in candidate_ids:
+            reference_seq = str(record.seq)
+            matched_id = raw_id
+            break
+
+    if reference_seq is None:
+        raise ValueError(f"Reference sequence '{reference_id}' not found in alignment")
+
+    position_map = {}
+    ref_pos = 0
+    for align_pos, char in enumerate(reference_seq, start=1):
+        if char != '-':
+            ref_pos += 1
+            position_map[align_pos] = ref_pos
+        else:
+            position_map[align_pos] = None
+
+    print(f"    Reference '{reference_id}' matched alignment ID '{matched_id}'")
+    print(f"    Reference has {ref_pos} ungapped positions")
+    return position_map
+
+
+def parse_msa_to_dataframe(msa_file, og_name, gene_name, seq_type, reference_id=None, metadata_label_lookup=None):
     """
     Parse MSA file and convert to long-format dataframe.
     
@@ -49,15 +100,31 @@ def parse_msa_to_dataframe(msa_file, og_name, gene_name, seq_type):
         Gene/peptide name from mapping table
     seq_type : str
         'AA' for amino acids or 'DNA' for nucleotides
+    reference_id : str, optional
+        ID or metadata label of the reference sequence for position mapping
     
     Returns:
     --------
-    pd.DataFrame with columns: sample_id, position, character, og, gene, seq_type
+    pd.DataFrame with columns: sample_id, position, character, og, gene, seq_type.
+    If reference_id is provided and found, also includes position_alignment and
+    position_reference.
     """
     alignment = read_phylip_msa(msa_file)
     
     if alignment is None:
         return pd.DataFrame()
+
+    position_map = None
+    if reference_id:
+        try:
+            position_map = map_alignment_to_reference_positions(
+                alignment,
+                reference_id,
+                metadata_label_lookup=metadata_label_lookup,
+            )
+        except ValueError as e:
+            print(f"    Warning: {e}", file=sys.stderr)
+            print("    Continuing without reference mapping for this MSA", file=sys.stderr)
     
     records = []
     
@@ -66,14 +133,19 @@ def parse_msa_to_dataframe(msa_file, og_name, gene_name, seq_type):
         sequence = str(record.seq)
         
         for position, char in enumerate(sequence, start=1):
-            records.append({
+            record_dict = {
                 'sample_id': sample_id,
                 'position': position,
                 'character': char,
                 'og': og_name,
                 'gene': gene_name,
                 'seq_type': seq_type
-            })
+            }
+            if position_map is not None:
+                record_dict['position_alignment'] = position
+                record_dict['position_reference'] = position_map.get(position)
+
+            records.append(record_dict)
     
     return pd.DataFrame(records)
 
@@ -259,6 +331,8 @@ Examples:
                         help='Output CSV file for position table')
     parser.add_argument('--seq_type', required=True, choices=['AA', 'DNA'],
                         help='Sequence type: AA (amino acid) or DNA (nucleotide)')
+    parser.add_argument('--reference_id', type=str, default=None,
+                        help='Reference sequence ID or metadata label for biological position mapping. Adds position_reference.')
     parser.add_argument('--metadata', type=Path, default=None,
                         help='Optional metadata CSV used for filtering and label mapping')
     parser.add_argument('--metadata_match_column', type=str, default='label',
@@ -293,6 +367,7 @@ Examples:
     # Load metadata if provided
     metadata = None
     metadata_label_lookup = None
+    reference_label_lookup = None
     if args.metadata:
         if not args.metadata.exists():
             print(f"Error: Metadata file not found: {args.metadata}", file=sys.stderr)
@@ -300,6 +375,7 @@ Examples:
         print(f"Loading metadata from {args.metadata}...")
         metadata = pd.read_csv(args.metadata)
         metadata = maybe_drop_metadata_type_row(metadata)
+        metadata_for_reference = metadata.copy()
         
         # Apply filtering if specified
         if args.filter_column and args.filter_value:
@@ -336,6 +412,17 @@ Examples:
             sys.exit(1)
 
         print(f"Prepared {len(metadata_label_lookup)} sample-id mappings from metadata")
+
+        if args.reference_id:
+            try:
+                reference_label_lookup = build_metadata_label_lookup(
+                    metadata=metadata_for_reference,
+                    match_column=args.metadata_match_column,
+                    five_letter_map=five_letter_map,
+                )
+            except ValueError as e:
+                print(f"Error: {e}", file=sys.stderr)
+                sys.exit(1)
     
     # Process all MSA files
     all_positions = []
@@ -358,7 +445,14 @@ Examples:
         gene_name = og_mapping[og_name]
         print(f"  Processing {og_name} ({gene_name})...")
         
-        df = parse_msa_to_dataframe(msa_file, og_name, gene_name, args.seq_type)
+        df = parse_msa_to_dataframe(
+            msa_file,
+            og_name,
+            gene_name,
+            args.seq_type,
+            reference_id=args.reference_id,
+            metadata_label_lookup=reference_label_lookup or metadata_label_lookup,
+        )
         
         if df.empty:
             print(f"    Warning: No data extracted from {msa_file}", file=sys.stderr)
@@ -411,6 +505,17 @@ Examples:
     print(f"Unique samples: {final_df['label'].nunique()}")
     print(f"Genes processed: {final_df['gene'].nunique()}")
     print(f"Sequence type: {args.seq_type}")
+    if args.reference_id:
+        if 'position_reference' in final_df.columns:
+            non_null = final_df['position_reference'].notna().sum()
+            total = len(final_df)
+            null_count = total - non_null
+            if total > 0:
+                print(f"Reference mapping: Enabled (using {args.reference_id})")
+                print(f"  Records mapped to reference positions: {non_null:,} / {total:,} ({non_null/total*100:.1f}%)")
+                print(f"  Records at reference-gap positions: {null_count:,} ({null_count/total*100:.1f}%)")
+        else:
+            print(f"Reference mapping: Requested ({args.reference_id}) but no MSA contained that reference")
     print(f"\nOutput saved to: {args.output}")
 
 if __name__ == "__main__":
