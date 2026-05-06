@@ -32,6 +32,7 @@ FILTER_VALUE=""
 EXCLUDE_GAPS=false
 MIN_SAMPLES=""
 ADD_DOMAIN_FILE=""
+REFERENCE_ID=""
 GROUP_BY=()
 FIVE_LETTER_FILE="five_letter_taxon.tsv"
 OG_ENTROPY_TABLE="stats/entropy/OG_genes_entropy.csv"
@@ -92,6 +93,8 @@ Visualization:
   -l, --label <text>                            Optional visualization label [default: Omni2tree_Tree]
 
 Entropy Step 1 (msa_to_position_table.py) optional filters:
+  --reference_id <id-or-label>                  Reference sequence ID or metadata label for entropy coordinates.
+                                                When set, entropy uses ungapped reference positions.
   --exclude_pattern <regex>                     Python regex to exclude sample IDs (case-sensitive)
   --filter_column <name>                        Metadata column to filter on (requires --filter_value)
   --filter_value <value>                        Metadata value to keep (requires --filter_column)
@@ -104,8 +107,8 @@ Entropy Step 2 (calculate_entropy.py) optional:
 Entropy Step 3 (plot_entropy.R) optional:
   --add_domain <csv>                            Domain annotations CSV with columns: gene,domain,start,end
                                                 Gene names are validated against stats/entropy/OG_genes_entropy.csv
-                                                Coordinates are used as provided: AA positions for --seq_type aa,
-                                                DNA positions for --seq_type dna.
+                                                Coordinates are used as provided in the entropy coordinate system:
+                                                alignment positions by default, reference positions with --reference_id.
 
 Expected inputs from previous steps (inside --o2t_out):
   O2T_RESULTS/                                  read2tree output from step1/step2
@@ -121,6 +124,9 @@ Examples:
 
   $PROGNAME -o virus2tree_rsv -l RSV_Run -m metadata.csv \\
     --seq_type aa --exclude_pattern s0 --group_by subgroup time_phase --exclude_gaps
+
+  $PROGNAME -o virus2tree_rsv -l RSV_Run -m metadata.csv \\
+    --seq_type aa --reference_id s0337 --add_domain domains.csv
 
   $PROGNAME -o virus2tree_rsv -l RSV_Run -m metadata.csv \\
     --seq_type dna --bootstrap 2000 --add_domain domains.csv
@@ -391,6 +397,10 @@ while [[ $# -gt 0 ]]; do
       EXCLUDE_PATTERN="$2"
       shift 2
       ;;
+    --reference_id)
+      REFERENCE_ID="$2"
+      shift 2
+      ;;
     --filter_column)
       FILTER_COLUMN="$2"
       shift 2
@@ -593,6 +603,9 @@ fi
 if [[ -n "$FILTER_COLUMN" ]]; then
   MSA2POS_CMD+=(--filter_column "$FILTER_COLUMN" --filter_value "$FILTER_VALUE")
 fi
+if [[ -n "$REFERENCE_ID" ]]; then
+  MSA2POS_CMD+=(--reference_id "$REFERENCE_ID")
+fi
 
 run_cmd "${MSA2POS_CMD[@]}"
 
@@ -610,6 +623,9 @@ if [[ -n "$MIN_SAMPLES" ]]; then
 fi
 if [[ "$EXCLUDE_GAPS" == true ]]; then
   CALC_ENTROPY_CMD+=(--exclude_gaps)
+fi
+if [[ -n "$REFERENCE_ID" ]]; then
+  CALC_ENTROPY_CMD+=(--use_reference_positions)
 fi
 
 run_cmd "${CALC_ENTROPY_CMD[@]}"
