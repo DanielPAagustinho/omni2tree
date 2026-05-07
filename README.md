@@ -5,7 +5,7 @@ Omni2Tree is an end-to-end phylogenomic workflow that builds maximum-likelihood 
 
 ## Table of Contents
 
-- [Installation](#installation)
+- [Installation](docs/installation.md)
 - [Quick start](#quick-start)
 - [Running step 1: Creating the reference database](#running-step-1-creating-the-reference-database)
 - [Running step 2: Processing sample reads and adding them to the read2tree folder](#running-step-2-processing-sample-reads-and-adding-them-to-the-read2tree-folder)
@@ -15,120 +15,9 @@ Omni2Tree is an end-to-end phylogenomic workflow that builds maximum-likelihood 
 
 ## Installation
 
-### Dependencies
+See the full installation guide in [docs/installation.md](docs/installation.md).
 
-This software relies on four external tools: [OMA Standalone](https://omabrowser.org/standalone/), [Rasusa](https://github.com/mbhall88/rasusa?tab=readme-ov-file#install), [czid-dedup](https://github.com/chanzuckerberg/czid-dedup?tab=readme-ov-file#installation), and [Read2Tree](https://github.com/DessimozLab/read2tree/tree/minimap2?tab=readme-ov-file#installation). It assumes all programs are in your Conda environment or `PATH`. 
-Below are two general ways to install all the required dependencies. For more details, please visit the respective web pages.
-
-### 1. Installation with Conda (not possible for all dependencies)
-
-[Conda](https://docs.anaconda.com/miniconda/) is a package manager that allows you to install all dependencies quickly and easily.
-
-```bash
-conda create -n my_env python=3.10.8 -y 
-conda activate my_env 
-conda install -c bioconda rasusa read2tree sra-tools entrez-direct -y
-```
-
-**Notes:** 
-* OMA standalone and czid-dedup are not available via Conda. Please, follow the "Installation from source" instructions below.
-* The Conda version of read2tree does not include the metagenomics branch. If you need this branch, follow the "Installation from source" instructions.
-
-### 2. Installation from source
-
-If you prefer to install the tools manually from their source code, use the following commands:
-
-**OMA Standalone**
-
-```bash
-## Download the last version, in this example is 2.6.0
-wget -O oma.tgz https://omabrowser.org/standalone/OMA.2.6.0.tgz 
-tar xvzf oma.tgz 
-cd OMA.2.6.0
-
-## Below choose your install path, if not OMA will be installed in /usr/local/OMA (you might need to use sudo in this case)
-./install.sh /your/install/path
-
-## This step is IMPORTANT:
-## After installation, make sure the bin folder of OMA is in your PATH variable. For that, edit your shell configuration file (`~/.bashrc`, `~/.zshrc`, etc.)
-echo 'export PATH=$PATH:/your/install/path/OMA/bin' >> ~/.bashrc 
-source ~/.bashrc
-```
-
-**Rasusa**
-
-```bash
-## When rasusa is downloaded it is automatically added to your PATH
-curl -sSL rasusa.mbh.sh | sh
-```
-
-**czid-dedup**
-
-Take into account that `czid-dedup` requires [rust/cargo](https://www.rust-lang.org/tools/install) for compilation
-
-```bash
-git clone https://github.com/chanzuckerberg/czid-dedup.git 
-cd czid-dedup 
-cargo build --release 
-
-#Make sure that the release directory is in your PATH variable
-echo 'export PATH=$PATH:your/install/path/czid-dedup/target/release' >> ~/.bashrc 
-source ~/.bashrc
-```
-
-**Read2Tree**
-
-```bash
-## Create conda env
-conda create -n r2t python=3.10.8 -y 
-conda activate r2t
-
-## Get required python packages
-conda install -c conda-forge biopython numpy Cython ete3 lxml tqdm scipy pyparsing requests natsort pyyaml filelock -y
-conda install -c bioconda dendropy pysam -y
-
-## Install required softwares
-conda install -c bioconda mafft iqtree minimap2 samtools -y
-
-## Clone read2tree
-git clone https://github.com/DessimozLab/read2tree.git 
-cd read2tree 
-python setup.py install
-## read2tree will be placed in the default bin folder of your Conda installation
-```
-
-To study co-infection (in metagenomics mode), we need to have a separate conda environment. Inside this new environment, please install read2tree metagenomics branch, after downloading with `git clone -b metagenomics https://github.com/DessimozLab/read2tree.git`. 
-
-**SRA Toolkit**
-
-```bash
-wget https://ftp-trace.ncbi.nlm.nih.gov/sra/sdk/current/sratoolkit.current-ubuntu64.tar.gz 
-tar -xvzf sratoolkit.current-ubuntu64.tar.gz
-
-## Add executable to your path (using your own version, in this case is 3.2.0)
-echo 'export PATH="$PATH:/your/install/path/sratoolkit.3.2.0-ubuntu64/bin"' >> ~/.bashrc 
-source ~/.bashrc
-```
-
-**Entrez direct**
-
-```bash
-## Get the scripts and download them in an "edirect folder" in the user's home directory
-sh -c "$(wget -q https://ftp.ncbi.nlm.nih.gov/entrez/entrezdirect/install-edirect.sh -O -)"
-source ~/.bashrc
-```
-
-### 3. Verify Installation
-
-To verify that all tools are correctly installed and available in your Conda environment or `PATH`, run the following command:
-
-```bash
-command -v oma && command -v rasusa && command -v czid-dedup && command -v read2tree && command -v fasterq-dump && command -v esearch
-```
-
-### Omni2tree installation
-
-You can set up Omni2tree cloning the repo and running the installer:
+After installing the dependencies, install Omni2Tree itself with:
 
 ```bash
 git clone https://github.com/DanielPAagustinho/omni2tree.git
@@ -136,11 +25,7 @@ cd omni2tree
 ./install.sh /your/install/path
 ```
 
-The installation script creates symlinks to the shell entry points.
-* If you omit the install path, symlinks go to /usr/local/bin (may require sudo).
-* If you use a custom path, make sure it’s in your PATH.
-
-Finally, check your installation with:
+Check the command entry points with:
 
 ```bash
 which o2t-step1 && o2t-step1 --help
@@ -510,7 +395,7 @@ At the end of execution, the script removes the directories containing the .sra 
 
 ## Citation
 
-If you use these scripts, please cite:
+If you use Omni2Tree, please cite:
 
 - **Omni2Tree**: Majidian, S., Chalco, A., Zheng, X., Webby, R. J., Bowman, A. S., Poulson, R. L., Nemeth, N. M., Sedlazeck, F. J., & Agustinho, D. P. (2026). "Rapid phylogenomic analysis for viral surveillance and metagenomic profiling with Omni2Tree" *bioRxiv*. https://doi.org/10.64898/2026.04.29.721707
 

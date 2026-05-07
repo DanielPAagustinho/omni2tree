@@ -1,0 +1,142 @@
+# Omni2Tree Installation
+
+## Dependencies
+
+This software relies on four external tools: [OMA Standalone](https://omabrowser.org/standalone/), [Rasusa](https://github.com/mbhall88/rasusa?tab=readme-ov-file#install), [czid-dedup](https://github.com/chanzuckerberg/czid-dedup?tab=readme-ov-file#installation), and [Read2Tree](https://github.com/DessimozLab/read2tree/tree/minimap2?tab=readme-ov-file#installation). It assumes all programs are in your Conda environment or `PATH`.
+
+Below are two general ways to install all the required dependencies. For more details, please visit the respective web pages.
+
+## 1. Installation with Conda
+
+[Conda](https://docs.anaconda.com/miniconda/) is a package manager that allows you to install all dependencies quickly and easily.
+
+```bash
+conda create -n my_env python=3.10.8 -y
+conda activate my_env
+conda install -c bioconda rasusa read2tree sra-tools entrez-direct -y
+```
+
+Notes:
+
+- OMA standalone and czid-dedup are not available via Conda. Please follow the "Installation from source" instructions below.
+- The Conda version of Read2Tree does not include the metagenomics branch. If you need this branch, follow the "Installation from source" instructions.
+
+## 2. Installation from Source
+
+If you prefer to install the tools manually from their source code, use the following commands.
+
+### OMA Standalone
+
+```bash
+# Download the latest version; this example uses 2.6.0.
+wget -O oma.tgz https://omabrowser.org/standalone/OMA.2.6.0.tgz
+tar xvzf oma.tgz
+cd OMA.2.6.0
+
+# Choose your install path. If omitted, OMA installs to /usr/local/OMA and may require sudo.
+./install.sh /your/install/path
+
+# Make sure the OMA bin folder is in PATH.
+echo 'export PATH=$PATH:/your/install/path/OMA/bin' >> ~/.bashrc
+source ~/.bashrc
+```
+
+### Rasusa
+
+```bash
+# When Rasusa is downloaded it is automatically added to your PATH.
+curl -sSL rasusa.mbh.sh | sh
+```
+
+### czid-dedup
+
+`czid-dedup` requires [rust/cargo](https://www.rust-lang.org/tools/install) for compilation.
+
+```bash
+git clone https://github.com/chanzuckerberg/czid-dedup.git
+cd czid-dedup
+cargo build --release
+
+# Make sure the release directory is in your PATH.
+echo 'export PATH=$PATH:your/install/path/czid-dedup/target/release' >> ~/.bashrc
+source ~/.bashrc
+```
+
+### Read2Tree
+
+```bash
+# Create conda environment.
+conda create -n r2t python=3.10.8 -y
+conda activate r2t
+
+# Get required Python packages.
+conda install -c conda-forge biopython numpy Cython ete3 lxml tqdm scipy pyparsing requests natsort pyyaml filelock -y
+conda install -c bioconda dendropy pysam -y
+
+# Install required software.
+conda install -c bioconda mafft iqtree minimap2 samtools -y
+
+# Clone and install Read2Tree.
+git clone https://github.com/DessimozLab/read2tree.git
+cd read2tree
+python setup.py install
+```
+
+Read2Tree will be placed in the default bin folder of your Conda installation.
+
+To study co-infection in metagenomics mode, use a separate Conda environment and install the Read2Tree metagenomics branch:
+
+```bash
+git clone -b metagenomics https://github.com/DessimozLab/read2tree.git
+```
+
+### SRA Toolkit
+
+```bash
+wget https://ftp-trace.ncbi.nlm.nih.gov/sra/sdk/current/sratoolkit.current-ubuntu64.tar.gz
+tar -xvzf sratoolkit.current-ubuntu64.tar.gz
+
+# Add executable to your path, using your own version. This example uses 3.2.0.
+echo 'export PATH="$PATH:/your/install/path/sratoolkit.3.2.0-ubuntu64/bin"' >> ~/.bashrc
+source ~/.bashrc
+```
+
+### Entrez Direct
+
+```bash
+# Get the scripts and download them in an "edirect" folder in the user's home directory.
+sh -c "$(wget -q https://ftp.ncbi.nlm.nih.gov/entrez/entrezdirect/install-edirect.sh -O -)"
+source ~/.bashrc
+```
+
+## 3. Verify Dependencies
+
+To verify that all tools are installed and available in your Conda environment or `PATH`, run:
+
+```bash
+command -v oma && command -v rasusa && command -v czid-dedup && command -v read2tree && command -v fasterq-dump && command -v esearch
+```
+
+## 4. Install Omni2Tree
+
+Clone the repo and run the installer:
+
+```bash
+git clone https://github.com/DanielPAagustinho/omni2tree.git
+cd omni2tree
+./install.sh /your/install/path
+```
+
+The installation script creates symlinks to the shell entry points.
+
+- If you omit the install path, symlinks go to `/usr/local/bin` and may require sudo.
+- If you use a custom path, make sure it is in your `PATH`.
+
+Check the installation with:
+
+```bash
+which o2t-step1 && o2t-step1 --help
+which o2t-step2 && o2t-step2 --help
+which o2t-step3 && o2t-step3 --help
+which o2t-sra   && o2t-sra   --help
+```
