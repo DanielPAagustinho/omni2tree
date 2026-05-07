@@ -1,0 +1,11 @@
+LABEL,ACcession,subgroup,lineage,tree_group,location,collection_date,decade,bases,avg_spot_len,selection_note
+character,character,character,character,character,character,character,character,numeric,numeric,character
+A2,M74568.1,RSV-A,A.1_historical,historical_RSV_A,USA,1961,1960,NA,NA,Historical_RSV_A_anchor
+HRSV_A_England_397_2017,PP109421.1,RSV-A,A.D.2.2.1,post_ON1_RSV_A,UK,2017,2010,NA,NA,Goya_2024_RSV_A_coordinate_reference
+hRSV_A_USA_202195752_2021,OP965711.1,RSV-A,A.D.5,contemporary_RSV_A,USA,2021,2020,NA,NA,Contemporary_RSV_A_D5_reference
+hRSV_B_Australia_VIC_RCH056_2019,OP975389.1,RSV-B,B.D.4.1.1,contemporary_RSV_B,Australia,2019,2010,NA,NA,Goya_2024_RSV_B_coordinate_reference
+hMPV_CAN97_83,AY297749.1,hMPV,outgroup,hMPV_outgroup,Canada,1997,1990,NA,NA,Outgroup_for_rooting
+hRSV_SRR24833886,SRR24833886,RSV-B_inferred,NA,B_like_from_full_run,United_Kingdom,2023-01-26,2020,3327511,330,Smallest_mappable_readset_outlier_branch
+hRSV_SRR24833879,SRR24833879,RSV-A_inferred,NA,contemporary_A_cluster,United_Kingdom,2022-12-13,2020,5260160,335,Small_A_readset_near_contemporary_cluster
+hRSV_SRR24833888,SRR24833888,RSV-A_inferred,NA,A_D5_nearby_cluster,United_Kingdom,2023-01-22,2020,5783068,323,Small_A_readset_on_separate_terminal_cluster
+hRSV_SRR24833895,SRR24833895,RSV-A_inferred,NA,A_subcluster_extra_diversity,United_Kingdom,2022-11-30,2020,8423854,330,Moderate_small_readset_distinct_from_selected_A_reads

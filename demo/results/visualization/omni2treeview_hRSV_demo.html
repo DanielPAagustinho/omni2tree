@@ -1,0 +1,2103 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Omni2TreeView</title>
+    <script src="https://d3js.org/d3.v6.min.js"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+    <style>
+        body {
+            font-family: sans-serif;
+        }
+
+        .link {
+            fill: none;
+            stroke: #ccc;
+            stroke-width: 1.5px;
+        }
+
+        .node text {
+            font-size: 10px;
+            text-anchor: middle;
+            dominant-baseline: middle;
+        }
+
+        .section-title {
+            font-size: 14px;
+            font-weight: bold;
+            margin-top: 16px;
+            margin-bottom: 8px;
+        }
+
+        ul {
+            padding-left: 20px;
+        }
+
+        code {
+            background-color: #f4f4f4;
+            padding: 1px 4px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+
+        .orange-theme {
+            --primary-color: #f7990c;
+            --primary-color-dark: #FB8C00;
+            --text-on-primary: white;
+        }
+
+
+        .orange-theme button {
+            background-color: var(--primary-color);
+            color: var(--text-on-primary);
+            border: none;
+            padding: 6px 12px;
+            font-size: 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+        }
+
+        .orange-theme button:hover {
+            background-color: var(--primary-color-dark);
+        }
+
+        .orange-theme button:active {
+            transform: scale(0.97);
+        }
+
+        .orange-theme .header,
+        .orange-theme #footer {
+            background-color: var(--primary-color);
+            color: var(--text-on-primary);
+        }
+
+        button {
+            background-color: #FFA726;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            font-size: 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+        }
+
+        button:hover {
+            background-color: #FB8C00;
+        }
+
+        button:active {
+            transform: scale(0.97);
+        }
+
+        .help-tooltip-wrapper {
+            position: relative;
+            display: inline-block;
+            cursor: pointer;
+        }
+
+        .help-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background-color: transparent;
+            /* color: white; */
+            text-align: center;
+            line-height: 20px;
+            font-weight: bold;
+            font-size: 14px;
+            user-select: none;
+        }
+
+        .tooltip-content {
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.2s;
+            position: absolute;
+            top: 120%;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #333;
+            color: #fff;
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            z-index: 100;
+            white-space: normal;
+            width: 200px;
+            word-wrap: break-word;
+        }
+
+        .help-tooltip-wrapper:hover .tooltip-content {
+            visibility: visible;
+            opacity: 1;
+        }
+
+
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+</head>
+
+<body style="margin: 0; height: 100vh;font-size: 14px;">
+    <div id="app" class="orange-theme" style="display: flex; flex-direction: column; height: 100vh;">
+
+        <!-- Header -->
+        <div id="header" class="header"
+            style=" color:#f7f5f3;  padding: 0 20px; display: flex; justify-content: space-between; align-items: center; height: 5vh;  position: relative;">
+
+            <h4 style="margin: 0;">Omni2TreeView</h4>
+
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <label for="currMeta">Main Palette <helper>The main palette is used to color all nodes. Non-leaf
+                        nodes (pie charts) are fully colored using the main palette. For leaf nodes (squares), the
+                        top-left corner is colored with the main palette, while the rest is filled using the extra
+                        palette. Select the corresponding metadata from the dropdown menu; the palette will appear to
+                        the right of the selection box. Sample node colors can be configured using the boxes on the
+                        right.
+
+                    </helper>
+                    <select id="currMeta" name="currMeta" v-model="selectedMeta">
+                        <option v-for="meta in meta_names" :value="meta">{{ meta }}</option>
+                    </select>
+                    <palette :color-map="main_color_map"></palette>
+                </label>
+                |
+                <label for="currMeta">Right Top <helper>
+                        The extra palette is used to render square leaf nodes (representing sample nodes). The top-left
+                        corner shows the main palette color, This palette is used to color the right-top corner of the
+                        square leaf nodes.
+                    </helper>
+
+                    <select id="extraMeta1" name="extraMeta1" v-model="extraMeta1">
+                        <option v-for="meta in extraMeta1Names" :value="meta">{{ meta }}</option>
+                    </select>
+                    <palette :color-map="extraMeta1ColorMap"></palette>
+
+                </label>|
+                <label>Bottom Left <helper>
+                        The extra palette is used to render square leaf nodes (representing sample nodes). The
+                        bottom-left
+                        corner shows the main palette color, This palette is used to color the bottom-left corner of the
+                        square leaf nodes.
+                    </helper>
+
+                    <select id="extraMeta2" name="extraMeta2" v-model="extraMeta2">
+                        <option v-for="meta in extraMeta2Names" :value="meta">{{ meta }}</option>
+                    </select>
+                    <palette :color-map="extraMeta2ColorMap"></palette>
+
+                </label>|
+                <label>
+                    Bottom Right <helper>
+                        The extra palette is used to render square leaf nodes (representing sample nodes). The
+                        bottom-right
+                        corner shows the main palette color, This palette is used to color the bottom-right corner of
+                        the
+                        square leaf nodes.
+                    </helper>
+                    <select id="extraMeta3" name="extraMeta3" v-model="extraMeta3">
+                        <option v-for="meta in extraMeta3Names" :value="meta">{{ meta }}</option>
+                    </select>
+                    <palette :color-map="extraMeta3ColorMap"></palette>
+                </label>
+
+<!-- <button @click="exportSVG">Export SVG</button> -->
+
+            </div>
+        </div>
+
+        <!-- Main content area -->
+        <div id="main" style="display: flex; height: 90vh;">
+
+            <div id="left_panel"
+                style="width: 15%; background-color: #FAFAFA; padding: 3px;  overflow: auto;border: 1px solid black;border-right: none;">
+
+                <div style="height: 50%; border-bottom: 1px solid black; overflow-y: scroll; scrollbar-width: none; -ms-overflow-style: none;"
+                    class="hide-scrollbar">
+
+                    <div style="display: flex; justify-content: space-between; margin-top:4px;margin-bottom: 4px;">
+                        <div style="
+                                width: 100%;
+                                background-color: #FFA726;
+                                color: white;
+                                padding: 6px 0;
+                                font-size: 14px;
+                                font-weight: bold;
+                                border-radius: 4px;
+                                text-align: center;
+                                user-select: none;
+                                box-shadow: 1px 1px 3px rgba(0,0,0,0.1);
+                                ">
+                            Tree Information
+                        </div>
+
+                    </div>
+
+                    <collapse-panel>
+                        <template #title>
+                            <strong>Basic:
+                                <helper :color="'#000'">Basic information about the tree.</helper>
+                            </strong>
+                        </template>
+                        <template #content>
+                            <div style="padding: 4px; font-size: 12px;">
+                                <div> <strong>Tree Name:</strong> {{ meta_keys && meta_keys.name || "" }}</div>
+                                <div> <strong>#Node:</strong> {{ node_list && node_list.length }},
+                                    <strong>#Sample:</strong> {{ num_leaf_nodes }}
+                                </div>
+                                <div> <strong>Metadata:</strong>
+                                    <helper :color="'#CCCCCC'">Metadata is used to color the nodes. The metadata
+                                        names and their types are listed below.</helper>
+                                </div>
+                                <div style="margin-top: 4px;">
+                                    <div v-for="item in meta_keys.meta_keys" :key="item.name"
+                                        style="display: flex; justify-content: space-between; background-color: #333; color: white; padding: 4px; margin-bottom: 2px; border-radius: 4px;">
+                                        <span>{{ item.name }}</span>
+                                        <span>
+                                            {{
+                                            item.std_type === 'cate' ? 'category variable'
+                                            : item.std_type === 'cont' ? 'continue variable'
+                                            : item.std_type
+                                            }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                    </collapse-panel>
+
+
+
+                    <collapse-panel>
+                        <template #title>
+                            <strong>Adjsut Tree:
+                                <helper :color="'#000'">Adjust the tree size. The tree will be redrawn
+                                    after the adjustment.
+                                    Note that this operation will cause performance issues if the tree is
+                                    too large.</helper>
+                                </helper>
+                            </strong>
+                        </template>
+                        <template #content>
+                            <div style="padding: 4px; font-size: 12px;">
+
+                                <div
+                                    style="margin: 12px 0; padding: 6px 12px; border: 1px solid #ccc; border-radius: 6px; background-color: #f9f9f9;">
+                                    <div style="text-align: center; font-size: 14px; margin-bottom: 10px;">
+                                        <strong>Current canvas size:</strong> {{ svgwidth }} × {{ svgheight }}
+                                    </div>
+
+                                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                                        <div>
+                                            <div style="font-weight: bold; margin-bottom: 6px;">Adjust canvas size</div>
+                                            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                                <label style="display: flex; align-items: center; gap: 4px;">
+                                                    <span>Width</span>
+                                                    <input v-model.number="canvasWidthInput" type="number" min="200" step="100"
+                                                        style="width: 70px; padding: 4px 6px; border: 1px solid #ccc; border-radius: 4px;">
+                                                </label>
+                                                <label style="display: flex; align-items: center; gap: 4px;">
+                                                    <span>Height</span>
+                                                    <input v-model.number="canvasHeightInput" type="number" min="200" step="100"
+                                                        style="width: 70px; padding: 4px 6px; border: 1px solid #ccc; border-radius: 4px;">
+                                                </label>
+                                                <button @click="applyCanvasResize">apply</button>
+                                                <button @click="resetCanvasResize">reset</button>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div style="font-weight: bold; margin-bottom: 6px;">Adjust node size</div>
+                                            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                                <label style="display: flex; align-items: center; gap: 4px;">
+                                                    <span>Min size</span>
+                                                    <input v-model.number="minNodeSizeInput" type="number" min="0.1" step="0.1"
+                                                        style="width: 80px; padding: 4px 6px; border: 1px solid #ccc; border-radius: 4px;">
+                                                </label>
+                                                <label style="display: flex; align-items: center; gap: 4px;">
+                                                    <span>Max size</span>
+                                                    <input v-model.number="maxNodeSizeInput" type="number" min="0.1" step="0.1"
+                                                        style="width: 80px; padding: 4px 6px; border: 1px solid #ccc; border-radius: 4px;">
+                                                </label>
+                                                <button @click="applyNodeSizeSettings">apply</button>
+                                                <button @click="resetNodeSizeSettings">reset</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+
+                            </div>
+
+                        </template>
+                    </collapse-panel>
+
+
+
+                </div>
+
+                <div style="height: 49%; border-bottom: 1px solid black; overflow-y: scroll; scrollbar-width: none; -ms-overflow-style: none;"
+                    class="hide-scrollbar">
+                    <div style="display: flex; justify-content: space-between; margin-top:4px;margin-bottom: 4px;">
+                        <div style="
+                                width: 100%;
+                                background-color: #FFA726;
+                                color: white;
+                                padding: 6px 0;
+                                font-size: 14px;
+                                font-weight: bold;
+                                border-radius: 4px;
+                                text-align: center;
+                                user-select: none;
+                                box-shadow: 1px 1px 3px rgba(0,0,0,0.1);
+                                ">
+                            Tree Filters
+                        </div>
+
+                    </div>
+
+                    <div style="margin-top: 4px;margin-bottom: 4px; display:flex;align-items: right; gap: 10px;">
+
+                        <!-- <button @click="clear_all_filters">Remove Filters</button> -->
+                        <button @click="apply_filter">Apply Filters</button>
+
+                    </div>
+
+                    <!-- <collapse-panel>
+                        <template #title>
+                            <strong>Confidence Filter:
+                            </strong>
+                        </template>
+                        <template #content>
+
+                            <label>
+                                <input type="checkbox" name="agree" value="yes">
+                                Apply
+                            </label>
+
+                            <div>
+                                <label for="min">Min:</label>
+                                <input type="number" id="min" v-model="confidence_filter.min" min="0" max="100"
+                                    step="1">
+                                <label for="max">Max:</label>
+                                <input type="number" id="max" v-model="confidence_filter.max" min="0" max="100"
+                                    step="1">
+                            </div>
+
+
+                        </template>
+                    </collapse-panel> -->
+                    <collapse-panel>
+                        <template #title>
+                            <strong>Tree Internal Confidence Filter:</strong>
+                        </template>
+                        <template #content>
+                            <range-filter :name="''" :min-value="0" :max-value="100"
+                                @update:apply="is_confidence_applied = $event"
+                                @update:range="val => { confidence_filter.min = val.min; confidence_filter.max = val.max }" />
+
+                        </template>
+                    </collapse-panel>
+
+                    <collapse-panel>
+                        <template #title>
+                            <strong>Sample Metadata Filters:
+                            </strong>
+                        </template>
+                        <template #content>
+
+                            <!-- range values in metadata -->
+                            <!-- <div v-for="item in meta_keys.meta_keys" :key="item.name">
+                                <div v-if="item.std_type === 'cont'">
+
+
+
+                                </div>
+                            </div> -->
+
+                            <div v-if="meta_keys && meta_keys.meta_keys">
+                                <div v-for="item in Object.values(meta_keys.meta_keys).filter(m => m.std_type === 'cont')"
+                                    :key="item.name">
+                                    <range-filter :name="item.name" :min-value="item.min" :max-value="item.max"
+                                        @update:apply="metadata_filters[item.name].applied= $event"
+                                        @update:range="val => { metadata_filters[item.name].min = val.min; metadata_filters[item.name].max = val.max }" />
+                                </div>
+                            </div>
+
+
+
+                            <div v-if="meta_keys && meta_keys.meta_keys">
+                                <div v-for="item in Object.values(meta_keys.meta_keys).filter(m => m.std_type === 'cate')"
+                                    :key="item.name">
+                                    <category-filter :name="item.name" :candidates="item.categories"
+                                        @update:apply="metadata_filters[item.name].applied= $event"
+                                        @update:selected="metadata_filters[item.name].selected = $event" />
+                                </div>
+                            </div>
+
+
+
+                            <!-- <div>
+                                <label>
+                                    <input type="checkbox" name="agree" value="yes">
+                                    Apply
+                                </label>
+                                <form>
+                                    <div
+                                        v-for="item in (meta_keys && meta_keys.meta_keys && meta_keys.meta_keys['subgroup'].categories || [])">
+                                        <label><input type="checkbox" name="fruits" value="item">{{item}}</label><br>
+                                    </div>
+
+                                </form>
+                            </div> -->
+
+
+                        </template>
+                    </collapse-panel>
+
+                </div>
+
+
+
+            </div>
+
+            <!-- Left panel -->
+            <div id="tree_panel" style="width: 70%; background-color: lightblue; border: 1px solid black;">
+                <!-- <svg style="width: 100%; height: 100%; background-color: #FAFAFA;"></svg> -->
+                <svg ref="svg" preserveAspectRatio="xMidYMid meet"
+                    style="width: 100%; height: 100%; background-color: #FAFAFA;"></svg>
+
+            </div>
+
+            <!-- Right panel -->
+            <div id="right_panel"
+                style="width: 15%; background-color: #FAFAFA; padding: 3px; overflow: hidden; border: 1px solid black; border-left: none; display: flex; flex-direction: column; gap: 8px;">
+
+                <!-- <div style="display: flex; justify-content: space-between;">
+                    <span> <button @click="showTab('info')">Node information</button></span>
+                    <span><button @click="showTab('help')">Help</button></span>
+
+                </div> -->
+
+                <div style="height: 75%; min-height: 0; display: flex; flex-direction: column;">
+                    <div style="display: flex; justify-content: space-between; margin-top:4px;margin-bottom: 4px;">
+                        <div style="
+                                    width: 100%;
+                                    background-color: #FFA726;
+                                    color: white;
+                                    padding: 6px 0;
+                                    font-size: 14px;
+                                    font-weight: bold;
+                                    border-radius: 4px;
+                                    text-align: center;
+                                    user-select: none;
+                                    box-shadow: 1px 1px 3px rgba(0,0,0,0.1);
+                                    ">
+                            Node Information
+                        </div>
+                    </div>
+
+                    <div id="info" style="flex: 1; min-height: 0; overflow-y: auto; padding-right: 2px;">
+                        <div v-if="selectedNode">
+                            <div style="margin-top: 10px;">
+
+                                <collapse-panel>
+                                    <template #title>
+                                        <strong>Basic:</strong>
+
+                                    </template>
+                                    <template #content>
+                                        <div style="padding: 4px; font-size: 12px;">
+                                            <div> <strong>Node id:</strong> {{ selectedNode && selectedNode.id || null }}
+                                            </div>
+                                            <div><strong>Node name:</strong> {{ selectedNode && selectedNode.name || null }}
+                                            </div>
+                                            <div><strong>Node type:</strong> {{ isLeafNode2Label(selectedNode) }}</div>
+                                            <div><strong>Branch Length:</strong> {{ selectedNode &&
+                                                selectedNode.branch_length || null }}</div>
+                                            <div><strong>Sample size:</strong> {{getSampleSize(selectedNode)}} <helper
+                                                    :color="'#000'">
+                                                    Sample Size only count the samples(leaf nodes). Non-leaf nodes will be
+                                                    ignored.</helper>
+                                            </div>
+                                            <div>
+                                                <strong>Confidence:</strong>
+                                                {{selectedNode && selectedNode.confidence || null }}
+
+                                            </div>
+                                            <div style="margin-top: 8px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                                <strong>Highlight:</strong>
+                                                <label style="display: inline-flex; align-items: center; gap: 4px;">
+                                                    <input type="checkbox" :checked="isSelectedSubtreeHighlighted()"
+                                                        @change="toggleSelectedSubtreeHighlight($event.target.checked)"
+                                                        :disabled="!selectedNode">
+                                                    <span>current subtree</span>
+                                                </label>
+                                                <button @click="resetHighlight" :disabled="!highlightNodeIds.length">reset</button>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </collapse-panel>
+                            </div>
+
+                            <div style="margin-top: 10px;">
+
+                                <collapse-panel>
+                                    <template #title>
+                                        <strong>Composition:</strong>
+
+                                    </template>
+                                    <template #content>
+                                        <div
+                                            style="max-height: 300px; overflow: auto; border: 1px solid #ccc; font-size: 12px;">
+                                            <div style="padding: 4px; background-color: #ccc;">
+                                                <div style="display: flex; justify-content: space-between;">
+                                                    <span>Name</span>
+                                                    <span>Count [Porpotion]</span>
+                                                </div>
+                                            </div>
+
+                                            <div v-for="item in getPieChartData((selectedNode && selectedNode.pieValues) || [], main_color_map)"
+                                                :key="item.label" :style="{ backgroundColor: item.color, padding: '4px' }">
+                                                <div style="display: flex; justify-content: space-between;">
+                                                    <span>{{ item.label }}</span>
+                                                    <span>{{ item.count }} [{{ (item.value *100) .toFixed(2) }}%]</span>
+                                                </div>
+                                            </div>
+
+                                        </div>
+
+                                    </template>
+
+                                </collapse-panel>
+                            </div>
+
+                            <div style="margin-top: 10px;">
+
+                                <collapse-panel>
+                                    <template #title>
+                                        <strong>Sample details:</strong>
+                                    </template>
+                                    <template #content>
+                                        <div style="max-height: 500px; overflow: auto; border: 1px solid #ccc;">
+                                            <div style="margin-top: 6px; display: flex; justify-content: right;">
+                                                <button @click="exportSampleDetailsAsCSV">Download</button>
+                                            </div>
+
+
+                                            <div
+                                                style="margin-top: 6px; display: flex; justify-content: center; align-items: center; gap: 6px;">
+                                                <button @click="changePage(-1)" :disabled="currentPage === 1">
+                                                    Prev</button>
+                                                <span>Page {{ currentPage }} / {{ totalPages }}</span>
+                                                <button @click="changePage(1)" :disabled="currentPage === totalPages">Next
+                                                </button>
+                                            </div>
+                                            <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                                                <thead>
+                                                    <tr>
+                                                        <th v-for="header in selectedNodeChildrenMata.table_header"
+                                                            :key="header"
+                                                            style="position: sticky; top: 0; background: #f0f0f0; padding: 4px;">
+                                                            {{ header }}
+                                                        </th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr v-for="row in pagedTableData" :key="row['sample_id'] + '-' + row['Label']">
+                                                        <td v-for="header in selectedNodeChildrenMata.table_header"
+                                                            :key="header" style="padding: 4px;">
+                                                            {{ row[header] }}
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+
+                                            <div
+                                                style="margin-top: 6px; display: flex; justify-content: center; align-items: center; gap: 6px;">
+                                                <button @click="changePage(-1)" :disabled="currentPage === 1">
+                                                    Prev</button>
+                                                <span>Page {{ currentPage }} / {{ totalPages }}</span>
+                                                <button @click="changePage(1)" :disabled="currentPage === totalPages">Next
+                                                </button>
+                                            </div>
+
+                                        </div>
+                                    </template>
+                                </collapse-panel>
+                            </div>
+
+                        </div>
+                        <div v-else style="padding: 8px; font-size: 12px; color: #666;">
+                            Click a node to view details.
+                        </div>
+                    </div>
+                </div>
+
+                <div style="height: 25%; min-height: 0; display: flex; flex-direction: column;">
+                    <div style="display: flex; justify-content: space-between; margin-top:4px;margin-bottom: 4px;">
+                        <div style="
+                                    width: 100%;
+                                    background-color: #FFA726;
+                                    color: white;
+                                    padding: 6px 0;
+                                    font-size: 14px;
+                                    font-weight: bold;
+                                    border-radius: 4px;
+                                    text-align: center;
+                                    user-select: none;
+                                    box-shadow: 1px 1px 3px rgba(0,0,0,0.1);
+                                    ">
+                            Entropy Information
+                        </div>
+                    </div>
+
+                    <div style="flex: 1; min-height: 0; overflow-y: auto; border: 1px solid #ccc; border-radius: 4px; background-color: #f7f5f5; padding: 8px;">
+                        <div style="font-size: 12px;">
+                            <div><strong>#Entropy PNG:</strong> {{ entropyInfo.count_excluding_all_genes || 0 }}</div>
+                            <div style="margin-top: 8px; max-height: 100%; overflow-y: auto; border: 1px solid #ccc; background-color: #fff;">
+                                <div v-if="!entropyInfo.files || entropyInfo.files.length === 0"
+                                    style="padding: 8px; color: #666;">
+                                    No entropy PNG files found.
+                                </div>
+                                <div v-for="file in entropyInfo.files" :key="file"
+                                    @click="openEntropyImage(file)"
+                                    style="padding: 6px 8px; border-bottom: 1px solid #eee; cursor: pointer; color: #1a73e8; word-break: break-all;">
+                                    {{ file }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- <div id="help" v-show="tabs.help">
+                    <div class="section-title">Layout</div>
+                    <ul>
+                        <li><strong>Header</strong>: Contains the tool title, a metadata selector dropdown, a palette
+                            toggle button, and basic node/sample counts.</li>
+                        <li><strong>Left Panel (Tree)</strong>: Shows the interactive phylogenetic tree with zoom/pan
+                            support.</li>
+                        <li><strong>Right Panel (Info)</strong>: Displays detailed information about the selected node.
+                        </li>
+                        <li><strong>Footer</strong>: Includes external links to lab websites.</li>
+                    </ul>
+                    <div class="section-title">Interactions</div>
+                    <ul>
+                        <li><strong>Metadata Selection</strong>: Use the dropdown to choose a metadata field for
+                            coloring and analysis.</li>
+                        <li><strong>Color Palette</strong>: Click the <code>Palette</code> button to toggle the display
+                            of color legends based on the selected metadata.</li>
+                        <li><strong>Zoom & Pan</strong>: Use mouse wheel to zoom and drag to pan around the tree.</li>
+                        <li><strong>Node Shapes</strong>:
+                            <ul>
+                                <li>Leaf nodes are drawn as colored triangles based on metadata values.</li>
+                                <li>Internal nodes are drawn as pie charts representing the distribution of child
+                                    metadata.</li>
+                            </ul>
+                        </li>
+                        <li><strong>Click Node</strong>: Clicking a node will update the right panel to show:
+                            <ul>
+                                <li>Node ID, name, type, branch length, sample count.</li>
+                                <li>A pie chart summary of metadata composition.</li>
+                                <li>A table listing metadata of all descendant leaf nodes.</li>
+                            </ul>
+                        </li>
+                        <li><strong>Tabs</strong>: Switch between <code>Information</code> and <code>Help</code> using
+                            the buttons above the right panel.</li>
+                    </ul>
+                </div> -->
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div id="footer" class="footer"
+            style=" padding-left: 10px; display: flex;  justify-content: space-between; align-items: center; height: 5vh; ">
+            <div>
+                <a href="https://fritzsedlazeck.github.io/"
+                    style="text-decoration: none; color:blueviolet; padding-right: 5px;" target="_blank">@Sedlazeck
+                    Lab</a>
+
+
+
+            </div>
+            <div>
+                
+
+                <help-popup></help-popup>
+            </div>
+        </div>
+        <div v-if="selectedEntropyImage" @click.self="closeEntropyImage" style="
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        ">
+            <div style="
+                background: white;
+                padding: 12px;
+                border-radius: 8px;
+                width: min(90vw, 1000px);
+                max-height: 90vh;
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+            ">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <strong>{{ selectedEntropyImage.name }}</strong>
+                    <button @click="closeEntropyImage">Close</button>
+                </div>
+                <div style="overflow: auto; text-align: center;">
+                    <img :src="selectedEntropyImage.src" :alt="selectedEntropyImage.name"
+                        style="max-width: 100%; max-height: 75vh; object-fit: contain;">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+
+        let tree_data = {"id": "13", "name": "Internal-8", "sample_id": "NA", "branch_length": 0.0, "meta": {"Source": "NA", "Subgroup": "NA", "Lineage": "NA", "Tree_group": "NA", "Location": "NA", "Collection_date": "NA", "Decade": "NA", "Bases": "NA", "Avg_spot_len": "NA", "Selection_note": "NA"}, "confidence": "NA", "children": [{"id": "1", "name": "A2", "sample_id": "M74568.1", "branch_length": 0.01359, "meta": {"Source": "Reference", "Subgroup": "RSV-A", "Lineage": "A.1_historical", "Tree_group": "historical_RSV_A", "Location": "USA", "Collection_date": "1961", "Decade": "1960", "Bases": "NA", "Avg_spot_len": "NA", "Selection_note": "Historical_RSV_A_anchor"}, "confidence": "NA", "children": []}, {"id": "14", "name": "Internal-2", "sample_id": "NA", "branch_length": 0.01448, "meta": {"Source": "NA", "Subgroup": "NA", "Lineage": "NA", "Tree_group": "NA", "Location": "NA", "Collection_date": "NA", "Decade": "NA", "Bases": "NA", "Avg_spot_len": "NA", "Selection_note": "NA"}, "confidence": "NA", "children": [{"id": "9", "name": "Internal-3", "sample_id": "NA", "branch_length": 0.00052, "meta": {"Source": "NA", "Subgroup": "NA", "Lineage": "NA", "Tree_group": "NA", "Location": "NA", "Collection_date": "NA", "Decade": "NA", "Bases": "NA", "Avg_spot_len": "NA", "Selection_note": "NA"}, "confidence": "NA", "children": [{"id": "10", "name": "Internal-4", "sample_id": "NA", "branch_length": 0.00042, "meta": {"Source": "NA", "Subgroup": "NA", "Lineage": "NA", "Tree_group": "NA", "Location": "NA", "Collection_date": "NA", "Decade": "NA", "Bases": "NA", "Avg_spot_len": "NA", "Selection_note": "NA"}, "confidence": "NA", "children": [{"id": "11", "name": "HRSV_A_England_397_2017", "sample_id": "PP109421.1", "branch_length": 0.00478, "meta": {"Source": "Reference", "Subgroup": "RSV-A", "Lineage": "A.D.2.2.1", "Tree_group": "post_ON1_RSV_A", "Location": "UK", "Collection_date": "2017", "Decade": "2010", "Bases": "NA", "Avg_spot_len": "NA", "Selection_note": "Goya_2024_RSV_A_coordinate_reference"}, "confidence": "NA", "children": []}, {"id": "2", "name": "hRSV_SRR24833895", "sample_id": "SRR24833895", "branch_length": 0.00625, "meta": {"Source": "Readset", "Subgroup": "RSV-A_inferred", "Lineage": "NA", "Tree_group": "A_subcluster_extra_diversity", "Location": "United_Kingdom", "Collection_date": "2022-11-30", "Decade": "2020", "Bases": "8423854", "Avg_spot_len": "330", "Selection_note": "Moderate_small_readset_distinct_from_selected_A_reads"}, "confidence": "NA", "children": []}]}, {"id": "8", "name": "hRSV_SRR24833879", "sample_id": "SRR24833879", "branch_length": 0.00292, "meta": {"Source": "Readset", "Subgroup": "RSV-A_inferred", "Lineage": "NA", "Tree_group": "contemporary_A_cluster", "Location": "United_Kingdom", "Collection_date": "2022-12-13", "Decade": "2020", "Bases": "5260160", "Avg_spot_len": "335", "Selection_note": "Small_A_readset_near_contemporary_cluster"}, "confidence": "NA", "children": []}]}, {"id": "0", "name": "Internal-5", "sample_id": "NA", "branch_length": 0.00242, "meta": {"Source": "NA", "Subgroup": "NA", "Lineage": "NA", "Tree_group": "NA", "Location": "NA", "Collection_date": "NA", "Decade": "NA", "Bases": "NA", "Avg_spot_len": "NA", "Selection_note": "NA"}, "confidence": "NA", "children": [{"id": "3", "name": "hRSV_A_USA_202195752_2021", "sample_id": "OP965711.1", "branch_length": 0.00111, "meta": {"Source": "Reference", "Subgroup": "RSV-A", "Lineage": "A.D.5", "Tree_group": "contemporary_RSV_A", "Location": "USA", "Collection_date": "2021", "Decade": "2020", "Bases": "NA", "Avg_spot_len": "NA", "Selection_note": "Contemporary_RSV_A_D5_reference"}, "confidence": "NA", "children": []}, {"id": "4", "name": "hRSV_SRR24833888", "sample_id": "SRR24833888", "branch_length": 0.00214, "meta": {"Source": "Readset", "Subgroup": "RSV-A_inferred", "Lineage": "NA", "Tree_group": "A_D5_nearby_cluster", "Location": "United_Kingdom", "Collection_date": "2023-01-22", "Decade": "2020", "Bases": "5783068", "Avg_spot_len": "323", "Selection_note": "Small_A_readset_on_separate_terminal_cluster"}, "confidence": "NA", "children": []}]}]}, {"id": "15", "name": "Internal-6", "sample_id": "NA", "branch_length": 0.04489, "meta": {"Source": "NA", "Subgroup": "NA", "Lineage": "NA", "Tree_group": "NA", "Location": "NA", "Collection_date": "NA", "Decade": "NA", "Bases": "NA", "Avg_spot_len": "NA", "Selection_note": "NA"}, "confidence": "NA", "children": [{"id": "12", "name": "hMPV_CAN97_83", "sample_id": "AY297749.1", "branch_length": 2.64818, "meta": {"Source": "Reference", "Subgroup": "hMPV", "Lineage": "outgroup", "Tree_group": "hMPV_outgroup", "Location": "Canada", "Collection_date": "1997", "Decade": "1990", "Bases": "NA", "Avg_spot_len": "NA", "Selection_note": "Outgroup_for_rooting"}, "confidence": "NA", "children": []}, {"id": "5", "name": "Internal-7", "sample_id": "NA", "branch_length": 0.08288, "meta": {"Source": "NA", "Subgroup": "NA", "Lineage": "NA", "Tree_group": "NA", "Location": "NA", "Collection_date": "NA", "Decade": "NA", "Bases": "NA", "Avg_spot_len": "NA", "Selection_note": "NA"}, "confidence": "NA", "children": [{"id": "7", "name": "hRSV_B_Australia_VIC_RCH056_2019", "sample_id": "OP975389.1", "branch_length": 0.02721, "meta": {"Source": "Reference", "Subgroup": "RSV-B", "Lineage": "B.D.4.1.1", "Tree_group": "contemporary_RSV_B", "Location": "Australia", "Collection_date": "2019", "Decade": "2010", "Bases": "NA", "Avg_spot_len": "NA", "Selection_note": "Goya_2024_RSV_B_coordinate_reference"}, "confidence": "NA", "children": []}, {"id": "6", "name": "hRSV_SRR24833886", "sample_id": "SRR24833886", "branch_length": 0.00265, "meta": {"Source": "Readset", "Subgroup": "RSV-B_inferred", "Lineage": "NA", "Tree_group": "B_like_from_full_run", "Location": "United_Kingdom", "Collection_date": "2023-01-26", "Decade": "2020", "Bases": "3327511", "Avg_spot_len": "330", "Selection_note": "Smallest_mappable_readset_outlier_branch"}, "confidence": "NA", "children": []}]}]}]}
+        let tree_meta = {"name": "hRSV_demo", "node_count": 16, "leaf_count": 9, "internal_count": 7, "meta_keys": {"Source": {"type": "character", "std_type": "cate", "name": "Source", "NA_count": 7, "min": null, "max": null, "categories": ["Reference", "Readset"]}, "Subgroup": {"type": "character", "std_type": "cate", "name": "Subgroup", "NA_count": 7, "min": null, "max": null, "categories": ["RSV-A", "RSV-A_inferred", "hMPV", "RSV-B", "RSV-B_inferred"]}, "Lineage": {"type": "character", "std_type": "cate", "name": "Lineage", "NA_count": 11, "min": null, "max": null, "categories": ["A.1_historical", "A.D.2.2.1", "A.D.5", "outgroup", "B.D.4.1.1"]}, "Tree_group": {"type": "character", "std_type": "cate", "name": "Tree_group", "NA_count": 7, "min": null, "max": null, "categories": ["historical_RSV_A", "post_ON1_RSV_A", "A_subcluster_extra_diversity", "contemporary_A_cluster", "contemporary_RSV_A", "A_D5_nearby_cluster", "hMPV_outgroup", "contemporary_RSV_B", "B_like_from_full_run"]}, "Location": {"type": "character", "std_type": "cate", "name": "Location", "NA_count": 7, "min": null, "max": null, "categories": ["USA", "UK", "United_Kingdom", "Canada", "Australia"]}, "Collection_date": {"type": "character", "std_type": "cate", "name": "Collection_date", "NA_count": 7, "min": null, "max": null, "categories": ["1961", "2017", "2022-11-30", "2022-12-13", "2021", "2023-01-22", "1997", "2019", "2023-01-26"]}, "Decade": {"type": "character", "std_type": "cate", "name": "Decade", "NA_count": 7, "min": null, "max": null, "categories": ["1960", "2010", "2020", "1990"]}, "Bases": {"type": "numeric", "std_type": "cont", "name": "Bases", "NA_count": 12, "min": 3327511.0, "max": 8423854.0, "categories": []}, "Avg_spot_len": {"type": "numeric", "std_type": "cont", "name": "Avg_spot_len", "NA_count": 12, "min": 323.0, "max": 335.0, "categories": []}, "Selection_note": {"type": "character", "std_type": "cate", "name": "Selection_note", "NA_count": 7, "min": null, "max": null, "categories": ["Historical_RSV_A_anchor", "Goya_2024_RSV_A_coordinate_reference", "Moderate_small_readset_distinct_from_selected_A_reads", "Small_A_readset_near_contemporary_cluster", "Contemporary_RSV_A_D5_reference", "Small_A_readset_on_separate_terminal_cluster", "Outgroup_for_rooting", "Goya_2024_RSV_B_coordinate_reference", "Smallest_mappable_readset_outlier_branch"]}}, "estimated_width": 5, "estimated_height": 9, "entropy": {"dir": "omni2treeview_hRSV_demo_entropy", "files": ["entropy_L.png", "entropy_M.png", "entropy_M2-1.png", "entropy_N.png", "entropy_NS2.png", "entropy_all_genes.png"], "count_excluding_all_genes": 5}}
+
+    </script>
+
+
+    <script>
+        const { createApp, reactive } = Vue;
+
+        const app = createApp({
+            data() {
+                return {
+                    title: "Omni2TreeView",
+                    selectedNodeName: null,
+                    selectedNodeMeta: null,
+                    selectedNode: null,
+                    selectedNodeChildrenMata: {
+                        table_header: [],
+                        table_data: [],
+                    },
+                    entropyInfo: {
+                        dir: null,
+                        files: [],
+                        count_excluding_all_genes: 0,
+                    },
+                    selectedEntropyImage: null,
+                    tabs: {
+                        "info": true,
+                        "help": false,
+                    },
+                    node_list: [],
+                    main_color_map: null,
+                    num_leaf_nodes: 0,
+                    meta_names: [],
+                    selectedMeta: null,
+                    root_tree: null,
+                    showPalette: false,
+                    svg: null,
+                    isShowInfoTab: false,
+                    highlightedNodeId: null,
+                    meta_keys: {},
+                    svgwidth: 1500,
+                    svgheight: 900,
+                    defaultSvgwidth: 1500,
+                    defaultSvgheight: 900,
+                    canvasWidthInput: 1500,
+                    canvasHeightInput: 900,
+                    minNodeSize: 3,
+                    maxNodeSize: 10,
+                    minNodeSizeInput: 3,
+                    maxNodeSizeInput: 10,
+                    currentPage: 1,
+                    pageSize: 10,
+                    color_cache_map: {},
+                    applied_meta_filters: [],
+                    is_confidence_applied: false,
+                    confidence_filter: {
+                        min: 0,
+                        max: 100,
+                    },
+                    metadata_filters: {
+
+                    },
+
+                    extraMeta1: null,
+                    extraMeta2: null,
+                    extraMeta3: null,
+                    extraMeta1ColorMap: null,
+                    extraMeta2ColorMap: null,
+                    extraMeta3ColorMap: null,
+                    extraMeta1Names: [],
+                    extraMeta2Names: [],
+                    extraMeta3Names: [],
+                    currentZoomTransform: null,
+                    highlightNodeIds: [],
+
+
+                };
+            },
+
+            watch: {
+                selectedMeta(newValue) {
+                    if (newValue && this.root_tree) {
+                        const pieCategories = new Set();
+                        this.collectPieValues(this.root_tree, newValue, pieCategories);
+                        this.main_color_map = this.color_cache_map[newValue].colorMap;
+
+                        const extraMetaNames = this.meta_names.filter(meta => meta !== newValue);
+                        this.extraMeta1Names = [...extraMetaNames];
+                        this.extraMeta2Names = [...extraMetaNames];
+                        this.extraMeta3Names = [...extraMetaNames];
+
+                        this.drawTree();
+                    }
+                },
+
+                extraMeta1(newValue) {
+                    if (newValue && this.root_tree) {
+
+                        this.extraMeta1ColorMap = this.color_cache_map[newValue].colorMap;
+
+                        this.drawTree();
+                    }
+                },
+                extraMeta2(newValue) {
+                    if (newValue && this.root_tree) {
+
+                        this.extraMeta2ColorMap = this.color_cache_map[newValue].colorMap;
+                        // console.log(this.extraMeta2ColorMap);
+                        this.drawTree();
+                    }
+                },
+                extraMeta3(newValue) {
+                    if (newValue && this.root_tree) {
+
+                        this.extraMeta3ColorMap = this.color_cache_map[newValue].colorMap;
+                        this.drawTree();
+                    }
+                },
+
+            },
+            computed: {
+                pagedTableData() {
+                    const data = this.selectedNodeChildrenMata.table_data || [];
+                    const start = (this.currentPage - 1) * this.pageSize;
+                    return data.slice(start, start + this.pageSize);
+                },
+                totalPages() {
+                    const data = this.selectedNodeChildrenMata.table_data || [];
+                    return Math.max(1, Math.ceil(data.length / this.pageSize));
+                }
+
+            },
+
+            methods: {
+
+                exportSVG() {
+                    const svgNode = this.svg.node();
+                    const serializer = new XMLSerializer();
+                    const source = serializer.serializeToString(svgNode);
+
+                    // Add xmlns attribute
+                    const svgBlob = new Blob(
+                        ['<?xml version="1.0" standalone="no"?>\n' + source],
+                        { type: 'image/svg+xml;charset=utf-8' }
+                    );
+
+                    const url = URL.createObjectURL(svgBlob);
+                    const link = document.createElement("a");
+                    link.href = url;
+                    link.download = "omni2treeview.svg";
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                },
+
+                openEntropyImage(fileName) {
+                    if (!this.entropyInfo.dir || !fileName) return;
+                    this.selectedEntropyImage = {
+                        name: fileName,
+                        src: `${this.entropyInfo.dir}/${fileName}`
+                    };
+                },
+
+                closeEntropyImage() {
+                    this.selectedEntropyImage = null;
+                },
+
+
+
+                apply_filter() {
+
+                    console.log(this.metadata_filters);
+
+                    this.filterTree(this.metadata_filters, this.confidence_filter);
+
+                    this.drawTree();
+                },
+
+                filterTree(metadata_filters, confidence_filter) {
+
+                    this.root_tree.descendants().forEach(node => {
+
+
+                        node.passed = true;
+                        if (!node.isLeaf) {
+
+
+                            if (this.is_confidence_applied) {
+                                if (node.data.confidence === "NA") {
+                                    console.log(":aa")
+                                    node.passed = false;
+                                } else {
+                                    if (node.data.confidence < confidence_filter.min || node.data.confidence > confidence_filter.max) {
+                                        node.passed = false;
+
+                                    }
+                                }
+
+                            }
+
+                        } else {
+                            // apply metadata filters
+
+                            for (const [key, filter] of Object.entries(metadata_filters)) {
+                                if (filter.applied) {
+                                    if (filter.std_type === "cont") {
+                                        if (node.data.meta[key] < filter.min || node.data.meta[key] > filter.max) {
+                                            node.passed = false;
+                                        }
+                                    } else if (filter.std_type === "cate") {
+                                        if (!filter.selected.includes(node.data.meta[key])) {
+                                            node.passed = false;
+                                        }
+                                    }
+                                }
+                            }
+
+
+                        }
+
+                        // if (node.passed ){
+                        // console.log(node.data.confidence);
+                        // console.log(node.passed);
+                        // console.log(node.data.meta);
+
+                        // console.log(node.isLeaf);
+                        // console.log("-------------")
+                        // }
+
+
+                    });
+                },
+
+
+                applyCanvasResize() {
+                    const nextWidth = Number(this.canvasWidthInput);
+                    const nextHeight = Number(this.canvasHeightInput);
+
+                    if (!Number.isFinite(nextWidth) || !Number.isFinite(nextHeight)) return;
+
+                    this.svgwidth = Math.max(200, Math.round(nextWidth));
+                    this.svgheight = Math.max(200, Math.round(nextHeight));
+                    this.canvasWidthInput = this.svgwidth;
+                    this.canvasHeightInput = this.svgheight;
+                    this.svg.attr("viewBox", `0 0 ${this.svgwidth} ${this.svgheight}`);
+                    this.drawTree();
+                },
+
+                resetCanvasResize() {
+                    this.svgwidth = this.defaultSvgwidth;
+                    this.svgheight = this.defaultSvgheight;
+                    this.canvasWidthInput = this.defaultSvgwidth;
+                    this.canvasHeightInput = this.defaultSvgheight;
+                    this.svg.attr("viewBox", `0 0 ${this.svgwidth} ${this.svgheight}`);
+                    this.drawTree();
+                },
+
+                updateNodeRadii() {
+                    if (!this.root_tree) return;
+                    const radiusScaler = this.createRadiusScaler(this.root_tree, this.minNodeSize, this.maxNodeSize);
+                    this.root_tree.descendants().forEach(d => {
+                        d.data.radius = radiusScaler(d.data.nchild);
+                    });
+                },
+
+                applyNodeSizeSettings() {
+                    const nextMinNodeSize = Number(this.minNodeSizeInput);
+                    const nextMaxNodeSize = Number(this.maxNodeSizeInput);
+
+                    if (!Number.isFinite(nextMinNodeSize) || nextMinNodeSize <= 0) return;
+                    if (!Number.isFinite(nextMaxNodeSize) || nextMaxNodeSize <= 0) return;
+                    if (nextMaxNodeSize < nextMinNodeSize) return;
+
+                    this.minNodeSize = nextMinNodeSize;
+                    this.maxNodeSize = nextMaxNodeSize;
+                    this.minNodeSizeInput = this.minNodeSize;
+                    this.maxNodeSizeInput = this.maxNodeSize;
+                    this.updateNodeRadii();
+                    this.drawTree();
+                },
+
+                resetNodeSizeSettings() {
+                    this.minNodeSize = 3;
+                    this.maxNodeSize = 10;
+                    this.minNodeSizeInput = 3;
+                    this.maxNodeSizeInput = 10;
+                    this.updateNodeRadii();
+                    this.drawTree();
+                },
+
+                changePage(offset) {
+                    const newPage = this.currentPage + offset;
+                    if (newPage >= 1 && newPage <= this.totalPages) {
+                        this.currentPage = newPage;
+                    }
+                },
+
+                getSubtreeNodeIds(nodeId) {
+                    if (!nodeId || !this.root_tree) return [];
+                    const targetNode = this.root_tree.descendants().find(node => node.data.id === nodeId);
+                    if (!targetNode) return [];
+                    return targetNode.descendants().map(node => node.data.id);
+                },
+
+                highlightSelectedSubtree() {
+                    if (!this.selectedNode) return;
+                    this.highlightNodeIds = this.getSubtreeNodeIds(this.selectedNode.id);
+                    this.drawTree();
+                },
+
+                toggleSelectedSubtreeHighlight(checked) {
+                    if (checked) {
+                        this.highlightSelectedSubtree();
+                    } else {
+                        this.resetHighlight();
+                    }
+                },
+
+                isSelectedSubtreeHighlighted() {
+                    if (!this.selectedNode || !this.highlightNodeIds.length) return false;
+                    const subtreeNodeIds = this.getSubtreeNodeIds(this.selectedNode.id);
+                    if (subtreeNodeIds.length !== this.highlightNodeIds.length) return false;
+                    const highlightSet = new Set(this.highlightNodeIds);
+                    return subtreeNodeIds.every(nodeId => highlightSet.has(nodeId));
+                },
+
+                resetHighlight() {
+                    this.highlightNodeIds = [];
+                    this.drawTree();
+                },
+
+
+                isLeafNode2Label(d) {
+
+                    if (!d) return "";
+                    if (!d.children || d.children.length === 0) {
+                        return "Leaf Node";
+                    } else {
+                        return "Non-leaf Node";
+                    }
+                },
+
+                isLeafNode(d) {
+                    if (!d) return null;
+                    if (!d.children || d.children.length === 0) {
+                        return true;
+                    } else {
+                        return false;
+                    }
+                },
+
+                getSampleSize(d) {
+                    // console.log(d && d.pieValues);
+                    // console.log(d && Object.keys(d.pieValues).length)
+                    // return ""
+                    if (!d) return "";
+                    // if (!d.pieValues) return "";
+                    if (!d.children || d.children.length === 0) {
+                        return 1;
+                    } else {
+                        return d && Object.keys(d.pieValues).length;
+                    }
+                },
+
+                getLeafMetaAsTable(d) {
+
+                    if (!d || !d.data.cached_leaf_table) {
+                        return {
+                            table_header: [],
+                            table_data: []
+                        };
+                    }
+                    return d.data.cached_leaf_table;
+
+                },
+
+
+                cachePieValuesAndColorMap(meta_name) {
+                    const pieCategories = new Set();
+                    const root = this.root_tree;
+
+                    // 自底向上递归构建 pieValues（原始版本丢失非叶节点数据）
+                    function collect(node) {
+                        if (!node.children || node.children.length === 0) {
+                            const value = node.data.meta?.[meta_name];
+                            node.data.pieValues = [value];
+                            pieCategories.add(value);
+                            return [value];
+                        } else {
+                            const values = node.children.flatMap(child => collect(child));
+                            node.data.pieValues = values;
+                            return values;
+                        }
+                    }
+
+                    collect(root);  // 从根节点递归开始
+
+                    const colorMap = this.getColors(Array.from(pieCategories));
+                    // this.color_cache[meta_name] = colorMap;
+                    this.main_color_map = colorMap;
+                },
+
+
+                onNodeClick(d) {
+
+                    if (this.highlightedNodeId !== null) {
+                        d3.select(`#node-${this.highlightedNodeId} .outline`)
+                            .attr("stroke", "black")
+                            .attr("stroke-width", 0);
+                    }
+
+                    d3.select(`#node-${d.data.id} .outline`)
+                        .attr("stroke", "red")
+                        .attr("stroke-width", 2);
+
+                    this.highlightedNodeId = d.data.id;
+
+                    this.selectedNodeName = d.data.name || "(unnamed)";
+                    this.selectedNodeMeta = d.data.meta || null;
+                    this.selectedNode = d.data;
+
+                    this.selectedNodeChildrenMata = null;
+                    let childrenmeta = this.getLeafMetaAsTable(d);
+                    this.selectedNodeChildrenMata = childrenmeta;
+                    this.isShowInfoTab = true;
+                },
+
+                onLinkClick(L) {
+
+                },
+
+                getPieChartData(items, colorMap) {
+                    const countMap = {};
+                    // console.log(items);
+                    if (!items) return [];
+                    if (!items.length) return [];
+                    if (colorMap === undefined) return [];
+                    if (colorMap === null) return [];
+
+
+                    for (const item of items) countMap[item] = (countMap[item] || 0) + 1;
+                    const total = items.length;
+
+                    let out = Object.entries(countMap).map(([label, count]) => ({
+                        label,
+                        value: count / total,
+                        count,
+                        color: colorMap[label] || '#cccccc'
+                    }));
+
+                    out = out.sort((a, b) => b.count - a.count);
+
+                    return out
+                },
+
+                collectPieValues(node, metaname, categorySet) {
+                    if (!node.children || node.children.length === 0) {
+                        const value = node.data.meta[metaname];
+                        node.data.pieValues = [value];
+                        categorySet.add(value);
+                        return [value];
+                    }
+                    const values = node.children.flatMap(child => this.collectPieValues(child, metaname, categorySet));
+                    node.data.pieValues = values;
+                    return values;
+                },
+
+                getColors(categories) {
+                    const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
+                    const colorMap = {};
+                    categories.forEach(cat => colorMap[cat] = colorScale(cat));
+                    return colorMap;
+                },
+
+                showTab(tab) {
+                    for (const key in this.tabs) {
+                        this.tabs[key] = false;
+                    }
+                    this.tabs[tab] = true;
+                },
+
+                assign_nchildren(node) {
+                    if (!node.children || node.children.length === 0) {
+                        node.data.nchild = 0;
+                        return 0;
+                    }
+                    const count = node.children.reduce((sum, child) => sum + 1 + this.assign_nchildren(child), 0);
+                    node.data.nchild = count;
+                    return count;
+                },
+
+                createRadiusScaler(root, minRadius = 3, maxRadius = 10) {
+                    const counts = root.descendants().map(d => d.data.nchild);
+                    const min = Math.sqrt(Math.min(...counts) + 1);
+                    const max = Math.sqrt(Math.max(...counts) + 1);
+                    if (max === min) {
+                        return () => (minRadius + maxRadius) / 2;
+                    }
+                    return (n) => {
+                        const scaled = Math.sqrt(n + 1);
+                        return ((scaled - min) / (max - min)) * (maxRadius - minRadius) + minRadius;
+                    };
+                },
+
+                exportSampleDetailsAsCSV() {
+                    if (!this.selectedNodeChildrenMata || !this.selectedNodeChildrenMata.table_data) return;
+
+                    const header = this.selectedNodeChildrenMata.table_header;
+                    const rows = this.selectedNodeChildrenMata.table_data;
+
+                    const csvContent = [
+                        header.join(","),
+                        ...rows.map(row => header.map(h => JSON.stringify(row[h] || "")).join(","))
+                    ].join("\n");
+
+                    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+                    const url = URL.createObjectURL(blob);
+
+                    const link = document.createElement("a");
+                    link.setAttribute("href", url);
+                    link.setAttribute("download", `sample_details_node_${this.selectedNode?.id || "unknown"}.csv`);
+                    link.style.visibility = "hidden";
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                },
+
+
+                drawTree() {
+
+                    const vueThis = this;
+                    const preservedTransform = this.currentZoomTransform || d3.zoomIdentity.translate(80, 80);
+                    const highlightNodeIdSet = new Set(this.highlightNodeIds || []);
+                    const isHighlightMode = highlightNodeIdSet.size > 0;
+
+                    this.svg.selectAll("*").remove();
+
+                    let tree_panel = document.getElementById("tree_panel");
+
+
+                    const width = this.svgwidth
+                    const height = this.svgheight
+
+                    this.svg.attr("viewBox", `0 0 ${width + 160} ${height + 160}`);
+
+                    const g = this.svg.append("g");
+
+                    const zoom = d3.zoom()
+                        .scaleExtent([0.3, 15])
+                        .on("zoom", (event) => {
+                            g.attr("transform", event.transform);
+                            vueThis.currentZoomTransform = event.transform;
+                        });
+
+                    this.svg.call(zoom).call(zoom.transform, preservedTransform);
+
+
+
+
+                    function assignLeafColors(node, metaname, colorMap) {
+
+                        if (!node.children || node.children.length === 0) {
+
+                            node.data.color = colorMap[node.data.meta[metaname]];
+                        } else {
+                            node.children.forEach(child => assignLeafColors(child, metaname, colorMap));
+                        }
+                    }
+
+                    function renderLinks(group, root) {
+                        group.selectAll(".link")
+                            .data(root.links())
+                            .enter()
+                            .append("path")
+                            .attr("class", "link")
+                            .attr("d", d => `M${d.source.x},${d.source.y}V${d.target.y}H${d.target.x}`)
+                            .style("stroke-width", d => {
+                                if (!isHighlightMode) return 1.5;
+                                return (highlightNodeIdSet.has(d.source.data.id) && highlightNodeIdSet.has(d.target.data.id)) ? 4 : 1.5;
+                            })
+                            .style("stroke", d => {
+                                if (!isHighlightMode) return "#AFAFAF";
+                                return (highlightNodeIdSet.has(d.source.data.id) && highlightNodeIdSet.has(d.target.data.id)) ? "#AFAFAF" : "#AFAFAF";
+                            });
+                    }
+
+                    function renderNodes(group, root, colors) {
+                        vueThis.num_leaf_nodes = 0;
+
+                        function shouldGrayNode(node) {
+                            if (!node.passed) return true;
+                            if (!isHighlightMode) return false;
+                            return !highlightNodeIdSet.has(node.data.id);
+                        }
+
+                        const nodes = group.selectAll(".node")
+                            .data(root.descendants())
+                            .enter().append("g")
+                            .attr("class", "node")
+                            .attr("id", d => `node-${d.data.id}`)
+                            .attr("transform", d => `translate(${d.x},${d.y})`);
+
+                        // let meta_names = new Set();
+
+                        nodes.each(function (d) {
+                            const r = d.data.radius || 3;
+                            const nodeGroup = d3.select(this);
+                            const isSubtreeHighlightedNode = highlightNodeIdSet.has(d.data.id);
+                            const outlineStroke = isSubtreeHighlightedNode ? "red" : "black";
+                            const outlineStrokeWidth = isSubtreeHighlightedNode ? 2 : 0;
+
+                            // capture the click event on the node group
+                            nodeGroup.on("click", () => {
+                                vueThis.onNodeClick(d);
+                            });
+
+
+                            if (!d.children || d.children.length === 0) {
+
+
+
+                                const side = r * 2;
+                                const strokeWidth = 0.25;
+
+                                const unit = side / 10;
+
+                                // outer rect
+                                nodeGroup.append("rect")
+                                    .attr("class", "outline")
+                                    .attr("x", -side / 2)
+                                    .attr("y", -side / 2)
+                                    .attr("width", side)
+                                    .attr("height", side)
+                                    .attr("fill", "none")
+                                    .attr("stroke", outlineStroke)
+                                    .attr("stroke-width", outlineStrokeWidth);
+
+                                // left top (7x7)
+                                nodeGroup.append("rect")
+                                    .attr("x", -side / 2)
+                                    .attr("y", -side / 2)
+                                    .attr("width", unit * 7)
+                                    .attr("height", unit * 7)
+                                    .attr("fill", shouldGrayNode(d) ? "#D3D3D3" : d.data.color)
+                                    .attr("stroke", "#ccc")
+                                    .attr("stroke-width", strokeWidth);
+
+                                // right top (3x7)
+
+
+
+                                nodeGroup.append("rect")
+                                    .attr("x", -side / 2 + unit * 7)
+                                    .attr("y", -side / 2)
+                                    .attr("width", unit * 3)
+                                    .attr("height", unit * 7)
+                                    .attr("fill", () => {
+                                        if (shouldGrayNode(d)) {
+                                            return "#D3D3D3";
+                                        }
+                                        else {
+
+                                            if (vueThis.extraMeta1 === null) {
+                                                return "#FFF";
+                                            } else {
+                                                let this_meta = d.data.meta[vueThis.extraMeta1];
+
+                                                return vueThis.extraMeta1ColorMap[this_meta];
+                                            }
+
+                                        }
+                                    })
+                                    .attr("stroke", "#ccc")
+                                    .attr("stroke-width", strokeWidth);
+
+                                // left bottom (7x3)
+                                nodeGroup.append("rect")
+                                    .attr("x", -side / 2)
+                                    .attr("y", -side / 2 + unit * 7)
+                                    .attr("width", unit * 7)
+                                    .attr("height", unit * 3)
+                                    .attr("fill", () => {
+                                        if (shouldGrayNode(d)) {
+                                            return "#D3D3D3";
+                                        }
+                                        else {
+
+                                            if (vueThis.extraMeta2 === null) {
+                                                return "#FFF";
+                                            } else {
+                                                let this_meta = d.data.meta[vueThis.extraMeta2];
+
+                                                return vueThis.extraMeta2ColorMap[this_meta];
+                                            }
+
+                                        }
+                                    })
+                                    .attr("stroke", "#ccc")
+                                    .attr("stroke-width", strokeWidth);
+
+                                // right bottom (3x3)
+                                nodeGroup.append("rect")
+                                    .attr("x", -side / 2 + unit * 7)
+                                    .attr("y", -side / 2 + unit * 7)
+                                    .attr("width", unit * 3)
+                                    .attr("height", unit * 3)
+                                    .attr("fill", () => {
+                                        if (shouldGrayNode(d)) {
+                                            return "#D3D3D3";
+                                        }
+                                        else {
+
+                                            if (vueThis.extraMeta3 === null) {
+                                                return "#FFF";
+                                            } else {
+                                                let this_meta = d.data.meta[vueThis.extraMeta3];
+
+                                                return vueThis.extraMeta3ColorMap[this_meta];
+                                            }
+
+                                        }
+                                    })
+                                    .attr("stroke", "#ccc")
+                                    .attr("stroke-width", strokeWidth);
+
+                                vueThis.num_leaf_nodes += 1;
+                            } else {
+                                const pieData = vueThis.getPieChartData(d.data.pieValues, colors);
+                                // console.log(d);
+                                nodeGroup.append("circle")
+                                    .attr("class", "outline")
+                                    .attr("r", r)
+                                    .attr("fill", "none")
+                                    .attr("stroke", outlineStroke)
+                                    .attr("stroke-width", outlineStrokeWidth);
+
+                                const pie = d3.pie().value(d => d.value)(pieData);
+                                const arc = d3.arc().innerRadius(0).outerRadius(r);
+                                nodeGroup.selectAll("path")
+                                    .data(pie)
+                                    .enter()
+                                    .append("path")
+                                    .attr("d", arc)
+                                    .attr("fill", sec => {
+                                        // console.log(d);
+                                        if (!shouldGrayNode(d)) {
+                                            return sec.data.color;
+                                        } else {
+                                            return "#D3D3D3";
+                                        }
+                                    });
+                            }
+                        });
+                    }
+
+
+                    let root = vueThis.root_tree;
+
+
+
+
+
+                    const treeLayout = d3.tree()
+                        .size([width, height])
+                        .separation((a, b) => {
+                            const r1 = a.data.radius * 2 || 3;
+                            const r2 = b.data.radius * 2 || 3;
+                            return (r1 + r2 + 10) / 8;
+                        });
+                    treeLayout(root);
+
+                    // const pieCategories = new Set();
+
+
+                    // console.log(this.color_cache);
+                    // console.log(this.pie_value_cache);
+                    assignLeafColors(root, vueThis.selectedMeta, this.color_cache_map[vueThis.selectedMeta].colorMap);
+
+                    renderLinks(g, root);
+                    renderNodes(g, root, this.main_color_map);
+
+                    if (this.highlightedNodeId !== null) {
+                        d3.select(`#node-${this.highlightedNodeId} .outline`)
+                            .attr("stroke", "red")
+                            .attr("stroke-width", 3);
+                    }
+
+                    this.node_list = root.descendants().map(d => {
+                        // console.log(d);
+                        return {
+                            id: d.id,
+                            data: d.data,
+                            depth: d.depth,
+                            height: d.height,
+                            x: d.x,
+                            y: d.y,
+                        }
+                    });
+                    // this.colormap = colorMap;
+
+                    // console.log(this.node_list[0]);
+
+                    // });
+                },
+
+                async prepareTree() {
+                    const data = tree_data; // Replace with your actual data
+
+
+                    // const data = await d3.json("aa.tree.json");
+                    // const tree_meta = await d3.json("aa.tree_meta.json");
+                    const tree = d3.hierarchy(data);
+                    console.log(tree);
+                    this.root_tree = tree;
+                    this.meta_keys = tree_meta;
+                    this.entropyInfo = tree_meta["entropy"] || {
+                        dir: null,
+                        files: [],
+                        count_excluding_all_genes: 0,
+                    };
+
+                    Object.values(tree_meta["meta_keys"]).forEach((item) => {
+                        let data = {
+                            name: item.name,
+                            std_type: item.std_type,
+                            min: item.min,
+                            max: item.max,
+                            selected: [],
+                            applied: false
+                        }
+
+                        this.metadata_filters[item.name] = data;
+                    });
+
+                    this.meta_names = Object.keys(tree_meta["meta_keys"]);
+
+                    const estimatedWidth = this.meta_keys["estimated_width"] || 100;
+                    this.svgwidth = Math.min(Math.max(estimatedWidth * 80, 1000), 5000);
+                    this.svgheight = Math.min(Math.max(estimatedWidth * 2, 1300), 4000);
+                    this.defaultSvgwidth = this.svgwidth;
+                    this.defaultSvgheight = this.svgheight;
+                    this.canvasWidthInput = this.svgwidth;
+                    this.canvasHeightInput = this.svgheight;
+                    this.minNodeSize = 3;
+                    this.maxNodeSize = 10;
+                    this.minNodeSizeInput = 3;
+                    this.maxNodeSizeInput = 10;
+                    // console.log(this.meta_names);
+                    let color_cache_map = {}
+                    this.meta_names.map(k => {
+                        color_cache_map[k] = {
+                            name: k,
+                            categories: new Set(),
+                        }
+                    });
+
+
+                    this.root_tree.descendants().forEach(d => {
+
+                        this.meta_names.forEach(k => {
+                            if (d.data.meta && d.data.meta[k]) {
+                                color_cache_map[k].categories.add(d.data.meta[k]);
+                            }
+                        });
+
+                        const isLeaf = !d.children || d.children.length === 0;
+
+                        if (isLeaf) {
+                            d.isLeaf = true;
+                        } else {
+                            d.isLeaf = false;
+                        }
+
+                        d.passed = true;
+
+                        const leaves = isLeaf
+                            ? [d]
+                            : d.descendants().filter(n => !n.children || n.children.length === 0);
+
+                        const firstWithMeta = leaves.find(n => n.data.meta);
+                        const metaKeys = firstWithMeta ? Object.keys(firstWithMeta.data.meta || {}) : [];
+
+                        d.data.cached_leaf_table = {
+                            table_header: ["sample_id", "Label", ...metaKeys],
+                            table_data: leaves.map(n => {
+                                const row = {
+                                    "sample_id": n.data.sample_id || "NA",
+                                    "Label": n.data.name || "(unnamed)"
+                                };
+                                for (const k of metaKeys) {
+                                    row[k] = n.data.meta ? n.data.meta[k] : null;
+                                }
+                                return row;
+                            })
+                        };
+                    });
+
+                    this.assign_nchildren(this.root_tree);
+                    this.updateNodeRadii();
+                    Object.keys(color_cache_map).forEach((key) => {
+                        let item = color_cache_map[key];
+                        const colorMap = this.getColors(Array.from(item.categories));
+                        color_cache_map[key].colorMap = colorMap;
+                    });
+
+                    this.color_cache_map = color_cache_map;
+
+                    console.log(this.color_cache_map);
+                }
+
+
+            },
+            mounted() {
+                this.svg = d3.select("svg");  // 保存引用
+                this.prepareTree().then(() => {
+                    this.selectedMeta = this.meta_names[0] || null;
+                    this.drawTree();
+
+                });
+            }
+        });
+
+
+        app.component('collapse-panel', {
+            template: `
+                    <div style="background-color: #f7f5f5; border: 1px solid #ccc; border-radius: 4px; margin-bottom: 10px;">
+                    <div style="font-size: 12px; display: flex; align-items: center; justify-content: space-between; background: #eee; padding: 6px 10px; cursor: pointer;" @click="toggle">
+                        <slot name="title"></slot>
+                        <button style="font-size: 12px;">{{ isOpen ? 'Hide' : 'Show' }}</button>
+                    </div>
+                    <div v-show="isOpen" style="margin-top: 4px;">
+                        <slot name="content"></slot>
+                    </div>
+                    </div>
+                `,
+            data() {
+                return {
+                    isOpen: true
+                }
+            },
+            methods: {
+                toggle() {
+                    this.isOpen = !this.isOpen;
+                }
+            }
+        });
+        app.component('helper', {
+            props: {
+                color: {
+                    type: String,
+                    default: '#FFF'
+                }
+            },
+            data() {
+                return {
+                    showTooltip: false,
+                    tooltipStyle: {
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        top: '120%',
+                        right: 'auto'
+                    }
+                };
+            },
+            mounted() {
+                window.addEventListener("resize", this.adjustTooltipPosition);
+            },
+            beforeUnmount() {
+                window.removeEventListener("resize", this.adjustTooltipPosition);
+            },
+            methods: {
+                adjustTooltipPosition() {
+                    this.$nextTick(() => {
+                        const tooltip = this.$el.querySelector('.tooltip-content');
+                        if (!tooltip) return;
+
+                        const rect = tooltip.getBoundingClientRect();
+                        const overflowRight = rect.right > window.innerWidth;
+                        const overflowLeft = rect.left < 0;
+
+                        if (overflowRight) {
+                            this.tooltipStyle.left = 'auto';
+                            this.tooltipStyle.right = '0';
+                            this.tooltipStyle.transform = 'translateX(0%)';
+                        } else if (overflowLeft) {
+                            this.tooltipStyle.left = '0';
+                            this.tooltipStyle.right = 'auto';
+                            this.tooltipStyle.transform = 'translateX(0%)';
+                        } else {
+                            this.tooltipStyle.left = '50%';
+                            this.tooltipStyle.right = 'auto';
+                            this.tooltipStyle.transform = 'translateX(-50%)';
+                        }
+                    });
+                }
+            },
+            template: `
+            <div class="help-tooltip-wrapper" 
+                @mouseenter="showTooltip = true; adjustTooltipPosition()" 
+                @mouseleave="showTooltip = false">
+                <div class="help-icon" :style="{ color: color }"><strong> ⓘ</strong></div>
+                <div 
+                    class="tooltip-content"
+                    v-show="showTooltip"
+                    :style="tooltipStyle"
+                >
+                    <div style="padding: 4px; font-size: 12px; margin-top: 10px; max-width: 400px; word-wrap: break-word; white-space: normal;z-index: 100;">
+                        <slot></slot>
+                    </div>
+                </div>
+            </div>
+            `
+        });
+
+
+        app.component('palette', {
+            props: ['colorMap'],
+            data() {
+                return {
+                    show: false
+                };
+            },
+            template: `
+            <div style="position: relative; display: inline-block;">
+            <button @click="show = !show">Palette</button>
+
+            <div v-show="show" style="
+                position: absolute;
+                top: 110%;
+                left: 50%;
+                transform: translateX(-50%);
+                background-color: white;
+                border: 1px solid black;
+                padding: 10px;
+                z-index: 10;
+                color: black;
+                min-width: 150px;
+            ">
+                <h4 style="margin: 0 0 8px 0;">Color Palette</h4>
+                <div style="max-height:200px; overflow-y: auto;">
+                <div v-for="(color, label) in colorMap" :key="label"
+                    style="display: flex; align-items: center; margin-bottom: 4px;">
+                    <div :style="{ backgroundColor: color, width: '20px', height: '20px', marginRight: '5px' }"></div>
+                    {{ label }}
+                </div>
+                </div>
+            </div>
+            </div>
+        `
+        });
+
+        app.component('range-filter', {
+            props: {
+                minValue: {
+                    type: Number,
+                    required: true
+                },
+                maxValue: {
+                    type: Number,
+                    required: true
+                },
+                name: {
+                    type: String,
+                    default: 'Range Filter'
+                }
+            },
+            emits: ['update:apply', 'update:range'],
+            data() {
+                return {
+                    apply: false,
+                    range: {
+                        min: this.minValue,
+                        max: this.maxValue
+                    },
+                    error: ''
+                };
+            },
+            watch: {
+                apply(val) {
+                    this.$emit('update:apply', val);
+                },
+                range: {
+                    handler(val) {
+                        this.validateRange(val);
+                    },
+                    deep: true
+                }
+            },
+            methods: {
+                validateRange(val) {
+                    if (val.min < this.minValue || val.max > this.maxValue) {
+                        this.error = `Values must be between ${this.minValue} and ${this.maxValue}.`;
+                    } else if (val.max <= val.min) {
+                        this.error = `Max must be greater than Min.`;
+                    } else {
+                        this.error = '';
+                        this.$emit('update:range', val);
+                    }
+                }
+            },
+            template: `
+                <div style="padding: 6px 10px; font-size: 13px; display: flex; flex-direction: column; gap: 10px;">
+
+                <!-- Checkbox -->
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <span style="font-weight: bold;">{{ name }}</span>
+                    <helper color="#000">
+                        <template v-slot:default>
+                          
+                        </template>
+                    </helper>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                   
+                    <input type="checkbox" id="applyFilter" v-model="apply">
+                    <label for="applyFilter" style="margin: 0;">Apply Filter</label>
+                </div>
+
+                <!-- Range inputs -->
+                <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+                    <label for="min" style="min-width: 40px;">Min:</label>
+                    <input type="number" id="min" v-model.number="range.min" :min="minValue" :max="maxValue" step="1"
+                    style="flex: 1; padding: 2px; border: 1px solid #ccc; border-radius: 4px;">
+
+                    <label for="max" style="min-width: 40px;">Max:</label>
+                    <input type="number" id="max" v-model.number="range.max" :min="minValue" :max="maxValue" step="1"
+                    style="flex: 1; padding: 4px; border: 1px solid #ccc; border-radius: 4px;">
+                </div>
+
+                <!-- Error message -->
+                <div v-if="error" style="color: red; font-size: 12px; margin-top: 4px;">
+                    {{ error }}
+                </div>
+                </div>
+            `
+        });
+
+
+        app.component('category-filter', {
+            props: {
+                candidates: {
+                    type: Array,
+                    required: true
+                },
+                name: {
+                    type: String,
+                    default: 'Category Filter'
+                }
+            },
+            emits: ['update:apply', 'update:selected'],
+            data() {
+                return {
+                    apply: false,
+                    selected: [],
+                    error: '',
+                    page: 1,
+                    perPage: 10
+                };
+            },
+            computed: {
+                totalPages() {
+                    return Math.ceil(this.candidates.length / this.perPage);
+                },
+                paginatedCandidates() {
+                    const start = (this.page - 1) * this.perPage;
+                    return this.candidates.slice(start, start + this.perPage);
+                }
+            },
+            watch: {
+                selected(val) {
+                    this.validate();
+                    this.$emit('update:selected', val);
+                },
+                apply(val) {
+                    this.validate();
+                    this.$emit('update:apply', val);
+                }
+            },
+            methods: {
+                validate() {
+                    if (this.apply && this.selected.length === 0) {
+                        this.error = '⚠️ You must select at least one category to apply the filter.';
+                    } else {
+                        this.error = '';
+                    }
+                },
+                nextPage() {
+                    if (this.page < this.totalPages) this.page++;
+                },
+                prevPage() {
+                    if (this.page > 1) this.page--;
+                },
+                clear_all() {
+                    this.selected = [];
+                    this.apply = false;
+                    this.error = '';
+                }
+            },
+            template: `
+    <div style="padding: 6px 10px; font-size: 13px; display: flex; flex-direction: column; gap: 10px; margin-top:4px; border-top: 1px solid #ccc; border-radius: 4px; background-color: #f7f5f5;">
+
+      <!-- Title and help -->
+      <div style="display: flex; align-items: center; justify-content: space-between;">
+        <span style="font-weight: bold;">{{ name }}</span>
+        <helper color="#000">
+          <template v-slot:default>
+            
+          </template>
+        </helper>
+      </div>
+
+      <!-- Apply checkbox -->
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <input type="checkbox" id="applyFilter" v-model="apply">
+        <label for="applyFilter" style="margin: 0;">Apply Filter</label>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end;">
+        <button @click="clear_all" style="font-size: 12px; padding: 2px 6px;">Clear All</button>
+      </div>
+      <!-- Error -->
+      <div v-if="error" style="color: red; font-size: 12px; margin-top: 4px;">
+        {{ error }}
+      </div>
+      <!-- Category options with pagination -->
+      <div style="max-height: 200px; overflow-y: auto; border: 1px solid #ccc; padding: 4px; border-radius: 4px;background-color: #fff;">
+        <label v-for="option in paginatedCandidates" :key="option" style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+          <input type="checkbox" :value="option" v-model="selected">
+          {{ option }}
+        </label>
+      </div>
+
+      <!-- Pagination controls -->
+      <div v-if="totalPages > 1" style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
+        <button @click="prevPage" :disabled="page === 1"> Prev</button>
+        <span>Page {{ page }} / {{ totalPages }}</span>
+        <button @click="nextPage" :disabled="page === totalPages">Next </button>
+      </div>
+
+
+    </div>
+  `
+        });
+
+
+        app.component("help-popup", {
+            data() {
+                return {
+                    visible: false
+                };
+            },
+            methods: {
+                toggleHelp() {
+                    this.visible = !this.visible;
+                }
+            },
+            template: `
+    <div style="position: relative;">
+      <button @click="toggleHelp"
+        style="background-color: #FFA726; color: white; border: none; padding: 6px 12px; font-size: 13px; border-radius: 4px; cursor: pointer;">
+        Help
+      </button>
+
+      <div v-if="visible" style="
+        position: absolute;
+        bottom: 120%;
+        right: 0;
+        width: 90vw;
+        max-height: 80vh;
+        overflow-y: auto;
+        background: white;
+        color: black;
+        border: 2px solid #FFA726;
+        border-radius: 8px;
+        padding: 16px;
+        z-index: 1000;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      ">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <h3 style="margin: 0;">Omni2TreeView Help</h3>
+          <button @click="toggleHelp" style="background-color: #FB8C00;">Close</button>
+        </div>
+        <hr />
+<div>
+  <h2>Omni2TreeView Overview</h2>
+
+  <p>
+    Omni2TreeView is an interactive tree viewer for exploring node structure, sample composition, and metadata patterns in one page.
+  </p>
+
+  <h3>Page Layout</h3>
+  <ul>
+    <li><strong>Top Bar:</strong> Chooses the main palette and up to three extra palettes used to color the tree.</li>
+    <li><strong>Left Panel:</strong> Contains tree summary, tree size controls, node size controls, and filter modules.</li>
+    <li><strong>Center Tree View:</strong> Shows the interactive tree and supports zooming, panning, and node selection.</li>
+    <li><strong>Right Panel:</strong> Shows details for the currently selected node.</li>
+  </ul>
+
+  <h3>Main Modules</h3>
+  <ul>
+    <li><strong>Palette Controls:</strong> Let you decide which metadata drives the main node colors and the extra corner colors on leaf nodes.</li>
+    <li><strong>Tree Information:</strong> Summarizes the dataset, including tree name, node counts, sample counts, and available metadata fields.</li>
+    <li><strong>Adjust Tree:</strong> Lets you change canvas width and height, and also rescale node sizes with a factor plus min and max size limits.</li>
+    <li><strong>Tree Filters:</strong> Lets you restrict what is emphasized in the tree using confidence ranges and metadata-based filters.</li>
+    <li><strong>Node Details:</strong> Shows basic information, composition summary, and sample-level details for the selected node.</li>
+  </ul>
+
+  <h3>How To Read The Tree</h3>
+  <ul>
+    <li><strong>Leaf nodes:</strong> Display as small squares whose colored regions reflect the selected palettes.</li>
+    <li><strong>Internal nodes:</strong> Display as pie-chart circles summarizing the composition of descendant samples.</li>
+    <li><strong>Selected or highlighted content:</strong> Is emphasized so you can focus on one node or subtree at a time.</li>
+  </ul>
+
+  <h3>Common Interactions</h3>
+  <ul>
+    <li><strong>Change palettes:</strong> Update how metadata is mapped to node colors.</li>
+    <li><strong>Adjust tree or node size:</strong> Redraw the tree for a layout that is easier to inspect.</li>
+    <li><strong>Apply filters:</strong> Narrow the visible result to the ranges or categories you care about.</li>
+    <li><strong>Click a node:</strong> Inspect its metadata, descendants, and sample table in the right panel.</li>
+    <li><strong>Zoom and pan:</strong> Move around large trees more comfortably.</li>
+  </ul>
+</div>
+
+      </div>
+    </div>
+  `
+        });
+
+
+
+        app.mount("#app");
+
+    </script>
+
+</body>
+
+</html>

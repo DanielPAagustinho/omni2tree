@@ -1,0 +1,168 @@
+{
+  "name": "hRSV_demo",
+  "node_count": 16,
+  "leaf_count": 9,
+  "internal_count": 7,
+  "meta_keys": {
+    "Source": {
+      "type": "character",
+      "std_type": "cate",
+      "name": "Source",
+      "NA_count": 7,
+      "min": null,
+      "max": null,
+      "categories": [
+        "Reference",
+        "Readset"
+      ]
+    },
+    "Subgroup": {
+      "type": "character",
+      "std_type": "cate",
+      "name": "Subgroup",
+      "NA_count": 7,
+      "min": null,
+      "max": null,
+      "categories": [
+        "RSV-A",
+        "RSV-A_inferred",
+        "hMPV",
+        "RSV-B",
+        "RSV-B_inferred"
+      ]
+    },
+    "Lineage": {
+      "type": "character",
+      "std_type": "cate",
+      "name": "Lineage",
+      "NA_count": 11,
+      "min": null,
+      "max": null,
+      "categories": [
+        "A.1_historical",
+        "A.D.2.2.1",
+        "A.D.5",
+        "outgroup",
+        "B.D.4.1.1"
+      ]
+    },
+    "Tree_group": {
+      "type": "character",
+      "std_type": "cate",
+      "name": "Tree_group",
+      "NA_count": 7,
+      "min": null,
+      "max": null,
+      "categories": [
+        "historical_RSV_A",
+        "post_ON1_RSV_A",
+        "A_subcluster_extra_diversity",
+        "contemporary_A_cluster",
+        "contemporary_RSV_A",
+        "A_D5_nearby_cluster",
+        "hMPV_outgroup",
+        "contemporary_RSV_B",
+        "B_like_from_full_run"
+      ]
+    },
+    "Location": {
+      "type": "character",
+      "std_type": "cate",
+      "name": "Location",
+      "NA_count": 7,
+      "min": null,
+      "max": null,
+      "categories": [
+        "USA",
+        "UK",
+        "United_Kingdom",
+        "Canada",
+        "Australia"
+      ]
+    },
+    "Collection_date": {
+      "type": "character",
+      "std_type": "cate",
+      "name": "Collection_date",
+      "NA_count": 7,
+      "min": null,
+      "max": null,
+      "categories": [
+        "1961",
+        "2017",
+        "2022-11-30",
+        "2022-12-13",
+        "2021",
+        "2023-01-22",
+        "1997",
+        "2019",
+        "2023-01-26"
+      ]
+    },
+    "Decade": {
+      "type": "character",
+      "std_type": "cate",
+      "name": "Decade",
+      "NA_count": 7,
+      "min": null,
+      "max": null,
+      "categories": [
+        "1960",
+        "2010",
+        "2020",
+        "1990"
+      ]
+    },
+    "Bases": {
+      "type": "numeric",
+      "std_type": "cont",
+      "name": "Bases",
+      "NA_count": 12,
+      "min": 3327511.0,
+      "max": 8423854.0,
+      "categories": []
+    },
+    "Avg_spot_len": {
+      "type": "numeric",
+      "std_type": "cont",
+      "name": "Avg_spot_len",
+      "NA_count": 12,
+      "min": 323.0,
+      "max": 335.0,
+      "categories": []
+    },
+    "Selection_note": {
+      "type": "character",
+      "std_type": "cate",
+      "name": "Selection_note",
+      "NA_count": 7,
+      "min": null,
+      "max": null,
+      "categories": [
+        "Historical_RSV_A_anchor",
+        "Goya_2024_RSV_A_coordinate_reference",
+        "Moderate_small_readset_distinct_from_selected_A_reads",
+        "Small_A_readset_near_contemporary_cluster",
+        "Contemporary_RSV_A_D5_reference",
+        "Small_A_readset_on_separate_terminal_cluster",
+        "Outgroup_for_rooting",
+        "Goya_2024_RSV_B_coordinate_reference",
+        "Smallest_mappable_readset_outlier_branch"
+      ]
+    }
+  },
+  "estimated_width": 5,
+  "estimated_height": 9,
+  "entropy": {
+    "dir": "omni2treeview_hRSV_demo_entropy",
+    "files": [
+      "entropy_L.png",
+      "entropy_M.png",
+      "entropy_M2-1.png",
+      "entropy_N.png",
+      "entropy_NS2.png",
+      "entropy_all_genes.png"
+    ],
+    "count_excluding_all_genes": 5
+  }
+}

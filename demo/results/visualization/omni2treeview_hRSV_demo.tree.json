@@ -1,0 +1,327 @@
+{
+  "id": "13",
+  "name": "Internal-8",
+  "sample_id": "NA",
+  "branch_length": 0.0,
+  "meta": {
+    "Source": "NA",
+    "Subgroup": "NA",
+    "Lineage": "NA",
+    "Tree_group": "NA",
+    "Location": "NA",
+    "Collection_date": "NA",
+    "Decade": "NA",
+    "Bases": "NA",
+    "Avg_spot_len": "NA",
+    "Selection_note": "NA"
+  },
+  "confidence": "NA",
+  "children": [
+    {
+      "id": "1",
+      "name": "A2",
+      "sample_id": "M74568.1",
+      "branch_length": 0.01359,
+      "meta": {
+        "Source": "Reference",
+        "Subgroup": "RSV-A",
+        "Lineage": "A.1_historical",
+        "Tree_group": "historical_RSV_A",
+        "Location": "USA",
+        "Collection_date": "1961",
+        "Decade": "1960",
+        "Bases": "NA",
+        "Avg_spot_len": "NA",
+        "Selection_note": "Historical_RSV_A_anchor"
+      },
+      "confidence": "NA",
+      "children": []
+    },
+    {
+      "id": "14",
+      "name": "Internal-2",
+      "sample_id": "NA",
+      "branch_length": 0.01448,
+      "meta": {
+        "Source": "NA",
+        "Subgroup": "NA",
+        "Lineage": "NA",
+        "Tree_group": "NA",
+        "Location": "NA",
+        "Collection_date": "NA",
+        "Decade": "NA",
+        "Bases": "NA",
+        "Avg_spot_len": "NA",
+        "Selection_note": "NA"
+      },
+      "confidence": "NA",
+      "children": [
+        {
+          "id": "9",
+          "name": "Internal-3",
+          "sample_id": "NA",
+          "branch_length": 0.00052,
+          "meta": {
+            "Source": "NA",
+            "Subgroup": "NA",
+            "Lineage": "NA",
+            "Tree_group": "NA",
+            "Location": "NA",
+            "Collection_date": "NA",
+            "Decade": "NA",
+            "Bases": "NA",
+            "Avg_spot_len": "NA",
+            "Selection_note": "NA"
+          },
+          "confidence": "NA",
+          "children": [
+            {
+              "id": "10",
+              "name": "Internal-4",
+              "sample_id": "NA",
+              "branch_length": 0.00042,
+              "meta": {
+                "Source": "NA",
+                "Subgroup": "NA",
+                "Lineage": "NA",
+                "Tree_group": "NA",
+                "Location": "NA",
+                "Collection_date": "NA",
+                "Decade": "NA",
+                "Bases": "NA",
+                "Avg_spot_len": "NA",
+                "Selection_note": "NA"
+              },
+              "confidence": "NA",
+              "children": [
+                {
+                  "id": "11",
+                  "name": "HRSV_A_England_397_2017",
+                  "sample_id": "PP109421.1",
+                  "branch_length": 0.00478,
+                  "meta": {
+                    "Source": "Reference",
+                    "Subgroup": "RSV-A",
+                    "Lineage": "A.D.2.2.1",
+                    "Tree_group": "post_ON1_RSV_A",
+                    "Location": "UK",
+                    "Collection_date": "2017",
+                    "Decade": "2010",
+                    "Bases": "NA",
+                    "Avg_spot_len": "NA",
+                    "Selection_note": "Goya_2024_RSV_A_coordinate_reference"
+                  },
+                  "confidence": "NA",
+                  "children": []
+                },
+                {
+                  "id": "2",
+                  "name": "hRSV_SRR24833895",
+                  "sample_id": "SRR24833895",
+                  "branch_length": 0.00625,
+                  "meta": {
+                    "Source": "Readset",
+                    "Subgroup": "RSV-A_inferred",
+                    "Lineage": "NA",
+                    "Tree_group": "A_subcluster_extra_diversity",
+                    "Location": "United_Kingdom",
+                    "Collection_date": "2022-11-30",
+                    "Decade": "2020",
+                    "Bases": "8423854",
+                    "Avg_spot_len": "330",
+                    "Selection_note": "Moderate_small_readset_distinct_from_selected_A_reads"
+                  },
+                  "confidence": "NA",
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "8",
+              "name": "hRSV_SRR24833879",
+              "sample_id": "SRR24833879",
+              "branch_length": 0.00292,
+              "meta": {
+                "Source": "Readset",
+                "Subgroup": "RSV-A_inferred",
+                "Lineage": "NA",
+                "Tree_group": "contemporary_A_cluster",
+                "Location": "United_Kingdom",
+                "Collection_date": "2022-12-13",
+                "Decade": "2020",
+                "Bases": "5260160",
+                "Avg_spot_len": "335",
+                "Selection_note": "Small_A_readset_near_contemporary_cluster"
+              },
+              "confidence": "NA",
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": "0",
+          "name": "Internal-5",
+          "sample_id": "NA",
+          "branch_length": 0.00242,
+          "meta": {
+            "Source": "NA",
+            "Subgroup": "NA",
+            "Lineage": "NA",
+            "Tree_group": "NA",
+            "Location": "NA",
+            "Collection_date": "NA",
+            "Decade": "NA",
+            "Bases": "NA",
+            "Avg_spot_len": "NA",
+            "Selection_note": "NA"
+          },
+          "confidence": "NA",
+          "children": [
+            {
+              "id": "3",
+              "name": "hRSV_A_USA_202195752_2021",
+              "sample_id": "OP965711.1",
+              "branch_length": 0.00111,
+              "meta": {
+                "Source": "Reference",
+                "Subgroup": "RSV-A",
+                "Lineage": "A.D.5",
+                "Tree_group": "contemporary_RSV_A",
+                "Location": "USA",
+                "Collection_date": "2021",
+                "Decade": "2020",
+                "Bases": "NA",
+                "Avg_spot_len": "NA",
+                "Selection_note": "Contemporary_RSV_A_D5_reference"
+              },
+              "confidence": "NA",
+              "children": []
+            },
+            {
+              "id": "4",
+              "name": "hRSV_SRR24833888",
+              "sample_id": "SRR24833888",
+              "branch_length": 0.00214,
+              "meta": {
+                "Source": "Readset",
+                "Subgroup": "RSV-A_inferred",
+                "Lineage": "NA",
+                "Tree_group": "A_D5_nearby_cluster",
+                "Location": "United_Kingdom",
+                "Collection_date": "2023-01-22",
+                "Decade": "2020",
+                "Bases": "5783068",
+                "Avg_spot_len": "323",
+                "Selection_note": "Small_A_readset_on_separate_terminal_cluster"
+              },
+              "confidence": "NA",
+              "children": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "15",
+      "name": "Internal-6",
+      "sample_id": "NA",
+      "branch_length": 0.04489,
+      "meta": {
+        "Source": "NA",
+        "Subgroup": "NA",
+        "Lineage": "NA",
+        "Tree_group": "NA",
+        "Location": "NA",
+        "Collection_date": "NA",
+        "Decade": "NA",
+        "Bases": "NA",
+        "Avg_spot_len": "NA",
+        "Selection_note": "NA"
+      },
+      "confidence": "NA",
+      "children": [
+        {
+          "id": "12",
+          "name": "hMPV_CAN97_83",
+          "sample_id": "AY297749.1",
+          "branch_length": 2.64818,
+          "meta": {
+            "Source": "Reference",
+            "Subgroup": "hMPV",
+            "Lineage": "outgroup",
+            "Tree_group": "hMPV_outgroup",
+            "Location": "Canada",
+            "Collection_date": "1997",
+            "Decade": "1990",
+            "Bases": "NA",
+            "Avg_spot_len": "NA",
+            "Selection_note": "Outgroup_for_rooting"
+          },
+          "confidence": "NA",
+          "children": []
+        },
+        {
+          "id": "5",
+          "name": "Internal-7",
+          "sample_id": "NA",
+          "branch_length": 0.08288,
+          "meta": {
+            "Source": "NA",
+            "Subgroup": "NA",
+            "Lineage": "NA",
+            "Tree_group": "NA",
+            "Location": "NA",
+            "Collection_date": "NA",
+            "Decade": "NA",
+            "Bases": "NA",
+            "Avg_spot_len": "NA",
+            "Selection_note": "NA"
+          },
+          "confidence": "NA",
+          "children": [
+            {
+              "id": "7",
+              "name": "hRSV_B_Australia_VIC_RCH056_2019",
+              "sample_id": "OP975389.1",
+              "branch_length": 0.02721,
+              "meta": {
+                "Source": "Reference",
+                "Subgroup": "RSV-B",
+                "Lineage": "B.D.4.1.1",
+                "Tree_group": "contemporary_RSV_B",
+                "Location": "Australia",
+                "Collection_date": "2019",
+                "Decade": "2010",
+                "Bases": "NA",
+                "Avg_spot_len": "NA",
+                "Selection_note": "Goya_2024_RSV_B_coordinate_reference"
+              },
+              "confidence": "NA",
+              "children": []
+            },
+            {
+              "id": "6",
+              "name": "hRSV_SRR24833886",
+              "sample_id": "SRR24833886",
+              "branch_length": 0.00265,
+              "meta": {
+                "Source": "Readset",
+                "Subgroup": "RSV-B_inferred",
+                "Lineage": "NA",
+                "Tree_group": "B_like_from_full_run",
+                "Location": "United_Kingdom",
+                "Collection_date": "2023-01-26",
+                "Decade": "2020",
+                "Bases": "3327511",
+                "Avg_spot_len": "330",
+                "Selection_note": "Smallest_mappable_readset_outlier_branch"
+              },
+              "confidence": "NA",
+              "children": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
