@@ -25,15 +25,6 @@ cd omni2tree
 ./install.sh /your/install/path
 ```
 
-Check the command entry points with:
-
-```bash
-which o2t-step1 && o2t-step1 --help
-which o2t-step2 && o2t-step2 --help
-which o2t-step3 && o2t-step3 --help
-which o2t-sra   && o2t-sra   --help
-```
-
 ## Quick start
 
 Minimal example (adjust paths to your data):
