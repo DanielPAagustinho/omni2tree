@@ -97,6 +97,8 @@ python setup.py install
 ## read2tree will be placed in the default bin folder of your Conda installation
 ```
 
+To study co-infection (in metagenomics mode), we need to have a separate conda environment. Inside this new environment, please install read2tree metagenomics branch, after downloading with `git clone -b metagenomics https://github.com/DessimozLab/read2tree.git`. 
+
 **SRA Toolkit**
 
 ```bash
