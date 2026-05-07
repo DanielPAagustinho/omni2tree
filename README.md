@@ -1,5 +1,5 @@
 
-# Welcome to Omni2tree!!
+# Welcome to Omni2Tree!!
 
 Omni2Tree is an end-to-end phylogenomic workflow that builds maximum-likelihood phylogenetic trees directly from raw sequencing reads, without genome assembly or reliance on a single reference. It (i) constructs a reference database with OMA Standalone from coding sequences retrieved via NCBI accessions, (ii) processes read samples with optional deduplication and downsampling, and (iii) generates phylogenetic trees that place reference assemblies and read-derived consensus sequences on the same tree. For segmented viruses, Omni2Tree can be run on individual segments or selected subsets of segments, enabling users to investigate reassortment patterns or focus on specific genomic regions. The workflow also handles metagenomic samples containing multiple co-infecting pathogens, integrates metadata into an interactive HTML visualization through Omni2TreeView, computes per-position Shannon entropy from the merged MSAs with publication-ready plots, and includes a utility to bulk-download SRA runs or experiments.
 
@@ -7,6 +7,7 @@ Omni2Tree is an end-to-end phylogenomic workflow that builds maximum-likelihood 
 
 - [Installation](docs/installation.md)
 - [Quick start](#quick-start)
+- [hRSV demo dataset](demo/README.md)
 - [Running step 1: Creating the reference database](#running-step-1-creating-the-reference-database)
 - [Running step 2: Processing sample reads and adding them to the read2tree folder](#running-step-2-processing-sample-reads-and-adding-them-to-the-read2tree-folder)
 - [Running step 3: Getting the tree](#running-step-3-getting-the-tree)
@@ -31,20 +32,30 @@ Minimal example (adjust paths to your data):
 
 ```bash
 # Step 1: Create reference OMA database for r2t with NCBI accessions
-o2t-step1 -i rsv_accessions.csv -g rsv_outgroups.txt -T 25 -o virus2tree_rsv &> rsv_long_step1.log
+o2t-step1 -i rsv_accessions.csv -g rsv_outgroups.csv -T 25 -o o2t_rsv &> rsv_long_step1.log
 
 # Step 2: Map long nanopore reads to the reference using GNU Parallel
-parallel -j 4 o2t-step2 -r {1} -o virus2tree_rsv -T 20 ::: \
+parallel -j 4 o2t-step2 -r {1} -o o2t_rsv -T 20 ::: \
   $(ls reads/*fastq* | sort) &>> "rsv_long_step2.log" &
 
 # Step 2: Map short paired end reads to the reference
   parallel -j 4 o2t-step2 \
-  -r {1} -t paired -map_op '"-ax sr"' -o virus2tree_rsv -T 20 ::: \
+  -r {1} -t paired -map_op '"-ax sr"' -o o2t_rsv -T 20 ::: \
   $(ls reads/*_1.fastq* | sort) :::+ $(ls reads/*_2.fastq* | sort) &>> "rsv_short_step2.log" &
 
-# Step 3: Create tree + visualization + entropy outputs
-o2t-step3 -o virus2tree_rsv -m data/metadata.csv --seq_type aa -T 8
+# Step 3: Create tree + visualization + entropy outputs (excluding reference sequences from the entropy analysis)
+o2t-step3 -o o2t_rsv -m data/metadata.csv -l -l hRSV_main --seq_type aa --exclude_pattern "s0" -T 8
 ```
+## hRSV demo dataset
+
+A complete small hRSV demo is available in `demo/`.
+It runs Step 1, Step 2, Step 3, metadata validation, entropy plots and
+Omni2TreeView HTML generation.
+
+Please, take into account that tree branch lengths/support values can vary between runs because MAFFT/IQ-TREE
+use stochastic steps, so the demo should be validated with expected labels, row counts, generated files and log success patterns rather than exact Newick
+identity.
+
 
 ## Running step 1: Creating the reference database
 
