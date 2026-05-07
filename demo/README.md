@@ -14,7 +14,6 @@ The readsets total about 53M on disk. The selected reference AA FASTA files are 
 
 `data/metadata.csv` keeps columns that should be useful for visualization:
 
-- `source`: Reference or Readset.
 - `subgroup`: RSV-A, RSV-B, hMPV, or inferred readset subgroup.
 - `lineage`: Goya 2024 lineage where available.
 - `tree_group`: compact display group based on the full run.
@@ -24,32 +23,40 @@ The readsets total about 53M on disk. The selected reference AA FASTA files are 
 
 ## Suggested run
 
-Run from `data/`:
+Run from `data/`. The commands below write new outputs to `../my_results` so the bundled `../results` folder remains available for comparison.
+
+Download the selected SRA readsets:
 
 ```bash
-
-# First, let us download the readsets
-o2t-sra -i reads.csv -o reads --layout SINGLE
-
-# Second, let's create the reference database consisting on 5 assemblies
-o2t-step1 -i accessions.csv -g outgroup.csv -T 3 --o2t_out ../results |& tee hRSV_step1.log
-
-# Third, we generate the consensus sequence for each of the 4 read samples
-parallel -j 4 o2t-step2 -r {1} --o2t_out ../results -T 2 ::: \
-  $(ls reads/hRSV_*fastq | sort) |& tee -a hRSV_step2.log
-
-# Fourth, let us combine the recovered sequences with the OG alignment and generate the phylogenetic tree, entropy analysis and visualization
-
-o2t-step3 -o ../results -m metadata.csv -l hRSV_demo --seq_type aa -T 3 -r --exclude_pattern "s0" --min_samples 4 |& tee hRSV_step3.log
+o2t-sra -i reads.csv -o reads --layout SINGLE |& tee hRSV_sra.log
 ```
 
-Note that, using the `--exluce_pattern` parameter, we exclude all the reference sequences from the entropy analysis.
+Create the reference database from 5 assemblies:
+
+```bash
+o2t-step1 -i accessions.csv -g outgroup.csv -T 3 --o2t_out ../my_results |& tee hRSV_step1.log
+```
+
+Generate one consensus sequence per readset:
+
+```bash
+parallel -j 4 o2t-step2 -r {1} --o2t_out ../my_results -T 2 ::: \
+  $(ls reads/hRSV_*fastq | sort) |& tee -a hRSV_step2.log
+```
+
+Build the final tree, entropy tables, plots, and HTML visualization:
+
+```bash
+o2t-step3 -o ../my_results -m metadata.csv -l hRSV_demo --seq_type aa -T 3 -r \
+  --exclude_pattern "s0" --min_samples 4 |& tee hRSV_step3.log
+```
+
+The `--exclude_pattern "s0"` parameter excludes the reference sequences from the entropy analysis.
 
 ## How to confirm success
 
-To verify that the results are as expected, please compare your generated `results` folder—which contains the accumulated outputs from each step of the process—with the [demo/results](demo/results) folder. Pay special attention to the `OG_genes.tsv`, `aa_positions.csv`, `aa_entropy.csv`, the HTML visualization file, and the `.nwk` files in [O2T_RESULTS](demo/results/O2T_RESULTS).
+Compare your generated `../my_results` folder with the bundled [results](results) folder. The three most useful files to review are `results/O2T_RESULTS/concat_merge_view_aa.phy.treefile`, `results/stats/entropy/aa_entropy.csv`, and `results/visualization/omni2treeview_hRSV_demo.html`; as an extra, inspect the remaining output files to understand how Omni2Tree organizes the full run.
 
 ### Example HTML Visualization
 
-![O2T visualization demo](docs/demo_o2t_view.png)
-
+![O2T visualization demo](../docs/demo_o2t_view.png)

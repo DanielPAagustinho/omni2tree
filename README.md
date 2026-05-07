@@ -44,7 +44,7 @@ parallel -j 4 o2t-step2 -r {1} -o o2t_rsv -T 20 ::: \
   $(ls reads/*_1.fastq* | sort) :::+ $(ls reads/*_2.fastq* | sort) &>> "rsv_short_step2.log" &
 
 # Step 3: Create tree + visualization + entropy outputs (excluding reference sequences from the entropy analysis)
-o2t-step3 -o o2t_rsv -m data/metadata.csv -l -l hRSV_main --seq_type aa --exclude_pattern "s0" -T 8
+o2t-step3 -o o2t_rsv -m data/metadata.csv -l hRSV_main --seq_type aa --exclude_pattern "s0" -T 8
 ```
 ## hRSV demo dataset
 
