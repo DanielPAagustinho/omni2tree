@@ -512,8 +512,7 @@ At the end of execution, the script removes the directories containing the .sra 
 
 If you use these scripts, please cite:
 
-- **Read2Tree**: Dylus et al. (2024) "Inference of phylogenetic trees directly from raw sequencing reads using Read2Tree" *Nature Biotechnology*
-- Your study where you applied this pipeline
+- **Omni2Tree**: Majidian, S., Chalco, A., Zheng, X., Webby, R. J., Bowman, A. S., Poulson, R. L., Nemeth, N. M., Sedlazeck, F. J., & Agustinho, D. P. (2026). "Rapid phylogenomic analysis for viral surveillance and metagenomic profiling with Omni2Tree" *bioRxiv*. https://doi.org/10.64898/2026.04.29.721707
 
 ---
 
