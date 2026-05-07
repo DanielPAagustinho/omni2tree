@@ -48,7 +48,7 @@ o2t-step3 -o o2t_rsv -m data/metadata.csv -l hRSV_main --seq_type aa --exclude_p
 ```
 ## hRSV demo dataset
 
-A complete small hRSV demo is available in `demo/`.
+A complete small hRSV demo is available in [demo/](demo/README.md).
 It runs Step 1, Step 2, Step 3, metadata validation, entropy plots and
 Omni2TreeView HTML generation.
 
