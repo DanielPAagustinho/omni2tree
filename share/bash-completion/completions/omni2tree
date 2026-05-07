@@ -91,7 +91,7 @@ _o2t_step3_complete() {
   cur="${COMP_WORDS[COMP_CWORD]}"
   prev="${COMP_WORDS[COMP_CWORD-1]}"
 
-  opts="-o --o2t_out -l --label -m --metadata --seq_type -T --threads --bootstrap -r --redo --temp_dir --debug --exclude_pattern --filter_column --filter_value --group_by --min_samples --exclude_gaps --add_domain -h --help"
+  opts="-o --o2t_out -l --label -m --metadata --seq_type -T --threads --bootstrap -r --redo --temp_dir --debug --reference_id --exclude_pattern --filter_column --filter_value --group_by --min_samples --exclude_gaps --add_domain -h --help"
 
   case "$prev" in
     -o|--o2t_out|--temp_dir)
@@ -119,7 +119,7 @@ _o2t_calculate_entropy_complete() {
   cur="${COMP_WORDS[COMP_CWORD]}"
   prev="${COMP_WORDS[COMP_CWORD-1]}"
 
-  opts="--input --output --metadata --group_by --min_samples --exclude_gaps -h --help"
+  opts="--input --output --metadata --group_by --min_samples --use_reference_positions --exclude_gaps -h --help"
 
   case "$prev" in
     --input|--output|--metadata)
@@ -139,20 +139,40 @@ _o2t_msa_to_position_table_complete() {
   cur="${COMP_WORDS[COMP_CWORD]}"
   prev="${COMP_WORDS[COMP_CWORD-1]}"
 
-  opts="--msa_dir --og_table --output --seq_type --metadata --filter_column --filter_value \
-        --exclude_pattern --include_all -h --help"
+  opts="--msa_dir --og_table --output --seq_type --reference_id --metadata --metadata_match_column \
+        --five_letter --filter_column --filter_value --exclude_pattern --include_all -h --help"
 
   case "$prev" in
     --msa_dir)
       COMPREPLY=( $(compgen -d -- "$cur") )
       return 0
       ;;
-    --og_table|--output|--metadata)
+    --og_table|--output|--metadata|--five_letter)
       COMPREPLY=( $(compgen -f -- "$cur") )
       return 0
       ;;
     --seq_type)
       COMPREPLY=( $(compgen -W "AA DNA" -- "$cur") )
+      return 0
+      ;;
+  esac
+
+  if [[ "$cur" == -* ]]; then
+    COMPREPLY=( $(compgen -W "$opts" -- "$cur") )
+  fi
+}
+
+_o2t_entropy_msa_og_gene_table_complete() {
+  local cur prev opts
+  COMPREPLY=()
+  cur="${COMP_WORDS[COMP_CWORD]}"
+  prev="${COMP_WORDS[COMP_CWORD-1]}"
+
+  opts="--input --output --keep_empty_gene -h --help"
+
+  case "$prev" in
+    --input|--output)
+      COMPREPLY=( $(compgen -f -- "$cur") )
       return 0
       ;;
   esac
@@ -180,6 +200,10 @@ _o2t_plot_entropy_r_complete() {
       COMPREPLY=( $(compgen -W "AA DNA" -- "$cur") )
       return 0
       ;;
+    4)
+      COMPREPLY=( $(compgen -f -- "$cur") )
+      return 0
+      ;;
   esac
 }
 
@@ -189,11 +213,15 @@ _o2t_omni2treeview_complete() {
   cur="${COMP_WORDS[COMP_CWORD]}"
   prev="${COMP_WORDS[COMP_CWORD-1]}"
 
-  opts="-n --nwk_file -m --meta -c --code -o --output -t --template -l --name -h --help"
+  opts="-n --nwk_file -m --meta -e --entropy -o --output -t --template -l --name -h --help"
 
   case "$prev" in
-    -n|--nwk_file|-m|--meta|-c|--code|-t|--template|-o|--output)
+    -n|--nwk_file|-m|--meta|-t|--template|-o|--output)
       COMPREPLY=( $(compgen -f -- "$cur") )
+      return 0
+      ;;
+    -e|--entropy)
+      COMPREPLY=( $(compgen -d -- "$cur") )
       return 0
       ;;
   esac
@@ -252,8 +280,10 @@ complete -o default -F _o2t_step1_complete o2t-step1
 complete -o default -F _o2t_step2_complete o2t-step2
 complete -o default -F _o2t_step3_complete o2t-step3
 complete -o default -F _o2t_calculate_entropy_complete calculate_entropy.py
+complete -o default -F _o2t_entropy_msa_og_gene_table_complete entropy_msa_og_gene_table.py
 complete -o default -F _o2t_msa_to_position_table_complete msa_to_position_table.py
 complete -o default -F _o2t_plot_entropy_r_complete plot_entropy.R
+complete -o default -F _o2t_plot_entropy_r_complete plot_entropy_old.R
 complete -o default -F _o2t_omni2treeview_complete omni2treeview.py
 complete -o default -F _o2t_prepare_metadata_o2t_view_complete prepare_metadata_o2t_view.py
 complete -o default -F _o2t_validate_metadata_complete validate_metadata.py
