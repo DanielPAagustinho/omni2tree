@@ -499,8 +499,10 @@ generate_og_gene_tsv() {
                 gene="${BASH_REMATCH[1]}"
               fi
 
-              # protein
+              # protein/product
               if [[ "$line" =~ \[protein=([^]]+)\] ]]; then
+                protein="${BASH_REMATCH[1]}"
+              elif [[ "$line" =~ \[product=([^]]+)\] ]]; then
                 protein="${BASH_REMATCH[1]}"
               fi
 
