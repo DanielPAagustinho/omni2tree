@@ -93,16 +93,6 @@ If this file is not specified, OMA Standalone will use midpoint rooting, which i
 | `--debug`         | Keeps temp directory with intermediate files. |
 | `-h, --help`         | Show help. |
 
-### **Step 1 Workflow**
-
-Step 1 first validates the reference input(s), then builds a reference database from NCBI accessions, local GTF/GFF3-annotated assemblies, or both. If an NCBI input file is provided, Entrez Direct is used to retrieve nucleotide CDS FASTA records. Assembly identifiers (`GCF_`/`GCA_`) are expanded to their linked nucleotide accessions, preferring RefSeq `NC_*` accessions when available. The `-p/--use_mat_peptides` and `-q/--use_mat_peptides_only` options apply to NCBI references and use GenBank `mat_peptide` features when available.
-
-Local assemblies are validated before extraction. The local manifest is normalized into the temporary directory, local taxon names are cleaned with the same alphanumeric rule as NCBI taxa, and the selected GTF/GFF3 rows are converted to NCBI-like FASTA records in `db/`. After all references are present in `db/`, Step 1 translates and cleans them into `DB/` and `dna_ref.fa`, runs OMA Standalone, builds OG/gene statistics, optionally filters OGs with `--og_min_fraction`, copies the kept OG FASTA files to `marker_genes/`, and runs `read2tree --step 1marker` into `O2T_RESULTS`.
-
-For local assemblies, Step 1 logs a concise extraction report with written/skipped taxa, selected feature rows, final sequence units, feature-type counts, and the grouping attribute used, if any.
-
-When `-R/--resume` is used, taxa with existing non-empty `db/{taxon}_cds_from_genomic.fna` files are skipped. If `DB/` and `dna_ref.fa` already match the `db/` contents, Step 1 can skip the cleaning/translation step and resume from the OMA/read2tree part. Resume mode removes previous OMA/read2tree outputs that would conflict with the rerun.
-
 ### **Accession File Format**
 
 When `-i/--input` is used, the accession file must be a comma-separated values (CSV) text file, with the first line as the header. Each line represents a taxon/species/strain/label with associated accessions. The format varies depending on whether a five-letter code is included.
@@ -136,7 +126,7 @@ Local RSV A,local_rsv_a.fasta,local_rsv_a.gff3
 
 If `-i/--input` is omitted, either local manifest format is accepted.
 
-Use `--local_features` to select one or more feature types from GTF/GFF3 column 3, for example `--local_features CDS`, `--local_features mat_peptide`, or `--local_features CDS,mat_peptide`. By default, selected feature rows are not grouped: each selected row is treated as one sequence unit, even when multiple feature types are selected. Use `--local_group_by <attribute>` to group selected rows into final units by one attribute; a final group can contain rows from different selected feature types. Only one grouping attribute is allowed. Missing identifier values such as `.`, `-`, `NA`, `N/A`, `unknown`, or an empty value are treated as missing.
+Use `--local_features` to select one or more feature types from GTF/GFF3 column 3, for example `--local_features CDS`, `--local_features mat_peptide`, or `--local_features CDS,mat_peptide`. By default, selected feature rows are not grouped: each selected row is treated as one sequence unit, even when multiple feature types are selected. Use `--local_group_by <attribute>` to group selected rows into final units by one attribute; a final group can contain rows from different selected feature types.
 
 Each non-comment GTF/GFF3 row must have at least 9 tab-separated columns. Only include the feature rows you want to use. For example, if you want a subset of genes or segments, pre-filter the annotation so that only those rows remain. Local taxa must not duplicate taxa from the main accession file after Omni2Tree's alphanumeric taxon-name cleanup.
 
