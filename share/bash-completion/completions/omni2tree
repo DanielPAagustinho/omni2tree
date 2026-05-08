@@ -36,11 +36,11 @@ _o2t_step1_complete() {
   cur="${COMP_WORDS[COMP_CWORD]}"
   prev="${COMP_WORDS[COMP_CWORD-1]}"
 
-  opts="-i --input -g --outgroup -o --o2t_out --temp_dir -R --resume --og_min_fraction \
+  opts="-i --input -L --local_assemblies -g --outgroup -o --o2t_out --temp_dir -R --resume --og_min_fraction \
         -p --use_mat_peptides -q --use_mat_peptides_only -T --threads --debug -h --help"
 
   case "$prev" in
-    -i|--input|-g|--outgroup)
+    -i|--input|-L|--local_assemblies|-g|--outgroup)
       COMPREPLY=( $(compgen -f -- "$cur") )
       return 0
       ;;

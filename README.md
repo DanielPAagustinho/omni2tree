@@ -1,7 +1,7 @@
 
 # Welcome to Omni2Tree!!
 
-Omni2Tree is an end-to-end phylogenomic workflow that builds maximum-likelihood phylogenetic trees directly from raw sequencing reads, without genome assembly or reliance on a single reference. It (i) constructs a reference database with OMA Standalone from coding sequences retrieved via NCBI accessions, (ii) processes read samples with optional deduplication and downsampling, and (iii) generates phylogenetic trees that place reference assemblies and read-derived consensus sequences on the same tree. For segmented viruses, Omni2Tree can be run on individual segments or selected subsets of segments, enabling users to investigate reassortment patterns or focus on specific genomic regions. The workflow also handles metagenomic samples containing multiple co-infecting pathogens, integrates metadata into an interactive HTML visualization through Omni2TreeView, computes per-position Shannon entropy from the merged MSAs with publication-ready plots, and includes a utility to bulk-download SRA runs or experiments.
+Omni2Tree is an end-to-end phylogenomic workflow that builds maximum-likelihood phylogenetic trees directly from raw sequencing reads, without genome assembly or reliance on a single reference. It (i) constructs a reference database with OMA Standalone from coding sequences retrieved via NCBI accessions and/or extracted from local GTF/GFF3-annotated assemblies, (ii) processes read samples with optional deduplication and downsampling, and (iii) generates phylogenetic trees that place reference assemblies and read-derived consensus sequences on the same tree. For segmented viruses, Omni2Tree can be run on individual segments or selected subsets of segments, enabling users to investigate reassortment patterns or focus on specific genomic regions. The workflow also handles metagenomic samples containing multiple co-infecting pathogens, integrates metadata into an interactive HTML visualization through Omni2TreeView, computes per-position Shannon entropy from the merged MSAs with publication-ready plots, and includes a utility to bulk-download SRA runs or experiments.
 
 ## Table of Contents
 
@@ -31,7 +31,7 @@ cd omni2tree
 Minimal example (adjust paths to your data):
 
 ```bash
-# Step 1: Create reference OMA database for r2t with NCBI accessions
+# Step 1: Create reference OMA database for r2t with NCBI and/or local references
 o2t-step1 -i rsv_accessions.csv -g rsv_outgroups.csv -T 25 -o o2t_rsv &> rsv_long_step1.log
 
 # Step 2: Map long nanopore reads to the reference using GNU Parallel
@@ -65,9 +65,11 @@ identity.
 ```bash
 o2t-step1 -i rsv_accessions.csv -g rsv_outgroups.txt -T 25 -o virus2tree_rsv --temp_dir temp --debug &> def_rsv_long.log
 ```
-To create the reference database, two key input files are required:
+To create the reference database, provide at least one reference source:
 
-`-i`, `--input` (Required): A file containing the NCBI accessions to be used for reference (`rsv_accessions.csv`).
+`-i`, `--input` (optional if `--local_assemblies` is provided): A file containing the NCBI accessions to be used for reference (`rsv_accessions.csv`).
+
+`-L`, `--local_assemblies` (optional if `--input` is provided): A CSV manifest containing local assemblies and GTF/GFF3 annotations.
 
 `-g`, `--outgroup` (optional but recommended): A file containing taxon(s) to be used as outgroups by OMA Standalone during orthologous group prediction (`rsv_outgroups`).  
 If this file is not specified, OMA Standalone will use midpoint rooting, which is likely incorrect and will significantly affect hierarchical orthologous groups (HOGs) inferred by OMA.
@@ -76,7 +78,8 @@ If this file is not specified, OMA Standalone will use midpoint rooting, which i
 
 | **Parameter**       | **Description** |
 |--------------------|-----------------------------|
-| `-i`, `--input`    | **Required.** CSV file with NCBI accessions. |
+| `-i`, `--input`    | Optional CSV file with NCBI accessions. Required only when `--local_assemblies` is not provided. |
+| `-L`, `--local_assemblies` | Optional CSV manifest with local assemblies to add to the same reference database as the NCBI accessions. Required only when `--input` is not provided. |
 | `-g`, `--outgroup` | **Optional (recommended)** File with outgroup taxa used by OMA. |
 | `-o`, `--o2t_out`       | Base output directory where all outputs are written. **Default:** current directory|
 | `--temp_dir`       | Temporary directory (relative to `--o2t_out` or absolute). **Default:** `mktemp -d`|
@@ -90,7 +93,7 @@ If this file is not specified, OMA Standalone will use midpoint rooting, which i
 
 ### **Accession File Format**
 
-The accession file must be a comma-separated values (CSV) text file, with the first line as the header. Each line represents a taxon/species/strain/label with associated accessions. The format varies depending on whether a five-letter code is included.
+When `-i/--input` is used, the accession file must be a comma-separated values (CSV) text file, with the first line as the header. Each line represents a taxon/species/strain/label with associated accessions. The format varies depending on whether a five-letter code is included.
 
 #### **Columns:**
 1. **First column (required):** Taxon/species/label/strain name. Header: taxon (or taxa), species, label(s) or strain(s).
@@ -100,6 +103,28 @@ The accession file must be a comma-separated values (CSV) text file, with the fi
 Commented lines starting with `#` are ignored.
 
 For segmented viruses, include only the accessions corresponding to the segment(s) of interest if the goal is to analyze reassortment or focus on a subset of the genome.
+
+### **Local Assemblies Manifest**
+
+`-L`, `--local_assemblies` adds homemade/local assemblies to the reference database built in step 1. Each row represents one reference taxon/label and must point to a DNA FASTA file plus a GTF/GFF3 annotation file. Omni2Tree extracts only features whose third GTF/GFF3 column is `CDS`, writes them to `db/{taxon}_cds_from_genomic.fna`, and then processes them together with the NCBI references if `-i/--input` is also provided.
+
+If the main accession file has a code column, the local manifest must also have one:
+
+```plaintext
+taxon,code,dna,gff
+Local RSV A,LRSA1,local_rsv_a.fasta,local_rsv_a.gff3
+```
+
+If the main accession file does not have a code column:
+
+```plaintext
+taxon,dna,gff
+Local RSV A,local_rsv_a.fasta,local_rsv_a.gff3
+```
+
+If `-i/--input` is omitted, either local manifest format is accepted.
+
+Only include the CDS features you want to use in the GTF/GFF3 file. For example, if you want a subset of genes or segments, pre-filter the annotation so that only those `CDS` rows remain. Local taxa must not duplicate taxa from the main accession file after Omni2Tree's alphanumeric taxon-name cleanup.
 
 #### **Example Input Files**
 
@@ -144,7 +169,7 @@ All outputs are placed within the `--o2t_out` directory
 
 | **File**                      | **Description** |
 |--------------------------------|------------------------------------------------------------------|
-| `db/{taxon}_cds_from_genomic.fna` | Nucleotide FASTA files for each taxon with CDS (or mature peptides if selected) retrieved from NCBI. |
+| `db/{taxon}_cds_from_genomic.fna` | Nucleotide FASTA files for each taxon with CDS (or mature peptides if selected) retrieved from NCBI or extracted from local GTF/GFF3 annotations. |
 | `DB/{taxon}.fa`               | Amino acid FASTA files for each taxon, prepared for running with OMA Standalone and read2tree. |
 | `dna_ref.fa`                  | Reference FASTA file with all nucleotide CDS from all taxa, prepared to be used as input for read2tree. |
 | `five_letter_taxon.tsv`        | Table linking taxa with five-letter codes. |
@@ -152,7 +177,7 @@ All outputs are placed within the `--o2t_out` directory
 | `Output/`                     | Folder containing the output from OMA Standalone. |
 | `marker_genes/`               | Folder required by read2tree with the orthologous groups (OGs) generated by OMA Standalone (contents of `Output/OrthologousGroupsFasta`). |
 | `stats/References_CDS/` | Directory containing reference CDS summary outputs generated in step 1. |
-| `stats/References_CDS/cds_count_per_accession*` | Per-assembly CDS counts and their distribution across all downloaded assemblies: `cds_count_per_accession.tsv`, `cds_count_per_accession_frequency.tsv` and `cds_count_per_accession_distribution.png`. |
+| `stats/References_CDS/cds_count_per_accession*` | Per-reference CDS counts and their distribution across NCBI and local references: `cds_count_per_accession.tsv`, `cds_count_per_accession_frequency.tsv` and `cds_count_per_accession_distribution.png`. |
 | `stats/References_OGs/` | Directory containing reference OG summary outputs generated in step 1. |
 | `stats/References_OGs/OG_genes.tsv` | Table with all features for each CDS from the OGs identified by OMA. |
 | `stats/References_OGs/OG_genes-unique.tsv` | Summary table listing the OGs alongside its associated gene, protein, and the taxa in which it is found. |

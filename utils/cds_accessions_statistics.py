@@ -9,7 +9,7 @@ from matplotlib.ticker import MaxNLocator
 
 def main():
     p = argparse.ArgumentParser(
-        description="Generates TSV and plot of number of CDS per assembly."
+        description="Generates TSV and plot of number of CDS per reference taxon."
     )
     p.add_argument("--db-dir", required=True,
                    help="Directory that contains the *_cds_from_genomic.fna")
@@ -60,16 +60,16 @@ def main():
         ax.xaxis.set_major_locator(MaxNLocator(integer=True, nbins=15))
 
     ax.set_xlabel("Number of CDS")
-    ax.set_ylabel("Number of NCBI assemblies")
-    ax.set_title("Distribution of CDS Counts per NCBI Assembly")
+    ax.set_ylabel("Number of reference taxa")
+    ax.set_title("Distribution of CDS Counts per Reference Taxon")
     ax.grid(axis='y', alpha=0.3)
     fig.tight_layout()
     fig.savefig(out_dir / f"{args.prefix}_distribution.png", dpi=300)
 
     # Frequency tables
     freq_table = data.value_counts().sort_index()
-    freq_df = freq_table.to_frame(name="n_assemblies")
-    freq_df["percent"] = (freq_df["n_assemblies"] / freq_df["n_assemblies"].sum() * 100).round(2)
+    freq_df = freq_table.to_frame(name="n_reference_taxa")
+    freq_df["percent"] = (freq_df["n_reference_taxa"] / freq_df["n_reference_taxa"].sum() * 100).round(2)
     freq_df.index.name = "cds_count"
     freq_df.to_csv(out_dir / f"{args.prefix}_frequency.tsv", sep="\t", header=True)
 

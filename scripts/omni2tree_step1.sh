@@ -20,6 +20,7 @@ WORK_DIR=""
 PARAMETERS_FILE="parameters.drw"
 FIVE_LETTER_FILE="five_letter_taxon.tsv"
 INPUT_FILE=""
+LOCAL_ASSEMBLIES_FILE=""
 OUTGROUP_FILE=""
 THREADS=12
 TEMP_DIR=""
@@ -31,6 +32,8 @@ ONLY_MAT_PEPTIDES=false
 RES_DOWN=false
 RES_DOWN_VOID=false
 NCBI_DOWNLOAD_COUNT=0
+LOCAL_ASSEMBLY_COUNT=0
+LOCAL_RES_DOWN_VOID=false
 P_FLAG=false
 Q_FLAG=false
 SKIP_STEP4=false
@@ -66,13 +69,16 @@ check_dependencies() {
     ["mafft"]="MAFFT"
     ["oma"]="OMA standalone"
     ["oma-status"]="OMA standalone - oma-status"
-    ["efetch"]="Entrez Direct utilities - efetch"
-    ["esearch"]="Entrez Direct utilities - esearch"
-    ["elink"]="Entrez Direct utilities - elink"
     ["awk"]="AWK"
     ["python3"]="python 3"
 
   )
+
+  if [[ -n "$INPUT_FILE" ]]; then
+    tools["efetch"]="Entrez Direct utilities - efetch"
+    tools["esearch"]="Entrez Direct utilities - esearch"
+    tools["elink"]="Entrez Direct utilities - elink"
+  fi
 
   #log_info "Checking system dependencies..."
   #Looping through the array to test for commands and detect possible missing tools  
@@ -99,7 +105,7 @@ check_dependencies() {
 }
 
 usage() {
-  log_info "Usage: ${PROGNAME} -i <accession_file> [-g <outgroup_file>] [-o <dir>] [-R] [options]\n"
+  log_info "Usage: ${PROGNAME} [-i <accession_file>] [-L <local_assemblies.csv>] [-g <outgroup_file>] [-o <dir>] [-R] [options]\n"
   #echo "Try '$0 --help' for more information."
 }
 
@@ -107,10 +113,16 @@ show_help() {
   cat << EOF
 $(usage)
 
-Required:
-  -i, --input <file>                           Path to the accession file. Should be a comma-separated file with the structure: taxon(s)/species/strain(s)/label(s),code(optional),accession(s). If provided, the code should have exactly 5 alphanumeric characters.
+Required input:
+  Provide at least one of -i/--input or -L/--local_assemblies.
 
 Optional:
+  -i, --input <file>                           Optional NCBI accession CSV. Should be a comma-separated file with the structure: taxon(s)/species/strain(s)/label(s),code(optional),accession(s). If provided, the code should have exactly 5 alphanumeric characters.
+  -L, --local_assemblies <file>                Optional CSV with local assemblies to add to the reference database.
+                                               Format follows the main input code mode when -i is used:
+                                               taxon,code,dna,gff when -i has a code column; taxon,dna,gff otherwise.
+                                               If -i is omitted, either local format is accepted.
+                                               The annotation must be GTF/GFF3 and only CDS features are extracted.
   -g, --outgroup <file>                        Path to the outgroup taxon/species/strain file
   -o, --o2t_out <dir>                          Specify base output directory where all outputs will be saved [default: current directory]
                                                The read2tree step1 output directory is always named O2T_RESULTS inside o2t_out.
@@ -125,6 +137,7 @@ Optional:
 
 Example:
   $PROGNAME -i accessions.txt -g outgroups.txt
+  $PROGNAME -L local_assemblies.csv -g outgroups.txt
 
 EOF
 exit 0
@@ -137,6 +150,7 @@ clean_line() {
 
 skip_taxa() {
     local CLEAN_FILE="$1"
+    local EXTRA_EXPECTED_TAXA_FILE="${2:-}"
     local filtered_input_file="${CLEAN_FILE%.*}_filtered.csv"
     local taxon_list=""
     #echo "This is the filtered_input_file: ${filtered_input_file}"
@@ -146,6 +160,13 @@ skip_taxa() {
         taxon=$(basename "$file" | awk -F '_cds_' '{print $1}' | tr -cd '[:alnum:]')
         downloaded_taxa_map["$taxon"]=1
     done < <(find db -maxdepth 1 -type f -name "*_cds_from_genomic.fna")
+    if [[ -n "$EXTRA_EXPECTED_TAXA_FILE" && -s "$EXTRA_EXPECTED_TAXA_FILE" ]]; then
+        while IFS= read -r expected_taxon || [[ -n "$expected_taxon" ]]; do
+            expected_taxon=$(clean_line "$expected_taxon")
+            [[ -z "$expected_taxon" ]] && continue
+            unset 'downloaded_taxa_map["$expected_taxon"]'
+        done < "$EXTRA_EXPECTED_TAXA_FILE"
+    fi
     {
         head -n1 "$CLEAN_FILE" #iterate over each taxon to see if it was already downloaded (if it matches at least one name from db folder)
         while IFS= read -r line || [[ -n "$line" ]]; do
@@ -191,6 +212,208 @@ skip_taxa() {
 
     cp "$filtered_input_file" "$CLEAN_FILE"
     rm -f "$filtered_input_file"
+}
+
+validate_local_assemblies_manifest() {
+    local manifest="$1"
+    local local_clean_file="$2"
+    local local_taxa_file="$3"
+    local main_clean_file="$4"
+    local awk_output awk_status
+
+    if [[ ! -f "$manifest" ]] || [[ ! -s "$manifest" ]]; then
+        log_error "The local assemblies manifest '$manifest' does not exist or is empty."
+        exit 1
+    fi
+
+    awk 'NF && $0 !~ /^[[:space:]]*#/' "$manifest" > "$local_clean_file"
+    if [[ ! -s "$local_clean_file" ]]; then
+        log_error "The local assemblies manifest '$manifest' has no data after removing comments and empty lines."
+        exit 1
+    fi
+
+    local header_line
+    header_line="$(head -n1 "$local_clean_file" | tr -d '[:space:]')"
+    IFS=',' read -ra local_header_cols <<< "$header_line"
+
+    local expected_cols
+    if [[ -z "$main_clean_file" ]]; then
+        if [[ "${#local_header_cols[@]}" -eq 4 ]]; then
+            HAS_CODE_COLUMN=true
+        elif [[ "${#local_header_cols[@]}" -eq 3 ]]; then
+            HAS_CODE_COLUMN=false
+        else
+            log_error "Local assemblies manifest must have 3 columns (taxon,dna,gff) or 4 columns (taxon,code,dna,gff) when -i/--input is omitted."
+            exit 1
+        fi
+    fi
+
+    if $HAS_CODE_COLUMN; then
+        expected_cols=4
+    else
+        expected_cols=3
+    fi
+    if [[ "${#local_header_cols[@]}" -ne "$expected_cols" ]]; then
+        log_error "Local assemblies manifest must have ${expected_cols} columns in this run. Expected taxon,code,dna,gff when the main input has codes; taxon,dna,gff otherwise."
+        exit 1
+    fi
+
+    local h_taxon h_code h_dna h_gff
+    h_taxon="$(clean_line "${local_header_cols[0],,}")"
+    if ! [[ "$h_taxon" =~ ^(taxon|taxa|label|labels|strain|strains|species)$ ]]; then
+        log_error "Invalid first local assemblies manifest column: ${local_header_cols[0]}"
+        exit 1
+    fi
+
+    if $HAS_CODE_COLUMN; then
+        h_code="$(clean_line "${local_header_cols[1],,}")"
+        h_dna="$(clean_line "${local_header_cols[2],,}")"
+        h_gff="$(clean_line "${local_header_cols[3],,}")"
+        if ! [[ "$h_code" =~ ^(code|codes)$ ]]; then
+            log_error "Invalid second local assemblies manifest column: ${local_header_cols[1]}. Expected code(s)."
+            exit 1
+        fi
+    else
+        h_dna="$(clean_line "${local_header_cols[1],,}")"
+        h_gff="$(clean_line "${local_header_cols[2],,}")"
+    fi
+
+    if ! [[ "$h_dna" =~ ^(dna|fasta|fa|fna|genome|assembly|assemblyfasta)$ ]]; then
+        log_error "Invalid DNA/FASTA local assemblies manifest column: $h_dna"
+        exit 1
+    fi
+    if ! [[ "$h_gff" =~ ^(gff|gff3|gtf|annotation|annotations)$ ]]; then
+        log_error "Invalid GTF/GFF3 local assemblies manifest column: $h_gff"
+        exit 1
+    fi
+
+    set +e
+    if [[ -n "$main_clean_file" ]]; then
+      awk_output=$(awk -v has_code="$HAS_CODE_COLUMN" -v has_main="true" -v taxa_file="$local_taxa_file" -F',' '
+    function trim(s) { gsub(/^[[:space:]]+|[[:space:]]+$/, "", s); return s }
+    function clean(s) { gsub(/[^[:alnum:]]/, "", s); return s }
+    FNR == 1 { file_index++; next }
+    has_main == "true" && file_index == 1 {
+        taxon = clean($1)
+        if (taxon != "") {
+            main_taxa[taxon] = FNR
+            if (has_code == "true") {
+                code = trim($2)
+                main_codes[code] = FNR
+            }
+        }
+        next
+    }
+    {
+        taxon = clean($1)
+        if (taxon == "") {
+            printf "Local manifest line %d has an empty taxon after alphanumeric cleanup.\n", FNR
+            err = 1
+            next
+        }
+        if (taxon in main_taxa) {
+            printf "Local taxon on line %d duplicates a taxon from the main accession file after alphanumeric cleanup: %s.\n", FNR, taxon
+            err = 1
+        }
+        if (taxon in local_taxa) {
+            printf "Duplicated local taxon on line %d after alphanumeric cleanup: %s. First occurrence: line %d.\n", FNR, taxon, local_taxa[taxon]
+            err = 1
+        }
+        local_taxa[taxon] = FNR
+
+        if (has_code == "true") {
+            code = trim($2)
+            dna = trim($3)
+            gff = trim($4)
+            if (code !~ /^[[:alnum:]]{5}$/) {
+                printf "Invalid local 5-letter code on line %d: %s.\n", FNR, code
+                err = 1
+            }
+            if (code in main_codes) {
+                printf "Local code on line %d duplicates a code from the main accession file: %s.\n", FNR, code
+                err = 1
+            }
+            if (code in local_codes) {
+                printf "Duplicated local code on line %d: %s. First occurrence: line %d.\n", FNR, code, local_codes[code]
+                err = 1
+            }
+            local_codes[code] = FNR
+        } else {
+            dna = trim($2)
+            gff = trim($3)
+        }
+        if (dna == "" || gff == "") {
+            printf "Local manifest line %d must provide both DNA FASTA and GTF/GFF3 paths.\n", FNR
+            err = 1
+        }
+        print taxon > taxa_file
+    }
+    END { if (err) exit 1 }' "$main_clean_file" "$local_clean_file" 2>&1)
+    else
+      awk_output=$(awk -v has_code="$HAS_CODE_COLUMN" -v has_main="false" -v taxa_file="$local_taxa_file" -F',' '
+    function trim(s) { gsub(/^[[:space:]]+|[[:space:]]+$/, "", s); return s }
+    function clean(s) { gsub(/[^[:alnum:]]/, "", s); return s }
+    FNR == 1 { next }
+    {
+        taxon = clean($1)
+        if (taxon == "") {
+            printf "Local manifest line %d has an empty taxon after alphanumeric cleanup.\n", FNR
+            err = 1
+            next
+        }
+        if (taxon in local_taxa) {
+            printf "Duplicated local taxon on line %d after alphanumeric cleanup: %s. First occurrence: line %d.\n", FNR, taxon, local_taxa[taxon]
+            err = 1
+        }
+        local_taxa[taxon] = FNR
+
+        if (has_code == "true") {
+            code = trim($2)
+            dna = trim($3)
+            gff = trim($4)
+            if (code !~ /^[[:alnum:]]{5}$/) {
+                printf "Invalid local 5-letter code on line %d: %s.\n", FNR, code
+                err = 1
+            }
+            if (code in local_codes) {
+                printf "Duplicated local code on line %d: %s. First occurrence: line %d.\n", FNR, code, local_codes[code]
+                err = 1
+            }
+            local_codes[code] = FNR
+        } else {
+            dna = trim($2)
+            gff = trim($3)
+        }
+        if (dna == "" || gff == "") {
+            printf "Local manifest line %d must provide both DNA FASTA and GTF/GFF3 paths.\n", FNR
+            err = 1
+        }
+        print taxon > taxa_file
+    }
+    END { if (err) exit 1 }' "$local_clean_file" 2>&1)
+    fi
+    awk_status=$?
+    if [[ "$awk_status" -ne 0 || -n "$awk_output" ]]; then
+        log_error "$awk_output"
+        exit 1
+    fi
+    set -e
+
+    log_info "Validated local assemblies manifest: $manifest"
+}
+
+local_db_files_complete() {
+    local local_taxa_file="$1"
+    local taxon
+    [[ -s "$local_taxa_file" ]] || return 1
+    while IFS= read -r taxon || [[ -n "$taxon" ]]; do
+        taxon=$(clean_line "$taxon")
+        [[ -z "$taxon" ]] && continue
+        if [[ ! -s "db/${taxon}_cds_from_genomic.fna" ]]; then
+            return 1
+        fi
+    done < "$local_taxa_file"
+    return 0
 }
 
 fetch_data() {
@@ -645,6 +868,7 @@ log_info "========== Step 1.1: Validating parameters =========="
 while [[ "$#" -gt 0 ]]; do
     case $1 in
         -i|--input) INPUT_FILE="$2"; shift ;;
+        -L|--local_assemblies) LOCAL_ASSEMBLIES_FILE="$2"; shift ;;
         -g|--outgroup) OUTGROUP_FILE="$2"; shift ;;
         -p|--use_mat_peptides) MAT_PEPTIDES=true; P_FLAG=true;;
         -q|--use_mat_peptides_only) MAT_PEPTIDES=true; ONLY_MAT_PEPTIDES=true; Q_FLAG=true;;
@@ -664,20 +888,30 @@ done
 check_dependencies
 log_info "Checked system dependencies"
 
-if [[ -z "${INPUT_FILE}" ]]; then
-    log_error "Error: --input (-i) is required."
+if [[ -z "${INPUT_FILE}" && -z "${LOCAL_ASSEMBLIES_FILE}" ]]; then
+    log_error "Error: at least one reference input is required: --input (-i) and/or --local_assemblies (-L)."
     usage
     exit 1
 fi
 
-# Validate input file existence
-if [[ ! -f "$INPUT_FILE" ]] || [[ ! -s "$INPUT_FILE" ]]; then
-    log_error "The input file '$INPUT_FILE' does not exist or is empty."
-    usage
-    exit 1
+if [[ -n "$INPUT_FILE" ]]; then
+  # Validate input file existence
+  if [[ ! -f "$INPUT_FILE" ]] || [[ ! -s "$INPUT_FILE" ]]; then
+      log_error "The input file '$INPUT_FILE' does not exist or is empty."
+      usage
+      exit 1
+  fi
+
+  INPUT_FILE="$(realpath "$INPUT_FILE")"
 fi
 
-INPUT_FILE="$(realpath "$INPUT_FILE")"
+if [[ -n "$LOCAL_ASSEMBLIES_FILE" ]]; then
+  if [[ ! -f "$LOCAL_ASSEMBLIES_FILE" ]] || [[ ! -s "$LOCAL_ASSEMBLIES_FILE" ]]; then
+      log_error "The local assemblies manifest '$LOCAL_ASSEMBLIES_FILE' does not exist or is empty."
+      exit 1
+  fi
+  LOCAL_ASSEMBLIES_FILE="$(realpath "$LOCAL_ASSEMBLIES_FILE")"
+fi
 
 # Validate outgroup file if provided, yes -f tolerates sym links
 if [[ -n "$OUTGROUP_FILE" ]] && { [[ ! -f "$OUTGROUP_FILE" ]] || [[ ! -s "$OUTGROUP_FILE" ]]; }; then
@@ -702,7 +936,8 @@ fi
 if [[ -n "$WORK_DIR" ]]; then
     mkdir -p "$WORK_DIR"
     cd "$WORK_DIR"
-    log_info "Using work directory: '$(pwd)'"
+    WORK_DIR="$(pwd -P)"
+    log_info "Using work directory: '$WORK_DIR'"
 else
     # por defecto: cwd del usuario al ejecutar el script
     WORK_DIR="$(pwd)"
@@ -833,7 +1068,7 @@ if [[ -n "$OG_MIN_FRAC" ]]; then
   fi
 fi
 
-log_info "========== Step 1.2: Validating input file =========="
+log_info "========== Step 1.2: Validating reference input file(s) =========="
 
 # Export the functions and variables
 export -f skip_taxa fetch_data log_info log_warn log_error clean_line 
@@ -841,112 +1076,129 @@ export RED YELLOW GREEN NC FIVE_LETTER_FILE HAS_CODE_COLUMN NCBI_DOWNLOAD_COUNT 
 
 #CLEAN_FILE="$(mktemp -p "$TEMP_DIR" file.XXXXXX)"  #Temporary file for cleaned input
 CLEAN_FILE="$TEMP_DIR/input_clean_file.txt"
-# Extract the header line from the input file
-log_info "Cleaning accession file and saving to '$(realpath "$CLEAN_FILE")'"
-grep -v '^#' "$INPUT_FILE" | grep -v '^$' > "$CLEAN_FILE"
-
-HEADER_LINE="$(head -n1 "$CLEAN_FILE" | tr -d '[:space:]')"
-IFS=',' read -ra HEADER_COLS <<< "$HEADER_LINE"
-LOWER_HEADER=("${HEADER_COLS[@],,}")
+LOCAL_CLEAN_FILE="$TEMP_DIR/local_assemblies_clean.csv"
+LOCAL_EXPECTED_TAXA_FILE="$TEMP_DIR/local_assemblies_taxa.txt"
 HAS_CODE_COLUMN=false
-# Validate the number of columns first
-if [[ "${#HEADER_COLS[@]}" -lt 2 ]]; then
-  log_error "Error: The header must have at least 2 columns: 'taxon/species/strain/label' and 'accession(s)' (or equivalent)."
-  exit 1
-elif [[ "${#HEADER_COLS[@]}" -gt 3 ]]; then
-  log_error "Error: The header has more than 3 columns. This is not supported."
-  exit 1
-fi
-# Check specific column structure
-if [[ "${#HEADER_COLS[@]}" -eq 3 ]]; then
-  if [[ "${LOWER_HEADER[0]}" =~ ^(taxon|taxa|label(s)?|strain(s)?|species)$ ]] && [[ "${LOWER_HEADER[2]}" =~ ^accession(s)?$ ]]; then
-    log_info "Detected taxon and accession columns in the header. Now checking for the code column..." 
-    # If has exactly 3 columns, check if the second column is CODE
-    if [[ "${LOWER_HEADER[1]}" =~ ^code(s)?$ ]]; then
-      HAS_CODE_COLUMN=true
+if [[ -n "$INPUT_FILE" ]]; then
+  # Extract the header line from the input file
+  log_info "Cleaning accession file and saving to '$(realpath "$CLEAN_FILE")'"
+  grep -v '^#' "$INPUT_FILE" | grep -v '^$' > "$CLEAN_FILE"
+
+  HEADER_LINE="$(head -n1 "$CLEAN_FILE" | tr -d '[:space:]')"
+  IFS=',' read -ra HEADER_COLS <<< "$HEADER_LINE"
+  LOWER_HEADER=("${HEADER_COLS[@],,}")
+  # Validate the number of columns first
+  if [[ "${#HEADER_COLS[@]}" -lt 2 ]]; then
+    log_error "Error: The header must have at least 2 columns: 'taxon/species/strain/label' and 'accession(s)' (or equivalent)."
+    exit 1
+  elif [[ "${#HEADER_COLS[@]}" -gt 3 ]]; then
+    log_error "Error: The header has more than 3 columns. This is not supported."
+    exit 1
+  fi
+  # Check specific column structure
+  if [[ "${#HEADER_COLS[@]}" -eq 3 ]]; then
+    if [[ "${LOWER_HEADER[0]}" =~ ^(taxon|taxa|label(s)?|strain(s)?|species)$ ]] && [[ "${LOWER_HEADER[2]}" =~ ^accession(s)?$ ]]; then
+      log_info "Detected taxon and accession columns in the header. Now checking for the code column..." 
+      # If has exactly 3 columns, check if the second column is CODE
+      if [[ "${LOWER_HEADER[1]}" =~ ^code(s)?$ ]]; then
+        HAS_CODE_COLUMN=true
+        set +e
+        awk_output=$(awk -F ',' '
+        NR == 1 { next } 
+        {
+            codigo_col1 = $1
+            original_col1 = codigo_col1  
+            gsub(/[^[:alnum:]]/, "", codigo_col1)  
+
+            codigo_col2 = $2
+            gsub(/[[:blank:]]/, "", codigo_col2)
+
+            if (codigo_col1 in visto_col1) {
+                printf "Duplicated taxon in column 1: \047%s\047 (line %d). First occurrence: line %d.\nNote: Comparison is based on alphanumeric characters (ignoring symbols and spaces).\n",
+                      original_col1, NR, visto_col1[codigo_col1]
+                exit 1 
+            }
+            visto_col1[codigo_col1] = NR
+
+            if (length(codigo_col2) != 5 || codigo_col2 !~ /^[[:alnum:]]+$/) {
+                printf "Invalid 5-letter code on line %d: \047%s\047. The code must have 5 alphanumeric characters.\n",
+                      NR, codigo_col2
+                exit 1  
+            }
+
+            if (codigo_col2 in visto_col2) {
+                printf "Duplicated 5-letter code on line %d: \047%s\047. First occurrence: line %d.\nNote: Comparison is based on alphanumeric characters (ignoring symbols and spaces).\n",
+                      NR, codigo_col2, visto_col2[codigo_col2]
+                exit 1  
+            }
+            visto_col2[codigo_col2] = NR
+        }' "$CLEAN_FILE" 2>&1)
+        if [[ -n "$awk_output" ]]; then
+            log_error "$awk_output"
+            exit 1
+        fi
+        set -e
+        #first I deleted complete void lines, so if -z works, it is detecting a row that has its second field void
+        log_info "The code column has been detected and validated."
+        if [[ -n "$LOCAL_ASSEMBLIES_FILE" ]]; then
+          validate_local_assemblies_manifest "$LOCAL_ASSEMBLIES_FILE" "$LOCAL_CLEAN_FILE" "$LOCAL_EXPECTED_TAXA_FILE" "$CLEAN_FILE"
+        fi
+        if [[ "$RES_DOWN" == true ]]; then
+          skip_taxa "$CLEAN_FILE" "$LOCAL_EXPECTED_TAXA_FILE"
+        fi
+      else
+        log_error "The header has 3 columns, but the second is not a 'code(s)' column (Found: '${HEADER_COLS[1]}')."
+        exit 1
+      fi
+    else
+      log_error "The header columns are not correct. Expected 'taxon/species/strain/label' and 'accession(s)' (or equivalent). Found: '${HEADER_COLS[0]}' and '${HEADER_COLS[2]}'."
+      exit 1
+    fi
+  elif [[ "${#HEADER_COLS[@]}" -eq 2 ]]; then
+    # If has exactly 2 columns, check if they are valid (STRAIN/SPECIES and ACCESSIONS)
+    if [[ "${LOWER_HEADER[0]}" =~ ^(taxon|taxa|label(s)?|strain(s)?|species)$ ]] && [[ "${LOWER_HEADER[1]}" =~ ^accession(s)?$ ]]; then
+      log_info "Detected only taxon and accession columns in the header. No code column found. Unique codes for each taxon in the format 'sXXXX' will be automatically generated."
+      # Validate duplicates in column 1
       set +e
       awk_output=$(awk -F ',' '
-      NR == 1 { next } 
+      NR == 1 { next }  
       {
-          codigo_col1 = $1
-          original_col1 = codigo_col1  
-          gsub(/[^[:alnum:]]/, "", codigo_col1)  
+          taxon = $1
+          original_taxon = taxon  # keep original for the log message
+          gsub(/[^[:alnum:]]/, "", taxon)  # only alnum characters are compared
 
-          codigo_col2 = $2
-          gsub(/[[:blank:]]/, "", codigo_col2)
-
-          if (codigo_col1 in visto_col1) {
-              printf "Duplicated taxon in column 1: \047%s\047 (line %d). First occurrence: line %d.\nNote: Comparison is based on alphanumeric characters (ignoring symbols and spaces).\n",
-                    original_col1, NR, visto_col1[codigo_col1]
-              exit 1 
-          }
-          visto_col1[codigo_col1] = NR
-
-          if (length(codigo_col2) != 5 || codigo_col2 !~ /^[[:alnum:]]+$/) {
-              printf "Invalid 5-letter code on line %d: \047%s\047. The code must have 5 alphanumeric characters.\n",
-                    NR, codigo_col2
+          # check for duplicatres
+          if (taxon in visto) {
+              printf "Duplicated taxon: \047%s\047 (line %d). First occurrence: line %d.\nNote: Comparison is based on alphanumeric characters (ignoring symbols and spaces).\n",
+                     original_taxon, NR, visto[taxon]
               exit 1  
           }
-
-          if (codigo_col2 in visto_col2) {
-              printf "Duplicated 5-letter code on line %d: \047%s\047. First occurrence: line %d.\nNote: Comparison is based on alphanumeric characters (ignoring symbols and spaces).\n",
-                    NR, codigo_col2, visto_col2[codigo_col2]
-              exit 1  
-          }
-          visto_col2[codigo_col2] = NR
+          visto[taxon] = NR
       }' "$CLEAN_FILE" 2>&1)
+      # Manejar errores
       if [[ -n "$awk_output" ]]; then
           log_error "$awk_output"
           exit 1
       fi
       set -e
-      #first I deleted complete void lines, so if -z works, it is detecting a row that has its second field void
-      log_info "The code column has been detected and validated."
-      if [[ "$RES_DOWN" == true ]]; then
-        skip_taxa "$CLEAN_FILE"
+      if [[ -n "$LOCAL_ASSEMBLIES_FILE" ]]; then
+        validate_local_assemblies_manifest "$LOCAL_ASSEMBLIES_FILE" "$LOCAL_CLEAN_FILE" "$LOCAL_EXPECTED_TAXA_FILE" "$CLEAN_FILE"
       fi
+      if [[ "$RES_DOWN" == true ]]; then
+        skip_taxa "$CLEAN_FILE" "$LOCAL_EXPECTED_TAXA_FILE"
+      fi
+
     else
-      log_error "The header has 3 columns, but the second is not a 'code(s)' column (Found: '${HEADER_COLS[1]}')."
+      log_error "The header columns are not correct. Expected 'taxon/species/strain/label' and 'accession(s)' (or equivalent). Found: '${HEADER_COLS[0]}' and '${HEADER_COLS[1]}'."
       exit 1
     fi
-  else
-    log_error "The header columns are not correct. Expected 'taxon/species/strain/label' and 'accession(s)' (or equivalent). Found: '${HEADER_COLS[0]}' and '${HEADER_COLS[2]}'."
-    exit 1
   fi
-elif [[ "${#HEADER_COLS[@]}" -eq 2 ]]; then
-  # If has exactly 2 columns, check if they are valid (STRAIN/SPECIES and ACCESSIONS)
-  if [[ "${LOWER_HEADER[0]}" =~ ^(taxon|taxa|label(s)?|strain(s)?|species)$ ]] && [[ "${LOWER_HEADER[1]}" =~ ^accession(s)?$ ]]; then
-    log_info "Detected only taxon and accession columns in the header. No code column found. Unique codes for each taxon in the format 'sXXXX' will be automatically generated."
-    # Validate duplicates in column 1
-    set +e
-    awk_output=$(awk -F ',' '
-    NR == 1 { next }  
-    {
-        taxon = $1
-        original_taxon = taxon  # keep original for the log message
-        gsub(/[^[:alnum:]]/, "", taxon)  # only alnum characters are compared
-
-        # check for duplicatres
-        if (taxon in visto) {
-            printf "Duplicated taxon: \047%s\047 (line %d). First occurrence: line %d.\nNote: Comparison is based on alphanumeric characters (ignoring symbols and spaces).\n",
-                   original_taxon, NR, visto[taxon]
-            exit 1  
-        }
-        visto[taxon] = NR
-    }' "$CLEAN_FILE" 2>&1)
-    # Manejar errores
-    if [[ -n "$awk_output" ]]; then
-        log_error "$awk_output"
-        exit 1
-    fi
-    set -e
-    if [[ "$RES_DOWN" == true ]]; then
-      skip_taxa "$CLEAN_FILE"
-    fi
-
-  else
-    log_error "The header columns are not correct. Expected 'taxon/species/strain/label' and 'accession(s)' (or equivalent). Found: '${HEADER_COLS[0]}' and '${HEADER_COLS[1]}'."
-    exit 1
+else
+  log_info "No NCBI accession file provided. Building reference database from local assemblies only."
+  printf "taxon,accession\n" > "$CLEAN_FILE"
+  validate_local_assemblies_manifest "$LOCAL_ASSEMBLIES_FILE" "$LOCAL_CLEAN_FILE" "$LOCAL_EXPECTED_TAXA_FILE" ""
+  if [[ "$RES_DOWN" == true ]]; then
+    skip_taxa "$CLEAN_FILE" "$LOCAL_EXPECTED_TAXA_FILE"
   fi
 fi
 
@@ -954,7 +1206,7 @@ if [[ "$RES_DOWN" != true ]]; then
   mkdir -p db
 fi
 
-if [[ "$RES_DOWN_VOID" == false ]]; then
+if [[ -n "$INPUT_FILE" && "$RES_DOWN_VOID" == false ]]; then
   log_info "========== Step 1.3: Retrieving coding sequences from NCBI =========="
 
   log_info "Starting retrieval of sequences from $INPUT_FILE..."
@@ -992,9 +1244,36 @@ if [[ "$RES_DOWN_VOID" == false ]]; then
   else
     log_info "No new downloads -> skipping CDS counts/histogram."
   fi
+elif [[ -z "$INPUT_FILE" ]]; then
+  log_info "========== Skipping Step 1.3: No NCBI accession file provided =========="
 fi
 
-if [[ "$RES_DOWN_VOID" == false && "$NCBI_DOWNLOAD_COUNT" -eq 0 && "$RES_DOWN" == true ]]; then
+if [[ -n "$LOCAL_ASSEMBLIES_FILE" ]]; then
+  log_info "========== Step 1.3b: Extracting coding sequences from local assemblies =========="
+  LOCAL_ASSEMBLY_COUNT=$(awk 'NR >= 2 && NF {count += 1} END {print count + 0}' "$LOCAL_CLEAN_FILE")
+  if [[ "$RES_DOWN" == true ]] && local_db_files_complete "$LOCAL_EXPECTED_TAXA_FILE"; then
+    LOCAL_RES_DOWN_VOID=true
+  fi
+  LOCAL_CDS_CMD=(python3 "${SCRIPTS_DIR}/extract_local_cds_from_gff.py"
+    --manifest "$LOCAL_ASSEMBLIES_FILE"
+    --db-dir "${WORK_DIR}/db")
+  if $HAS_CODE_COLUMN; then
+    LOCAL_CDS_CMD+=(--has-code-column --codes-output "$FIVE_LETTER_FILE")
+  fi
+  if [[ "$RES_DOWN" == true ]]; then
+    LOCAL_CDS_CMD+=(--resume)
+  fi
+  log_info "Executing local CDS extraction command: ${LOCAL_CDS_CMD[*]}"
+  "${LOCAL_CDS_CMD[@]}"
+  log_info "Processed $LOCAL_ASSEMBLY_COUNT local assembly row(s)"
+  log_info "Generating CDS counts table and histogram including local assemblies..."
+  python3 "${SCRIPTS_DIR}/cds_accessions_statistics.py" --db-dir "${WORK_DIR}/db" --out-dir "${STATS_REFERENCES_CDS_DIR}" --prefix cds_count_per_accession
+  if [[ "$LOCAL_RES_DOWN_VOID" == false ]]; then
+    RES_DOWN_VOID=false
+  fi
+fi
+
+if [[ "$RES_DOWN_VOID" == false && "$NCBI_DOWNLOAD_COUNT" -eq 0 && "$LOCAL_ASSEMBLY_COUNT" -eq 0 && "$RES_DOWN" == true ]]; then
   RES_DOWN_VOID=true
 fi
 
