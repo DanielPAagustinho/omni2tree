@@ -10,3 +10,8 @@ Luego, estaba pensando en que el usuario pueda implementar otra cosa ademas de C
 Opcion para virus con mature peptides: que el script de python que extrae cds del gff se ajuste segun ocpions de extract mtature peptides o only matur epeptides.... Teniendo en cuenta tmb posibilida de agrupacion? mmmm
 
 Quiero ver bien esa logica de agrupacion del script de python, que pasa si no hya protein id? o s i se usa otra cosa mm o transcirtp id mmm
+
+Aguanta, pero los programas de anotacion generales no botan "mature_peptide" no? no lo hacen simplemente, entonces no es necesario añadir nada de eso en el parser del gff3? pero y si sí lo hacen de otro modo, tal vez programas d enaotaicon solo para virus, investigar
+
+Además, necesito que la validacion del local_assemblies.csv ocurra antes de la descarga!!
+y una pegunta, siempre verifica que no haya taxones duplicados y que no choquen en nombre, una vez filtrados con alnum, con los de las accessions.csv?

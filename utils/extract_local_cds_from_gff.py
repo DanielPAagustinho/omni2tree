@@ -92,10 +92,6 @@ def parse_args() -> argparse.Namespace:
     return p.parse_args()
 
 
-def canonical_header(name: str) -> str:
-    return re.sub(r"[^A-Za-z0-9]", "", name or "").lower()
-
-
 def resolve_path(raw_path: str, base_dir: Path) -> Path:
     path = Path(raw_path.strip())
     if not path.is_absolute():
@@ -103,45 +99,17 @@ def resolve_path(raw_path: str, base_dir: Path) -> Path:
     return path.resolve()
 
 
-def validate_header(header: List[str], has_code_column: bool) -> None:
-    normalized = [canonical_header(col) for col in header]
-    if has_code_column:
-        if len(normalized) != 4:
-            raise ValueError("Local assemblies manifest with codes must have 4 columns: taxon,code,dna,gff")
-        taxon_col, code_col, dna_col, ann_col = normalized
-        if taxon_col not in {"taxon", "taxa", "label", "labels", "strain", "strains", "species"}:
-            raise ValueError(f"Invalid first local manifest column: {header[0]}")
-        if code_col not in {"code", "codes"}:
-            raise ValueError(f"Invalid second local manifest column; expected code(s), found: {header[1]}")
-    else:
-        if len(normalized) != 3:
-            raise ValueError("Local assemblies manifest without codes must have 3 columns: taxon,dna,gff")
-        taxon_col, dna_col, ann_col = normalized
-        if taxon_col not in {"taxon", "taxa", "label", "labels", "strain", "strains", "species"}:
-            raise ValueError(f"Invalid first local manifest column: {header[0]}")
-
-    if dna_col not in {"dna", "fasta", "fa", "fna", "genome", "assembly", "assemblyfasta"}:
-        raise ValueError(f"Invalid DNA/FASTA local manifest column: {header[-2]}")
-    if ann_col not in {"gff", "gff3", "gtf", "annotation", "annotations"}:
-        raise ValueError(f"Invalid annotation local manifest column: {header[-1]}")
-
-
 def load_manifest(path: Path, has_code_column: bool) -> List[ManifestRow]:
     base_dir = path.resolve().parent
     rows: List[ManifestRow] = []
-    seen_taxa: Dict[str, int] = {}
-    seen_codes: Dict[str, int] = {}
 
     with path.open(newline="", encoding="utf-8") as fh:
         filtered = (line for line in fh if line.strip() and not line.lstrip().startswith("#"))
         reader = csv.reader(filtered)
         try:
-            header = next(reader)
+            next(reader)
         except StopIteration as exc:
             raise ValueError(f"Local assemblies manifest is empty: {path}") from exc
-
-        header = [col.strip() for col in header]
-        validate_header(header, has_code_column)
 
         for row_idx, row in enumerate(reader, start=2):
             if not row or not any(cell.strip() for cell in row):
@@ -154,30 +122,11 @@ def load_manifest(path: Path, has_code_column: bool) -> List[ManifestRow]:
 
             taxon_raw = row[0].strip()
             taxon = clean_alnum(taxon_raw)
-            if not taxon:
-                raise ValueError(f"Local manifest line {row_idx} has an empty taxon after cleanup")
-            if taxon in seen_taxa:
-                raise ValueError(
-                    f"Duplicated local taxon after alphanumeric cleanup on line {row_idx}: "
-                    f"{taxon_raw} (first seen on line {seen_taxa[taxon]})"
-                )
-            seen_taxa[taxon] = row_idx
 
             if has_code_column:
                 code = row[1].strip()
                 dna_raw = row[2]
                 ann_raw = row[3]
-                if not re.fullmatch(r"[A-Za-z0-9]{5}", code or ""):
-                    raise ValueError(
-                        f"Invalid local code on line {row_idx}: '{code}'. "
-                        "Codes must have exactly 5 alphanumeric characters."
-                    )
-                if code in seen_codes:
-                    raise ValueError(
-                        f"Duplicated local code on line {row_idx}: {code} "
-                        f"(first seen on line {seen_codes[code]})"
-                    )
-                seen_codes[code] = row_idx
             else:
                 code = None
                 dna_raw = row[1]
@@ -185,12 +134,6 @@ def load_manifest(path: Path, has_code_column: bool) -> List[ManifestRow]:
 
             dna_path = resolve_path(dna_raw, base_dir)
             annotation_path = resolve_path(ann_raw, base_dir)
-            if not dna_path.is_file() or dna_path.stat().st_size == 0:
-                raise ValueError(f"DNA FASTA not found or empty for local taxon {taxon_raw}: {dna_path}")
-            if not annotation_path.is_file() or annotation_path.stat().st_size == 0:
-                raise ValueError(
-                    f"GTF/GFF3 annotation not found or empty for local taxon {taxon_raw}: {annotation_path}"
-                )
 
             rows.append(
                 ManifestRow(

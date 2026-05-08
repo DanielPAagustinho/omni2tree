@@ -219,187 +219,44 @@ validate_local_assemblies_manifest() {
     local local_clean_file="$2"
     local local_taxa_file="$3"
     local main_clean_file="$4"
-    local awk_output awk_status
+    local status_file="${local_clean_file%.*}_validation.env"
+    local code_mode
+    local detected_has_code local_count
+    local -a LOCAL_VALIDATION_CMD
 
-    if [[ ! -f "$manifest" ]] || [[ ! -s "$manifest" ]]; then
-        log_error "The local assemblies manifest '$manifest' does not exist or is empty."
-        exit 1
-    fi
-
-    awk 'NF && $0 !~ /^[[:space:]]*#/' "$manifest" > "$local_clean_file"
-    if [[ ! -s "$local_clean_file" ]]; then
-        log_error "The local assemblies manifest '$manifest' has no data after removing comments and empty lines."
-        exit 1
-    fi
-
-    local header_line
-    header_line="$(head -n1 "$local_clean_file" | tr -d '[:space:]')"
-    IFS=',' read -ra local_header_cols <<< "$header_line"
-
-    local expected_cols
     if [[ -z "$main_clean_file" ]]; then
-        if [[ "${#local_header_cols[@]}" -eq 4 ]]; then
-            HAS_CODE_COLUMN=true
-        elif [[ "${#local_header_cols[@]}" -eq 3 ]]; then
-            HAS_CODE_COLUMN=false
-        else
-            log_error "Local assemblies manifest must have 3 columns (taxon,dna,gff) or 4 columns (taxon,code,dna,gff) when -i/--input is omitted."
-            exit 1
-        fi
-    fi
-
-    if $HAS_CODE_COLUMN; then
-        expected_cols=4
+        code_mode="auto"
+    elif $HAS_CODE_COLUMN; then
+        code_mode="with-code"
     else
-        expected_cols=3
-    fi
-    if [[ "${#local_header_cols[@]}" -ne "$expected_cols" ]]; then
-        log_error "Local assemblies manifest must have ${expected_cols} columns in this run. Expected taxon,code,dna,gff when the main input has codes; taxon,dna,gff otherwise."
-        exit 1
+        code_mode="no-code"
     fi
 
-    local h_taxon h_code h_dna h_gff
-    h_taxon="$(clean_line "${local_header_cols[0],,}")"
-    if ! [[ "$h_taxon" =~ ^(taxon|taxa|label|labels|strain|strains|species)$ ]]; then
-        log_error "Invalid first local assemblies manifest column: ${local_header_cols[0]}"
-        exit 1
-    fi
-
-    if $HAS_CODE_COLUMN; then
-        h_code="$(clean_line "${local_header_cols[1],,}")"
-        h_dna="$(clean_line "${local_header_cols[2],,}")"
-        h_gff="$(clean_line "${local_header_cols[3],,}")"
-        if ! [[ "$h_code" =~ ^(code|codes)$ ]]; then
-            log_error "Invalid second local assemblies manifest column: ${local_header_cols[1]}. Expected code(s)."
-            exit 1
-        fi
-    else
-        h_dna="$(clean_line "${local_header_cols[1],,}")"
-        h_gff="$(clean_line "${local_header_cols[2],,}")"
-    fi
-
-    if ! [[ "$h_dna" =~ ^(dna|fasta|fa|fna|genome|assembly|assemblyfasta)$ ]]; then
-        log_error "Invalid DNA/FASTA local assemblies manifest column: $h_dna"
-        exit 1
-    fi
-    if ! [[ "$h_gff" =~ ^(gff|gff3|gtf|annotation|annotations)$ ]]; then
-        log_error "Invalid GTF/GFF3 local assemblies manifest column: $h_gff"
-        exit 1
-    fi
-
-    set +e
+    LOCAL_VALIDATION_CMD=(python3 "${SCRIPTS_DIR}/validate_local_assemblies.py"
+      --manifest "$manifest"
+      --local-clean-output "$local_clean_file"
+      --local-taxa-output "$local_taxa_file"
+      --status-output "$status_file"
+      --code-mode "$code_mode")
     if [[ -n "$main_clean_file" ]]; then
-      awk_output=$(awk -v has_code="$HAS_CODE_COLUMN" -v has_main="true" -v taxa_file="$local_taxa_file" -F',' '
-    function trim(s) { gsub(/^[[:space:]]+|[[:space:]]+$/, "", s); return s }
-    function clean(s) { gsub(/[^[:alnum:]]/, "", s); return s }
-    FNR == 1 { file_index++; next }
-    has_main == "true" && file_index == 1 {
-        taxon = clean($1)
-        if (taxon != "") {
-            main_taxa[taxon] = FNR
-            if (has_code == "true") {
-                code = trim($2)
-                main_codes[code] = FNR
-            }
-        }
-        next
-    }
-    {
-        taxon = clean($1)
-        if (taxon == "") {
-            printf "Local manifest line %d has an empty taxon after alphanumeric cleanup.\n", FNR
-            err = 1
-            next
-        }
-        if (taxon in main_taxa) {
-            printf "Local taxon on line %d duplicates a taxon from the main accession file after alphanumeric cleanup: %s.\n", FNR, taxon
-            err = 1
-        }
-        if (taxon in local_taxa) {
-            printf "Duplicated local taxon on line %d after alphanumeric cleanup: %s. First occurrence: line %d.\n", FNR, taxon, local_taxa[taxon]
-            err = 1
-        }
-        local_taxa[taxon] = FNR
-
-        if (has_code == "true") {
-            code = trim($2)
-            dna = trim($3)
-            gff = trim($4)
-            if (code !~ /^[[:alnum:]]{5}$/) {
-                printf "Invalid local 5-letter code on line %d: %s.\n", FNR, code
-                err = 1
-            }
-            if (code in main_codes) {
-                printf "Local code on line %d duplicates a code from the main accession file: %s.\n", FNR, code
-                err = 1
-            }
-            if (code in local_codes) {
-                printf "Duplicated local code on line %d: %s. First occurrence: line %d.\n", FNR, code, local_codes[code]
-                err = 1
-            }
-            local_codes[code] = FNR
-        } else {
-            dna = trim($2)
-            gff = trim($3)
-        }
-        if (dna == "" || gff == "") {
-            printf "Local manifest line %d must provide both DNA FASTA and GTF/GFF3 paths.\n", FNR
-            err = 1
-        }
-        print taxon > taxa_file
-    }
-    END { if (err) exit 1 }' "$main_clean_file" "$local_clean_file" 2>&1)
-    else
-      awk_output=$(awk -v has_code="$HAS_CODE_COLUMN" -v has_main="false" -v taxa_file="$local_taxa_file" -F',' '
-    function trim(s) { gsub(/^[[:space:]]+|[[:space:]]+$/, "", s); return s }
-    function clean(s) { gsub(/[^[:alnum:]]/, "", s); return s }
-    FNR == 1 { next }
-    {
-        taxon = clean($1)
-        if (taxon == "") {
-            printf "Local manifest line %d has an empty taxon after alphanumeric cleanup.\n", FNR
-            err = 1
-            next
-        }
-        if (taxon in local_taxa) {
-            printf "Duplicated local taxon on line %d after alphanumeric cleanup: %s. First occurrence: line %d.\n", FNR, taxon, local_taxa[taxon]
-            err = 1
-        }
-        local_taxa[taxon] = FNR
-
-        if (has_code == "true") {
-            code = trim($2)
-            dna = trim($3)
-            gff = trim($4)
-            if (code !~ /^[[:alnum:]]{5}$/) {
-                printf "Invalid local 5-letter code on line %d: %s.\n", FNR, code
-                err = 1
-            }
-            if (code in local_codes) {
-                printf "Duplicated local code on line %d: %s. First occurrence: line %d.\n", FNR, code, local_codes[code]
-                err = 1
-            }
-            local_codes[code] = FNR
-        } else {
-            dna = trim($2)
-            gff = trim($3)
-        }
-        if (dna == "" || gff == "") {
-            printf "Local manifest line %d must provide both DNA FASTA and GTF/GFF3 paths.\n", FNR
-            err = 1
-        }
-        print taxon > taxa_file
-    }
-    END { if (err) exit 1 }' "$local_clean_file" 2>&1)
+      LOCAL_VALIDATION_CMD+=(--main-clean-file "$main_clean_file")
     fi
-    awk_status=$?
-    if [[ "$awk_status" -ne 0 || -n "$awk_output" ]]; then
-        log_error "$awk_output"
+    log_info "Executing local assemblies validation command: ${LOCAL_VALIDATION_CMD[*]}"
+    "${LOCAL_VALIDATION_CMD[@]}"
+
+    detected_has_code="$(awk -F= '$1=="HAS_CODE_COLUMN"{print $2}' "$status_file")"
+    local_count="$(awk -F= '$1=="LOCAL_ASSEMBLY_COUNT"{print $2}' "$status_file")"
+    if [[ "$detected_has_code" != "true" && "$detected_has_code" != "false" ]]; then
+        log_error "Invalid local assemblies validation status in '$status_file'."
         exit 1
     fi
-    set -e
+    if ! [[ "$local_count" =~ ^[0-9]+$ ]]; then
+        log_error "Invalid local assembly count in '$status_file'."
+        exit 1
+    fi
 
-    log_info "Validated local assemblies manifest: $manifest"
+    HAS_CODE_COLUMN="$detected_has_code"
+    LOCAL_ASSEMBLY_COUNT="$local_count"
 }
 
 local_db_files_complete() {
@@ -1255,7 +1112,7 @@ if [[ -n "$LOCAL_ASSEMBLIES_FILE" ]]; then
     LOCAL_RES_DOWN_VOID=true
   fi
   LOCAL_CDS_CMD=(python3 "${SCRIPTS_DIR}/extract_local_cds_from_gff.py"
-    --manifest "$LOCAL_ASSEMBLIES_FILE"
+    --manifest "$LOCAL_CLEAN_FILE"
     --db-dir "${WORK_DIR}/db")
   if $HAS_CODE_COLUMN; then
     LOCAL_CDS_CMD+=(--has-code-column --codes-output "$FIVE_LETTER_FILE")
