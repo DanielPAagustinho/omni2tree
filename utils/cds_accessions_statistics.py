@@ -9,7 +9,7 @@ from matplotlib.ticker import MaxNLocator
 
 def main():
     p = argparse.ArgumentParser(
-        description="Generates TSV and plot of number of CDS per reference taxon."
+        description="Generates TSV and plot of number of sequence units per reference taxon."
     )
     p.add_argument("--db-dir", required=True,
                    help="Directory that contains the *_cds_from_genomic.fna")
@@ -59,9 +59,9 @@ def main():
         ax.hist(data, bins=bin_edges)
         ax.xaxis.set_major_locator(MaxNLocator(integer=True, nbins=15))
 
-    ax.set_xlabel("Number of CDS")
+    ax.set_xlabel("Number of sequence units")
     ax.set_ylabel("Number of reference taxa")
-    ax.set_title("Distribution of CDS Counts per Reference Taxon")
+    ax.set_title("Distribution of Sequence-Unit Counts per Reference Taxon")
     ax.grid(axis='y', alpha=0.3)
     fig.tight_layout()
     fig.savefig(out_dir / f"{args.prefix}_distribution.png", dpi=300)

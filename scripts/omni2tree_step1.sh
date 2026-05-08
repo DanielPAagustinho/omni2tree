@@ -21,6 +21,8 @@ PARAMETERS_FILE="parameters.drw"
 FIVE_LETTER_FILE="five_letter_taxon.tsv"
 INPUT_FILE=""
 LOCAL_ASSEMBLIES_FILE=""
+LOCAL_FEATURES="CDS"
+LOCAL_GROUP_BY=""
 OUTGROUP_FILE=""
 THREADS=12
 TEMP_DIR=""
@@ -122,15 +124,17 @@ Optional:
                                                Format follows the main input code mode when -i is used:
                                                taxon,code,dna,gff when -i has a code column; taxon,dna,gff otherwise.
                                                If -i is omitted, either local format is accepted.
-                                               The annotation must be GTF/GFF3 and only CDS features are extracted.
+                                               The annotation must be GTF/GFF3. By default, CDS features are extracted.
+  --local_features <list>                      Comma-separated feature type(s) from local GTF/GFF3 column 3 to extract [default: CDS].
+  --local_group_by <attribute>                 Optional single GTF/GFF3 attribute used to group local feature rows into one sequence unit.
   -g, --outgroup <file>                        Path to the outgroup taxon/species/strain file
   -o, --o2t_out <dir>                          Specify base output directory where all outputs will be saved [default: current directory]
                                                The read2tree step1 output directory is always named O2T_RESULTS inside o2t_out.
   -T, --threads <int>                          Number of threads [default: 12]  
-  -R, --resume                                 Skips taxa whose coding sequences have already been downloaded from NCBI to the db folder. Skips as much steps as possible up to the OMA run step (1.6). When run, it removes existing OMA output and read2tree directories.
+  -R, --resume                                 Skips taxa whose reference FASTA already exists in the db folder. Skips as many steps as possible up to the OMA run step (1.6). When run, it removes existing OMA output and read2tree directories.
   --og_min_fraction <float>                    Keep only OGs present in at least this fraction of species (0–1). If omitted, all OGs are kept.
-  -p, --use_mat_peptides                       Downloads the gbk file for each taxon's accession(s). If at least one mature peptide feature is detected, these features are used as the coding sequences; otherwise, the standard CDS features are downloaded.
-  -q, --use_mat_peptides_only                  Downloads the gbk file for each taxon's accession(s). If at least one mature peptide feature is detected, these features are used as the coding sequences; if none are detected, that taxon is skipped.
+  -p, --use_mat_peptides                       For NCBI accessions, downloads the gbk file for each taxon's accession(s). If at least one mature peptide feature is detected, these features are used as the coding sequences; otherwise, the standard CDS features are downloaded.
+  -q, --use_mat_peptides_only                  For NCBI accessions, downloads the gbk file for each taxon's accession(s). If at least one mature peptide feature is detected, these features are used as the coding sequences; if none are detected, that taxon is skipped.
   --temp_dir <dir>                             Optional temp directory. If relative, it will be relative to o2t_out.
   --debug                                      Keeps temporary directory
   -h, --help                                   Show this help message
@@ -237,7 +241,11 @@ validate_local_assemblies_manifest() {
       --local-clean-output "$local_clean_file"
       --local-taxa-output "$local_taxa_file"
       --status-output "$status_file"
+      --feature-types "$LOCAL_FEATURES"
       --code-mode "$code_mode")
+    if [[ -n "$LOCAL_GROUP_BY" ]]; then
+      LOCAL_VALIDATION_CMD+=(--group-by "$LOCAL_GROUP_BY")
+    fi
     if [[ -n "$main_clean_file" ]]; then
       LOCAL_VALIDATION_CMD+=(--main-clean-file "$main_clean_file")
     fi
@@ -726,6 +734,8 @@ while [[ "$#" -gt 0 ]]; do
     case $1 in
         -i|--input) INPUT_FILE="$2"; shift ;;
         -L|--local_assemblies) LOCAL_ASSEMBLIES_FILE="$2"; shift ;;
+        --local_features) LOCAL_FEATURES="$2"; shift ;;
+        --local_group_by) LOCAL_GROUP_BY="$2"; shift ;;
         -g|--outgroup) OUTGROUP_FILE="$2"; shift ;;
         -p|--use_mat_peptides) MAT_PEPTIDES=true; P_FLAG=true;;
         -q|--use_mat_peptides_only) MAT_PEPTIDES=true; ONLY_MAT_PEPTIDES=true; Q_FLAG=true;;
@@ -1106,21 +1116,25 @@ elif [[ -z "$INPUT_FILE" ]]; then
 fi
 
 if [[ -n "$LOCAL_ASSEMBLIES_FILE" ]]; then
-  log_info "========== Step 1.3b: Extracting coding sequences from local assemblies =========="
+  log_info "========== Step 1.3b: Extracting local feature sequences from local assemblies =========="
   LOCAL_ASSEMBLY_COUNT=$(awk 'NR >= 2 && NF {count += 1} END {print count + 0}' "$LOCAL_CLEAN_FILE")
   if [[ "$RES_DOWN" == true ]] && local_db_files_complete "$LOCAL_EXPECTED_TAXA_FILE"; then
     LOCAL_RES_DOWN_VOID=true
   fi
   LOCAL_CDS_CMD=(python3 "${SCRIPTS_DIR}/extract_local_cds_from_gff.py"
     --manifest "$LOCAL_CLEAN_FILE"
-    --db-dir "${WORK_DIR}/db")
+    --db-dir "${WORK_DIR}/db"
+    --feature-types "$LOCAL_FEATURES")
+  if [[ -n "$LOCAL_GROUP_BY" ]]; then
+    LOCAL_CDS_CMD+=(--group-by "$LOCAL_GROUP_BY")
+  fi
   if $HAS_CODE_COLUMN; then
     LOCAL_CDS_CMD+=(--has-code-column --codes-output "$FIVE_LETTER_FILE")
   fi
   if [[ "$RES_DOWN" == true ]]; then
     LOCAL_CDS_CMD+=(--resume)
   fi
-  log_info "Executing local CDS extraction command: ${LOCAL_CDS_CMD[*]}"
+  log_info "Executing local feature extraction command: ${LOCAL_CDS_CMD[*]}"
   "${LOCAL_CDS_CMD[@]}"
   log_info "Processed $LOCAL_ASSEMBLY_COUNT local assembly row(s)"
   log_info "Generating CDS counts table and histogram including local assemblies..."

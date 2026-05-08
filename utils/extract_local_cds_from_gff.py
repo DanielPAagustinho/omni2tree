@@ -5,10 +5,11 @@ import argparse
 import csv
 import re
 import sys
+from collections import Counter
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional
+from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 from urllib.parse import unquote
 
 from Bio import SeqIO
@@ -46,6 +47,37 @@ def clean_token(text: str) -> str:
     return token or "unknown"
 
 
+MISSING_VALUES = {"", ".", "-", "na", "n/a", "unknown"}
+
+
+def is_missing_value(value: Optional[str]) -> bool:
+    return value is None or value.strip().strip('"').strip("'").lower() in MISSING_VALUES
+
+
+def normalize_attr_value(value: Optional[str]) -> str:
+    if is_missing_value(value):
+        return ""
+    return value.strip().strip('"').strip("'")
+
+
+def parse_feature_types(raw: str) -> Tuple[str, ...]:
+    values = tuple(part.strip() for part in raw.split(",") if part.strip())
+    if not values:
+        raise ValueError("At least one local feature type must be provided.")
+    if any(re.search(r"\s", value) for value in values):
+        raise ValueError("Local feature types must be comma-separated values without spaces inside each value.")
+    return values
+
+
+def parse_group_by(raw: Optional[str]) -> Optional[str]:
+    if raw is None or is_missing_value(raw):
+        return None
+    value = raw.strip()
+    if "," in value or re.search(r"\s", value):
+        raise ValueError("Only one --group-by attribute is allowed.")
+    return value
+
+
 @dataclass
 class ManifestRow:
     line_no: int
@@ -59,6 +91,7 @@ class ManifestRow:
 @dataclass
 class CdsFeature:
     seqid: str
+    feature_type: str
     start: int
     end: int
     strand: str
@@ -67,9 +100,16 @@ class CdsFeature:
     line_no: int
 
 
+@dataclass
+class ExtractionStats:
+    feature_count: int
+    record_count: int
+    feature_type_counts: Dict[str, int]
+
+
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(
-        description="Extract local CDS from FASTA + GTF/GFF3 into Omni2Tree db FASTA files."
+        description="Extract selected local GTF/GFF3 features into Omni2Tree db FASTA files."
     )
     p.add_argument("--manifest", required=True, type=Path, help="CSV with local assemblies")
     p.add_argument("--db-dir", required=True, type=Path, help="Output db directory")
@@ -88,6 +128,16 @@ def parse_args() -> argparse.Namespace:
         "--resume",
         action="store_true",
         help="Skip local taxa whose db FASTA already exists and is non-empty",
+    )
+    p.add_argument(
+        "--feature-types",
+        default="CDS",
+        help="Comma-separated GTF/GFF3 feature type(s) to extract from column 3 [default: CDS]",
+    )
+    p.add_argument(
+        "--group-by",
+        default=None,
+        help="Single GTF/GFF3 attribute used to group selected feature rows into one sequence unit",
     )
     return p.parse_args()
 
@@ -153,6 +203,8 @@ def load_manifest(path: Path, has_code_column: bool) -> List[ManifestRow]:
 
 def parse_gff3_attributes(field: str) -> Dict[str, str]:
     attrs: Dict[str, str] = {}
+    if is_missing_value(field):
+        return attrs
     for item in field.split(";"):
         item = item.strip()
         if not item:
@@ -164,23 +216,35 @@ def parse_gff3_attributes(field: str) -> Dict[str, str]:
         else:
             key, value = item, ""
         key = key.strip()
-        values = [unquote(v.strip()) for v in value.split(",") if v.strip()]
-        attrs[key] = values[0] if values else ""
+        if is_missing_value(key):
+            continue
+        values = [normalize_attr_value(unquote(v.strip())) for v in value.split(",")]
+        values = [v for v in values if v]
+        if values:
+            attrs[key] = values[0]
     return attrs
 
 
 def parse_gtf_attributes(field: str) -> Dict[str, str]:
     attrs: Dict[str, str] = {}
+    if is_missing_value(field):
+        return attrs
     for item in field.split(";"):
         item = item.strip()
         if not item:
             continue
         match = re.match(r"(\S+)\s+\"?([^\"]*)\"?$", item)
         if match:
-            attrs[match.group(1)] = match.group(2).strip()
+            key = match.group(1).strip()
+            value = normalize_attr_value(match.group(2))
+            if not is_missing_value(key) and value:
+                attrs[key] = value
         elif "=" in item:
             key, value = item.split("=", 1)
-            attrs[key.strip()] = value.strip().strip('"')
+            key = key.strip()
+            value = normalize_attr_value(value)
+            if not is_missing_value(key) and value:
+                attrs[key] = value
     return attrs
 
 
@@ -192,7 +256,8 @@ def parse_attributes(field: str) -> Dict[str, str]:
     return attrs
 
 
-def read_cds_features(path: Path) -> List[CdsFeature]:
+def read_features(path: Path, feature_types: Sequence[str]) -> List[CdsFeature]:
+    wanted = {feature_type.lower() for feature_type in feature_types}
     features: List[CdsFeature] = []
     with path.open(encoding="utf-8") as fh:
         for line_no, line in enumerate(fh, start=1):
@@ -200,23 +265,24 @@ def read_cds_features(path: Path) -> List[CdsFeature]:
             if not line or line.startswith("#"):
                 continue
             cols = line.split("\t")
-            if len(cols) != 9:
-                log_warn(f"Skipping malformed annotation line {line_no} in {path}: expected 9 columns")
+            if len(cols) < 9:
+                log_warn(f"Skipping malformed annotation line {line_no} in {path}: expected at least 9 columns")
                 continue
-            seqid, _source, feature_type, start, end, _score, strand, phase, attributes = cols
-            if feature_type.lower() != "cds":
+            seqid, _source, feature_type, start, end, _score, strand, phase = cols[:8]
+            attributes = "\t".join(cols[8:])
+            if feature_type.lower() not in wanted:
                 continue
             try:
                 start_i = int(start)
                 end_i = int(end)
             except ValueError:
-                log_warn(f"Skipping CDS line {line_no} in {path}: invalid coordinates")
+                log_warn(f"Skipping feature line {line_no} in {path}: invalid coordinates")
                 continue
             if start_i < 1 or end_i < start_i:
-                log_warn(f"Skipping CDS line {line_no} in {path}: unsupported coordinate range {start}..{end}")
+                log_warn(f"Skipping feature line {line_no} in {path}: unsupported coordinate range {start}..{end}")
                 continue
             if strand not in {"+", "-"}:
-                log_warn(f"CDS line {line_no} in {path} has strand '{strand}', treating as '+'")
+                log_warn(f"Feature line {line_no} in {path} has strand '{strand}', treating as '+'")
                 strand = "+"
             phase_i: Optional[int]
             if phase in {".", ""}:
@@ -232,6 +298,7 @@ def read_cds_features(path: Path) -> List[CdsFeature]:
             features.append(
                 CdsFeature(
                     seqid=seqid,
+                    feature_type=feature_type,
                     start=start_i,
                     end=end_i,
                     strand=strand,
@@ -245,17 +312,21 @@ def read_cds_features(path: Path) -> List[CdsFeature]:
 
 def attr_value(attrs: Dict[str, str], keys: Iterable[str]) -> str:
     for key in keys:
-        value = attrs.get(key)
+        value = normalize_attr_value(attrs.get(key))
         if value:
             return value
     return ""
 
 
-def group_key(feature: CdsFeature) -> str:
-    for key in ("protein_id", "proteinId", "ID", "transcript_id", "Parent", "gene_id", "locus_tag", "gene", "Name"):
-        value = feature.attrs.get(key)
-        if value:
-            return value
+def group_key(feature: CdsFeature, group_by: Optional[str]) -> str:
+    if group_by:
+        value = attr_value(feature.attrs, (group_by,))
+        if not value:
+            raise ValueError(
+                f"Feature line {feature.line_no} is missing group-by attribute '{group_by}' "
+                "or its value is missing."
+            )
+        return value
     return f"{feature.seqid}:{feature.start}-{feature.end}:{feature.strand}:line{feature.line_no}"
 
 
@@ -281,7 +352,7 @@ def extract_group_sequence(features: List[CdsFeature], fasta_records: Dict[str, 
             raise ValueError(f"Sequence ID '{feat.seqid}' from annotation line {feat.line_no} not found in FASTA")
         if feat.end > len(record.seq):
             raise ValueError(
-                f"CDS coordinates {feat.seqid}:{feat.start}..{feat.end} exceed FASTA sequence length "
+                f"Feature coordinates {feat.seqid}:{feat.start}..{feat.end} exceed FASTA sequence length "
                 f"({len(record.seq)})"
             )
         part = record.seq[feat.start - 1 : feat.end]
@@ -293,15 +364,22 @@ def extract_group_sequence(features: List[CdsFeature], fasta_records: Dict[str, 
     return sum(parts[1:], parts[0]) if parts else ""
 
 
-def make_seqrecords(row: ManifestRow) -> List[SeqRecord]:
+def make_seqrecords(
+    row: ManifestRow,
+    feature_types: Sequence[str] = ("CDS",),
+    group_by: Optional[str] = None,
+) -> Tuple[List[SeqRecord], ExtractionStats]:
     fasta_records = load_fasta(row.dna_path)
-    features = read_cds_features(row.annotation_path)
+    features = read_features(row.annotation_path, feature_types)
     if not features:
-        raise ValueError(f"No CDS features found in {row.annotation_path} for local taxon {row.taxon_raw}")
+        raise ValueError(
+            f"No selected feature(s) found in {row.annotation_path} for local taxon {row.taxon_raw}: "
+            f"{', '.join(feature_types)}"
+        )
 
     grouped: Dict[str, List[CdsFeature]] = {}
     for feat in features:
-        grouped.setdefault(group_key(feat), []).append(feat)
+        grouped.setdefault(group_key(feat, group_by), []).append(feat)
 
     seqrecords: List[SeqRecord] = []
     used_protein_ids: Dict[str, int] = {}
@@ -312,10 +390,10 @@ def make_seqrecords(row: ManifestRow) -> List[SeqRecord]:
         first = group[0]
         seq = extract_group_sequence(group, fasta_records)
         if not seq:
-            raise ValueError(f"Empty CDS sequence generated for local taxon {row.taxon_raw}, group {key}")
+            raise ValueError(f"Empty local feature sequence generated for local taxon {row.taxon_raw}, group {key}")
         if len(seq) % 3 != 0:
             log_warn(
-                f"Local CDS group '{key}' for taxon {row.taxon_raw} has length {len(seq)}, "
+                f"Local feature group '{key}' for taxon {row.taxon_raw} has length {len(seq)}, "
                 "which is not divisible by 3. Step 1 cleaning will pad it with N."
             )
 
@@ -324,6 +402,8 @@ def make_seqrecords(row: ManifestRow) -> List[SeqRecord]:
         locus_tag = attr_value(first.attrs, ("locus_tag", "gene_id"))
         db_xref = attr_value(first.attrs, ("Dbxref", "db_xref"))
         protein_id = attr_value(first.attrs, ("protein_id", "proteinId"))
+        if not protein_id and group_by:
+            protein_id = attr_value(first.attrs, (group_by,))
         if not protein_id:
             protein_id = f"{row.taxon}_local_cds_{idx}"
 
@@ -346,7 +426,7 @@ def make_seqrecords(row: ManifestRow) -> List[SeqRecord]:
             description_parts.append(f"[locus_tag={locus_tag}]")
         if db_xref:
             description_parts.append(f"[db_xref={db_xref}]")
-        description_parts.append("[gbkey=CDS]")
+        description_parts.append(f"[gbkey={first.feature_type}]")
 
         seqrecords.append(
             SeqRecord(
@@ -357,7 +437,12 @@ def make_seqrecords(row: ManifestRow) -> List[SeqRecord]:
             )
         )
 
-    return seqrecords
+    stats = ExtractionStats(
+        feature_count=len(features),
+        record_count=len(seqrecords),
+        feature_type_counts=dict(Counter(feat.feature_type for feat in features)),
+    )
+    return seqrecords, stats
 
 
 def load_codes(path: Path) -> Dict[str, str]:
@@ -415,23 +500,45 @@ def append_codes(codes_output: Optional[Path], to_append: List[tuple[str, str]])
         log_info(f"Updated {codes_output} with {len(to_append)} local taxon code(s)")
 
 
-def write_local_db_files(rows: List[ManifestRow], db_dir: Path, resume: bool) -> int:
+def write_local_db_files(
+    rows: List[ManifestRow],
+    db_dir: Path,
+    resume: bool,
+    feature_types: Sequence[str],
+    group_by: Optional[str],
+) -> int:
     db_dir.mkdir(parents=True, exist_ok=True)
     written = 0
     skipped = 0
+    total_feature_rows = 0
+    total_records = 0
+    feature_type_counts = Counter()
     for row in rows:
         target = db_dir / f"{row.taxon}_cds_from_genomic.fna"
         if resume and target.exists() and target.stat().st_size > 0:
             log_info(f"Local taxon {row.taxon_raw} already exists in db; skipping extraction: {target}")
             skipped += 1
             continue
-        records = make_seqrecords(row)
+        records, stats = make_seqrecords(row, feature_types, group_by)
         if not records:
-            raise ValueError(f"No CDS records generated for local taxon {row.taxon_raw}")
+            raise ValueError(f"No local sequence units generated for local taxon {row.taxon_raw}")
         with target.open("w", encoding="utf-8") as fh:
             SeqIO.write(records, fh, "fasta")
         written += 1
-        log_info(f"Wrote {len(records)} local CDS sequence(s) for {row.taxon_raw}: {target}")
+        total_feature_rows += stats.feature_count
+        total_records += stats.record_count
+        feature_type_counts.update(stats.feature_type_counts)
+        log_info(
+            f"Wrote {len(records)} local sequence unit(s) from {stats.feature_count} feature row(s) "
+            f"for {row.taxon_raw}: {target}"
+        )
+    feature_summary = ", ".join(f"{feature}:{count}" for feature, count in sorted(feature_type_counts.items()))
+    log_info(
+        "Local extraction report: "
+        f"taxa_written={written}, taxa_skipped={skipped}, feature_rows={total_feature_rows}, "
+        f"sequence_units={total_records}, feature_types={feature_summary or 'none'}, "
+        f"group_by={group_by or 'none'}"
+    )
     log_info(f"Local assembly extraction summary: {written} written, {skipped} skipped")
     return written
 
@@ -439,12 +546,14 @@ def write_local_db_files(rows: List[ManifestRow], db_dir: Path, resume: bool) ->
 def main() -> None:
     args = parse_args()
     try:
+        feature_types = parse_feature_types(args.feature_types)
+        group_by = parse_group_by(args.group_by)
         rows = load_manifest(args.manifest, args.has_code_column)
         log_info(f"Loaded {len(rows)} local assembly row(s) from {args.manifest}")
         code_updates = prepare_code_updates(rows, args.codes_output)
-        written = write_local_db_files(rows, args.db_dir, args.resume)
+        written = write_local_db_files(rows, args.db_dir, args.resume, feature_types, group_by)
         append_codes(args.codes_output, code_updates)
-        log_info(f"Local CDS extraction completed successfully. Local db files written: {written}")
+        log_info(f"Local feature extraction completed successfully. Local db files written: {written}")
     except Exception as exc:
         log_error(str(exc))
         sys.exit(1)

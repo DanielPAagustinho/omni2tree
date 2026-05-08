@@ -221,14 +221,16 @@ If this file is not specified, OMA Standalone will use midpoint rooting, which i
 |--------------------|-----------------------------|
 | `-i`, `--input`    | Optional CSV file with NCBI accessions. Required only when `--local_assemblies` is not provided. |
 | `-L`, `--local_assemblies` | Optional CSV manifest with local assemblies to add to the same reference database as the NCBI accessions. Required only when `--input` is not provided. |
+| `--local_features` | Comma-separated feature type(s) from local GTF/GFF3 column 3 to extract. **Default:** `CDS`. |
+| `--local_group_by` | Optional single GTF/GFF3 attribute used to group selected local feature rows into one sequence unit. |
 | `-g`, `--outgroup` | **Optional (recommended)** File with outgroup taxa used by OMA. |
 | `-o`, `--o2t_out`       | Base output directory where all outputs are written. **Default:** current directory|
 | `--temp_dir`       | Temporary directory (relative to `--o2t_out` or absolute). **Default:** `mktemp -d`|
-| `-R`, `--resume`       |Skip taxa already downloaded from NCBI into the `db` folder. If all taxa were already downloaded, it resumes from Step 1.4. Additionally, if the required files are already present, Step 1.4 is bypassed and the script practically resumes from the OMA Standalone run (Step 1.6). |
+| `-R`, `--resume`       | Skips taxa whose reference FASTA already exists in the `db` folder. If all taxa are already present, it resumes at Step 1.4. If the required cleaned files are already present and match `db/`, Step 1.4 is bypassed and the script resumes from the OMA Standalone run (Step 1.6). |
 |`--og_min_fraction`| Keep only OGs present in at least this fraction of species (0–1). If omitted, all OGs are kept. |
-| `-p, --use_mat_peptides`       | Download GBK files for each taxon's accession(s) and uses the mat_peptide features instead of CDS features if at least one mat_peptide is found. |
-| `-q, --use_mat_peptides_only`       | Same as --use_mat_peptides, except that if no mat_peptide feature is found, it does not download CDS features and simply skips that taxon. |
-| `-T, --threads`   | Number of threads to use for Oma Standalone and the first step of read2tree. |
+| `-p, --use_mat_peptides`       | For NCBI accessions, download GBK files and use `mat_peptide` features instead of CDS features if at least one `mat_peptide` is found. |
+| `-q, --use_mat_peptides_only`       | Same as `--use_mat_peptides`, except that if no `mat_peptide` feature is found, it does not download CDS features and skips that taxon. |
+| `-T, --threads`   | Number of threads to use for OMA Standalone and the first step of read2tree. **Default:** `12`. |
 | `--debug`         | Keeps temp directory with intermediate files. |
 | `-h, --help`         | Show help. |
 
@@ -280,7 +282,7 @@ Norovirus GV, NC_008311.1
 <details>
 <summary><b>Click to expand local assembly format</b></summary>
 
-`-L`, `--local_assemblies` adds homemade/local assemblies to the reference database built in step 1. Each row represents one reference taxon/label and must point to a DNA FASTA file plus a GTF/GFF3 annotation file. Omni2Tree extracts only features whose third GTF/GFF3 column is `CDS`, writes them to `db/{taxon}_cds_from_genomic.fna`, and then processes them together with the NCBI references if `-i/--input` is also provided.
+`-L`, `--local_assemblies` adds homemade/local assemblies to the reference database built in step 1. Each row represents one reference taxon/label and must point to a DNA FASTA file plus a GTF/GFF3 annotation file. By default, Omni2Tree extracts features whose third GTF/GFF3 column is `CDS`, writes them to `db/{taxon}_cds_from_genomic.fna`, and then processes them together with the NCBI references if `-i/--input` is also provided.
 
 If the main accession file has a code column, the local manifest must also have one:
 
@@ -298,7 +300,9 @@ Local RSV A,local_rsv_a.fasta,local_rsv_a.gff3
 
 If `-i/--input` is omitted, either local manifest format is accepted.
 
-Only include the CDS features you want to use in the GTF/GFF3 file. For example, if you want a subset of genes or segments, pre-filter the annotation so that only those `CDS` rows remain. Local taxa must not duplicate taxa from the main accession file after Omni2Tree's alphanumeric taxon-name cleanup.
+Use `--local_features` to select one or more feature types from GTF/GFF3 column 3, for example `--local_features CDS`, `--local_features mat_peptide`, or `--local_features CDS,mat_peptide`. By default, selected feature rows are not grouped: each selected row is treated as one sequence unit, even when multiple feature types are selected. Use `--local_group_by <attribute>` to group selected rows into final units by one attribute; a final group can contain rows from different selected feature types. Only one grouping attribute is allowed. Missing identifier values such as `.`, `-`, `NA`, `N/A`, `unknown`, or an empty value are treated as missing.
+
+Each non-comment GTF/GFF3 row must have at least 9 tab-separated columns. Only include the feature rows you want to use. For example, if you want a subset of genes or segments, pre-filter the annotation so that only those rows remain. Local taxa must not duplicate taxa from the main accession file after Omni2Tree's alphanumeric taxon-name cleanup.
 
 </details>
 

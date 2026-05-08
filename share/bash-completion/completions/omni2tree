@@ -36,7 +36,7 @@ _o2t_step1_complete() {
   cur="${COMP_WORDS[COMP_CWORD]}"
   prev="${COMP_WORDS[COMP_CWORD-1]}"
 
-  opts="-i --input -L --local_assemblies -g --outgroup -o --o2t_out --temp_dir -R --resume --og_min_fraction \
+  opts="-i --input -L --local_assemblies --local_features --local_group_by -g --outgroup -o --o2t_out --temp_dir -R --resume --og_min_fraction \
         -p --use_mat_peptides -q --use_mat_peptides_only -T --threads --debug -h --help"
 
   case "$prev" in
@@ -46,6 +46,14 @@ _o2t_step1_complete() {
       ;;
     -o|--o2t_out|--temp_dir)
       COMPREPLY=( $(compgen -d -- "$cur") )
+      return 0
+      ;;
+    --local_features)
+      COMPREPLY=( $(compgen -W "CDS mat_peptide CDS,mat_peptide" -- "$cur") )
+      return 0
+      ;;
+    --local_group_by)
+      COMPREPLY=( $(compgen -W "protein_id ID Parent transcript_id gene_id locus_tag" -- "$cur") )
       return 0
       ;;
   esac
