@@ -106,30 +106,6 @@ Commented lines starting with `#` are ignored.
 
 For segmented viruses, include only the accessions corresponding to the segment(s) of interest if the goal is to analyze reassortment or focus on a subset of the genome.
 
-### **Local Assemblies Manifest**
-
-`-L`, `--local_assemblies` adds homemade/local assemblies to the reference database built in step 1. Each row represents one reference taxon/label and must point to a DNA FASTA file plus a GTF/GFF3 annotation file. By default, Omni2Tree extracts features whose third GTF/GFF3 column is `CDS`, writes them to `db/{taxon}_cds_from_genomic.fna`, and then processes them together with the NCBI references if `-i/--input` is also provided.
-
-If the main accession file has a code column, the local manifest must also have one:
-
-```plaintext
-taxon,code,dna,gff
-Local RSV A,LRSA1,local_rsv_a.fasta,local_rsv_a.gff3
-```
-
-If the main accession file does not have a code column:
-
-```plaintext
-taxon,dna,gff
-Local RSV A,local_rsv_a.fasta,local_rsv_a.gff3
-```
-
-If `-i/--input` is omitted, either local manifest format is accepted.
-
-Use `--local_features` to select one or more feature types from GTF/GFF3 column 3, for example `--local_features CDS`, `--local_features mat_peptide`, or `--local_features CDS,mat_peptide`. By default, selected feature rows are not grouped: each selected row is treated as one sequence unit, even when multiple feature types are selected. Use `--local_group_by <attribute>` to group selected rows into final units by one attribute; a final group can contain rows from different selected feature types.
-
-Each non-comment GTF/GFF3 row must have at least 9 tab-separated columns. Only include the feature rows you want to use. For example, if you want a subset of genes or segments, pre-filter the annotation so that only those rows remain. Local taxa must not duplicate taxa from the main accession file after Omni2Tree's alphanumeric taxon-name cleanup.
-
 #### **Example Input Files**
 
 ##### **With a five-letter code:**
@@ -166,6 +142,30 @@ The outgroup file should contain taxa from the accession file to be used as outg
 influenza A virus California
 Influenza A Hong Kong
 ```
+
+### **Local Assemblies Manifest**
+
+`-L`, `--local_assemblies` adds homemade/local assemblies to the reference database built in step 1. Each row represents one reference taxon/label and must point to a DNA FASTA file plus a GTF/GFF3 annotation file. By default, Omni2Tree extracts features whose third GTF/GFF3 column is `CDS`, writes them to `db/{taxon}_cds_from_genomic.fna`, and then processes them together with the NCBI references if `-i/--input` is also provided.
+
+If the main accession file has a code column, the local manifest must also have one:
+
+```plaintext
+taxon,code,dna,gff
+Local RSV A,LRSA1,local_rsv_a.fasta,local_rsv_a.gff3
+```
+
+If the main accession file does not have a code column:
+
+```plaintext
+taxon,dna,gff
+Local RSV A,local_rsv_a.fasta,local_rsv_a.gff3
+```
+
+If `-i/--input` is omitted, either local manifest format is accepted.
+
+Use `--local_features` to select one or more feature types from GTF/GFF3 column 3, for example `--local_features CDS`, `--local_features mat_peptide`, or `--local_features CDS,mat_peptide`. By default, selected feature rows are not grouped: each selected row is treated as one sequence unit, even when multiple feature types are selected. Use `--local_group_by <attribute>` to group selected rows into final units by one attribute; a final group can contain rows from different selected feature types.
+
+Each non-comment GTF/GFF3 row must have at least 9 tab-separated columns. Only include the feature rows you want to use. For example, if you want a subset of genes or segments, pre-filter the annotation so that only those rows remain. Local taxa must not duplicate taxa from the main accession file after Omni2Tree's alphanumeric taxon-name cleanup.
 
 ### **Output Files**
 
