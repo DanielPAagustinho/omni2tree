@@ -19,10 +19,27 @@ Me quedé en (viernes 8 de mayor):
 
 okey, haz esto: 
 
-Pendiente: que en todo o2t step1.sh se trate NA como valor normal, y tmb se añada NA cuando no se sabe que valor es. Creo quee sto ya es asi, solo verificar que siga siendo asi. Añadir no ta en el readme para alertar al usuario con ese nombre de gen, sobre todo cuando venga descargado de ncbi
-
-Y ademas a location solo pongo location, no añado protein id ni strand., solo start..end
-
 
 Pendiente: arreglar minimamente los logs. Que si skipea solo accessiones, diga skipping step 1.3a. Si skipea local assemblies diga skipping step 1.3b. 
 
+Revisar: que se integre bien con todos step2 y step3
+
+
+Asunto de accession: 
+En local assemblies:
+Se usa stem de fasta file
+En file con accessions:
+Se usa la accesion
+
+Sale en columna accession de og_genes.tsv
+
+
+En paso 3 es obligatorio colocar en metadata columna accesiones. Pero no se verifica contra anda, es solo informativa del id. Y termina llamandose sample_id.
+
+Tener en cuenta que o2tview verifica que ninguna columna se llame source y no recuerdo qué mas verificaba.
+
+
+
+Que siempre salga la version actual d e omni2tree, se puede conectar de alguna forma a tag actual?
+
+Colocar autores al final de cada help en o2t? 

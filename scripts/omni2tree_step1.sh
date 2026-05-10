@@ -19,6 +19,7 @@ WORK_DIR=""
 #OMA="${MAIN_DIR}/../oma/bin"
 PARAMETERS_FILE="parameters.drw"
 FIVE_LETTER_FILE="five_letter_taxon.tsv"
+RESUME_STATE_FILE=".omni2tree_step1_resume.json"
 INPUT_FILE=""
 LOCAL_ASSEMBLIES_FILE=""
 LOCAL_FEATURES="CDS"
@@ -39,6 +40,10 @@ LOCAL_RES_DOWN_VOID=false
 P_FLAG=false
 Q_FLAG=false
 SKIP_STEP4=false
+NCBI_REBUILD=false
+LOCAL_REBUILD=false
+CODES_CHANGED=false
+FORCE_STEP4=false
 
 if [ -t 1 ]; then
   RED="\033[1;31m"
@@ -131,7 +136,8 @@ Optional:
   -o, --o2t_out <dir>                          Specify base output directory where all outputs will be saved [default: current directory]
                                                The read2tree step1 output directory is always named O2T_RESULTS inside o2t_out.
   -T, --threads <int>                          Number of threads [default: 12]  
-  -R, --resume                                 Skips taxa whose reference FASTA already exists in the db folder. Skips as many steps as possible up to the OMA run step (1.6). When run, it removes existing OMA output and read2tree directories.
+  -R, --resume                                 Skips taxa whose reference FASTA already exists in the db folder and matches the hidden step1 resume state. Skips as many steps as possible up to the OMA run step (1.6). When run, it removes existing OMA output and read2tree directories.
+                                               Requires .omni2tree_step1_resume.json from a previous completed step1 reference build.
   --og_min_fraction <float>                    Keep only OGs present in at least this fraction of species (0–1). If omitted, all OGs are kept.
   -p, --use_mat_peptides                       For NCBI accessions, downloads the gbk file for each taxon's accession(s). If at least one mature peptide feature is detected, these features are used as the coding sequences; otherwise, the standard CDS features are downloaded.
   -q, --use_mat_peptides_only                  For NCBI accessions, downloads the gbk file for each taxon's accession(s). If at least one mature peptide feature is detected, these features are used as the coding sequences; if none are detected, that taxon is skipped.
@@ -279,6 +285,72 @@ local_db_files_complete() {
         fi
     done < "$local_taxa_file"
     return 0
+}
+
+state_bool() {
+    if [[ "$1" == true ]]; then
+        printf "true"
+    else
+        printf "false"
+    fi
+}
+
+add_step1_state_model_args() {
+    local -n cmd_ref=$1
+    local input_enabled=false
+    local local_enabled=false
+
+    [[ -n "$INPUT_FILE" ]] && input_enabled=true
+    [[ -n "$LOCAL_ASSEMBLIES_FILE" ]] && local_enabled=true
+
+    cmd_ref+=(--db-dir "${WORK_DIR}/db")
+    cmd_ref+=(--input-enabled "$input_enabled")
+    cmd_ref+=(--local-enabled "$local_enabled")
+    cmd_ref+=(--has-code-column "$(state_bool "$HAS_CODE_COLUMN")")
+    cmd_ref+=(--mat-peptides "$(state_bool "$MAT_PEPTIDES")")
+    cmd_ref+=(--only-mat-peptides "$(state_bool "$ONLY_MAT_PEPTIDES")")
+    cmd_ref+=(--local-features "$LOCAL_FEATURES")
+    if [[ -n "$LOCAL_GROUP_BY" ]]; then
+        cmd_ref+=(--local-group-by "$LOCAL_GROUP_BY")
+    fi
+    if [[ "$input_enabled" == true ]]; then
+        cmd_ref+=(--clean-file "$FULL_CLEAN_FILE")
+    fi
+    if [[ "$local_enabled" == true ]]; then
+        cmd_ref+=(--local-clean-file "$LOCAL_CLEAN_FILE")
+    fi
+}
+
+compare_step1_resume_state() {
+    local env_output="$1"
+    local cmd=(python3 "${SCRIPTS_DIR}/step1_resume_state.py" compare
+      --state "$RESUME_STATE_FILE"
+      --env-output "$env_output")
+    add_step1_state_model_args cmd
+    cmd+=(--validate-db)
+    log_info "Comparing current reference inputs against resume state: ${RESUME_STATE_FILE}"
+    "${cmd[@]}"
+}
+
+write_step1_resume_state() {
+    local complete="$1"
+    local cmd=(python3 "${SCRIPTS_DIR}/step1_resume_state.py" write
+      --state "$RESUME_STATE_FILE"
+      --complete "$complete")
+    add_step1_state_model_args cmd
+    if [[ "$complete" == true ]]; then
+        cmd+=(--validate-db)
+    fi
+    log_info "Writing step1 resume state (${RESUME_STATE_FILE}, complete=${complete})"
+    "${cmd[@]}"
+}
+
+write_current_code_mapping() {
+    local cmd=(python3 "${SCRIPTS_DIR}/step1_resume_state.py" write-codes
+      --output "$FIVE_LETTER_FILE")
+    add_step1_state_model_args cmd
+    log_info "Regenerating ${FIVE_LETTER_FILE} from current reference inputs and db files"
+    "${cmd[@]}"
 }
 
 fetch_data() {
@@ -819,6 +891,11 @@ else
     log_info "No -o/--o2t_out specified. Output directories will be written in '$(pwd)'"
 fi
 
+if [[ "$RES_DOWN" == true ]]; then
+    log_info "Checking step1 resume state file: ${RESUME_STATE_FILE}"
+    python3 "${SCRIPTS_DIR}/step1_resume_state.py" check --state "$RESUME_STATE_FILE"
+fi
+
 OUT_DIR="O2T_RESULTS"
 log_info "Using read2tree output directory: '$(pwd -P)/$OUT_DIR'"
 if [[ -d "$OUT_DIR" ]]; then
@@ -951,6 +1028,7 @@ export RED YELLOW GREEN NC FIVE_LETTER_FILE HAS_CODE_COLUMN NCBI_DOWNLOAD_COUNT 
 
 #CLEAN_FILE="$(mktemp -p "$TEMP_DIR" file.XXXXXX)"  #Temporary file for cleaned input
 CLEAN_FILE="$TEMP_DIR/input_clean_file.txt"
+FULL_CLEAN_FILE="$TEMP_DIR/input_clean_file_full.txt"
 LOCAL_CLEAN_FILE="$TEMP_DIR/local_assemblies_clean.csv"
 LOCAL_EXPECTED_TAXA_FILE="$TEMP_DIR/local_assemblies_taxa.txt"
 HAS_CODE_COLUMN=false
@@ -1018,9 +1096,6 @@ if [[ -n "$INPUT_FILE" ]]; then
         if [[ -n "$LOCAL_ASSEMBLIES_FILE" ]]; then
           validate_local_assemblies_manifest "$LOCAL_ASSEMBLIES_FILE" "$LOCAL_CLEAN_FILE" "$LOCAL_EXPECTED_TAXA_FILE" "$CLEAN_FILE"
         fi
-        if [[ "$RES_DOWN" == true ]]; then
-          skip_taxa "$CLEAN_FILE" "$LOCAL_EXPECTED_TAXA_FILE"
-        fi
       else
         log_error "The header has 3 columns, but the second is not a 'code(s)' column (Found: '${HEADER_COLS[1]}')."
         exit 1
@@ -1059,9 +1134,6 @@ if [[ -n "$INPUT_FILE" ]]; then
       if [[ -n "$LOCAL_ASSEMBLIES_FILE" ]]; then
         validate_local_assemblies_manifest "$LOCAL_ASSEMBLIES_FILE" "$LOCAL_CLEAN_FILE" "$LOCAL_EXPECTED_TAXA_FILE" "$CLEAN_FILE"
       fi
-      if [[ "$RES_DOWN" == true ]]; then
-        skip_taxa "$CLEAN_FILE" "$LOCAL_EXPECTED_TAXA_FILE"
-      fi
 
     else
       log_error "The header columns are not correct. Expected 'taxon/species/strain/label' and 'accession(s)' (or equivalent). Found: '${HEADER_COLS[0]}' and '${HEADER_COLS[1]}'."
@@ -1072,14 +1144,42 @@ else
   log_info "No NCBI accession file provided. Building reference database from local assemblies only."
   printf "taxon,accession\n" > "$CLEAN_FILE"
   validate_local_assemblies_manifest "$LOCAL_ASSEMBLIES_FILE" "$LOCAL_CLEAN_FILE" "$LOCAL_EXPECTED_TAXA_FILE" ""
-  if [[ "$RES_DOWN" == true ]]; then
+fi
+
+cp "$CLEAN_FILE" "$FULL_CLEAN_FILE"
+
+if [[ "$RES_DOWN" == true ]]; then
+  RESUME_COMPARE_ENV="$TEMP_DIR/resume_compare.env"
+  compare_step1_resume_state "$RESUME_COMPARE_ENV"
+  # shellcheck disable=SC1090
+  source "$RESUME_COMPARE_ENV"
+
+  if [[ "$NCBI_REBUILD" == true ]]; then
+    log_info "Resume state changed for NCBI references or db counts; re-fetching all current NCBI taxa."
+  elif [[ -n "$INPUT_FILE" ]]; then
     skip_taxa "$CLEAN_FILE" "$LOCAL_EXPECTED_TAXA_FILE"
+  fi
+
+  if [[ "$LOCAL_REBUILD" == true ]]; then
+    log_info "Resume state changed for local assemblies or db counts; re-extracting all current local taxa."
+  elif [[ -n "$LOCAL_ASSEMBLIES_FILE" ]]; then
+    log_info "All local taxa match the resume state; local feature extraction can be skipped."
+  fi
+
+  if [[ "$CODES_CHANGED" == true ]]; then
+    log_info "5-letter code mapping changed; Step 1.4 will be regenerated."
+  fi
+
+  if [[ -z "$INPUT_FILE" && "$LOCAL_REBUILD" == false ]]; then
+    RES_DOWN_VOID=true
   fi
 fi
 
 if [[ "$RES_DOWN" != true ]]; then
   mkdir -p db
 fi
+
+write_step1_resume_state false
 
 if [[ -n "$INPUT_FILE" && "$RES_DOWN_VOID" == false ]]; then
   log_info "========== Step 1.3: Retrieving coding sequences from NCBI =========="
@@ -1129,25 +1229,27 @@ if [[ -n "$LOCAL_ASSEMBLIES_FILE" ]]; then
   if [[ "$RES_DOWN" == true ]] && local_db_files_complete "$LOCAL_EXPECTED_TAXA_FILE"; then
     LOCAL_RES_DOWN_VOID=true
   fi
-  LOCAL_CDS_CMD=(python3 "${SCRIPTS_DIR}/extract_local_cds_from_gff.py"
-    --manifest "$LOCAL_CLEAN_FILE"
-    --db-dir "${WORK_DIR}/db"
-    --feature-types "$LOCAL_FEATURES")
-  if [[ -n "$LOCAL_GROUP_BY" ]]; then
-    LOCAL_CDS_CMD+=(--group-by "$LOCAL_GROUP_BY")
-  fi
-  if $HAS_CODE_COLUMN; then
-    LOCAL_CDS_CMD+=(--has-code-column --codes-output "$FIVE_LETTER_FILE")
-  fi
-  if [[ "$RES_DOWN" == true ]]; then
-    LOCAL_CDS_CMD+=(--resume)
-  fi
-  log_info "Executing local feature extraction command: ${LOCAL_CDS_CMD[*]}"
-  "${LOCAL_CDS_CMD[@]}"
-  log_info "Processed $LOCAL_ASSEMBLY_COUNT local assembly row(s)"
-  log_info "Generating CDS counts table and histogram including local assemblies..."
-  python3 "${SCRIPTS_DIR}/cds_accessions_statistics.py" --db-dir "${WORK_DIR}/db" --out-dir "${STATS_REFERENCES_CDS_DIR}" --prefix cds_count_per_accession
-  if [[ "$LOCAL_RES_DOWN_VOID" == false ]]; then
+  if [[ "$RES_DOWN" == true && "$LOCAL_REBUILD" == false && "$LOCAL_RES_DOWN_VOID" == true ]]; then
+    log_info "All local taxa had corresponding db files and matching resume counts; skipping local extraction."
+  else
+    LOCAL_CDS_CMD=(python3 "${SCRIPTS_DIR}/extract_local_cds_from_gff.py"
+      --manifest "$LOCAL_CLEAN_FILE"
+      --db-dir "${WORK_DIR}/db"
+      --feature-types "$LOCAL_FEATURES")
+    if [[ -n "$LOCAL_GROUP_BY" ]]; then
+      LOCAL_CDS_CMD+=(--group-by "$LOCAL_GROUP_BY")
+    fi
+    if $HAS_CODE_COLUMN; then
+      LOCAL_CDS_CMD+=(--has-code-column)
+    fi
+    if [[ "$RES_DOWN" == true && "$LOCAL_REBUILD" == false ]]; then
+      LOCAL_CDS_CMD+=(--resume)
+    fi
+    log_info "Executing local feature extraction command: ${LOCAL_CDS_CMD[*]}"
+    "${LOCAL_CDS_CMD[@]}"
+    log_info "Processed $LOCAL_ASSEMBLY_COUNT local assembly row(s)"
+    log_info "Generating CDS counts table and histogram including local assemblies..."
+    python3 "${SCRIPTS_DIR}/cds_accessions_statistics.py" --db-dir "${WORK_DIR}/db" --out-dir "${STATS_REFERENCES_CDS_DIR}" --prefix cds_count_per_accession
     RES_DOWN_VOID=false
   fi
 fi
@@ -1156,7 +1258,17 @@ if [[ "$RES_DOWN_VOID" == false && "$NCBI_DOWNLOAD_COUNT" -eq 0 && "$LOCAL_ASSEM
   RES_DOWN_VOID=true
 fi
 
-if [ "$RES_DOWN_VOID" == true ] && [ -d "DB" ] && [ -s "dna_ref.fa" ]; then
+if $HAS_CODE_COLUMN; then
+  write_current_code_mapping
+fi
+
+write_step1_resume_state false
+
+if [[ "$FORCE_STEP4" == true ]]; then
+  log_info "Resume state requires regenerating DB, dna_ref.fa, and ${FIVE_LETTER_FILE}."
+fi
+
+if [ "$RES_DOWN_VOID" == true ] && [ "$FORCE_STEP4" != true ] && [ -d "DB" ] && [ -s "dna_ref.fa" ] && [ -s "$FIVE_LETTER_FILE" ]; then
   SKIP_STEP4=true
   for DB_file in DB/*.fa; do
       base_name=$(basename "$DB_file" .fa)
@@ -1193,6 +1305,8 @@ else
     python3 "${SCRIPTS_DIR}/clean_fasta_cdna_cds.py" db "$RES_DOWN"
   fi
 fi
+
+write_step1_resume_state true
 
 log_info "========== Step 1.5: Editing parameters.drw file for running OMA =========="
 
