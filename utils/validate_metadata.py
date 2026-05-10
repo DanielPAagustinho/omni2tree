@@ -4,9 +4,9 @@ Validate Omni2tree Step 3 metadata before running expensive steps.
 
 Checks:
 1) Metadata CSV structure (header + type row + data rows)
-2) Required columns (label, accession)
+2) Required columns (label, identifier)
 3) Allowed type declarations
-4) label/accession constraints (non-empty; accession one-per-row; unique label/accession)
+4) label/identifier constraints (non-empty; identifier one-per-row; unique label/identifier)
 5) Label collision risk after output sanitization
 6) Every reference label in five_letter_taxon.tsv is present in metadata
    after alphanumeric cleanup (same criterion used in step1/step3 matching)
@@ -47,7 +47,7 @@ def log_error(message: str) -> None:
 
 
 VALID_TYPES = {"character", "date", "numeric", "integer"}
-VIEW_RESERVED_COLUMNS = {"sample_id", "source"}
+VIEW_RESERVED_COLUMNS = {"source"}
 
 
 @dataclass
@@ -56,7 +56,7 @@ class MetadataInput:
     types: List[str]
     rows: List[Dict[str, str]]
     label_col: str
-    accession_col: str
+    identifier_col: str
 
 
 def parse_args() -> argparse.Namespace:
@@ -137,10 +137,10 @@ def parse_metadata_csv(path: Path) -> MetadataInput:
     lower_map = {col.lower(): col for col in header}
     if "label" not in lower_map:
         raise ValueError("Metadata must contain a 'label' column")
-    if "accession" not in lower_map:
-        raise ValueError("Metadata must contain an 'accession' column")
+    if "identifier" not in lower_map:
+        raise ValueError("Metadata must contain an 'identifier' column")
     label_col = lower_map["label"]
-    accession_col = lower_map["accession"]
+    identifier_col = lower_map["identifier"]
 
     data_rows: List[Dict[str, str]] = []
     for i, raw in enumerate(rows[2:], start=3):
@@ -161,12 +161,12 @@ def parse_metadata_csv(path: Path) -> MetadataInput:
                 f"Metadata row {i} label contains a comma; labels must not contain commas"
             )
 
-        accession = row[accession_col]
-        if accession == "":
-            raise ValueError(f"Metadata row {i} has empty accession")
-        if "," in accession:
+        identifier = row[identifier_col]
+        if identifier == "":
+            raise ValueError(f"Metadata row {i} has empty identifier")
+        if "," in identifier:
             raise ValueError(
-                f"Metadata row {i} accession contains a comma; exactly one accession is required per row"
+                f"Metadata row {i} identifier contains a comma; exactly one identifier is required per row"
             )
 
         data_rows.append(row)
@@ -175,7 +175,7 @@ def parse_metadata_csv(path: Path) -> MetadataInput:
         raise ValueError("Metadata has no data rows after filtering empty rows")
 
     log_info(f"Loaded metadata rows: {len(data_rows)}")
-    return MetadataInput(header, types, data_rows, label_col, accession_col)
+    return MetadataInput(header, types, data_rows, label_col, identifier_col)
 
 
 def load_five_letter(path: Path) -> Tuple[Dict[str, str], Dict[str, str]]:
@@ -264,7 +264,7 @@ def validate_readset_presence(meta: MetadataInput, readset_names: List[str]) -> 
 
 
 def validate_output_constraints(meta: MetadataInput, labelkey_to_code: Dict[str, str]) -> None:
-    seen_sample_ids: set[str] = set()
+    seen_identifiers: set[str] = set()
     seen_raw_labels: set[str] = set()
     seen_label_keys: Dict[str, str] = {}
     sanitized_labels: Dict[str, Tuple[str, str]] = {}
@@ -272,16 +272,16 @@ def validate_output_constraints(meta: MetadataInput, labelkey_to_code: Dict[str,
     read_count = 0
 
     for idx, row in enumerate(meta.rows, start=1):
-        accession = row[meta.accession_col]
+        identifier = row[meta.identifier_col]
         raw_label = row[meta.label_col]
 
         if raw_label in seen_raw_labels:
             raise ValueError(f"Duplicated label in metadata: {raw_label}")
         seen_raw_labels.add(raw_label)
 
-        if accession in seen_sample_ids:
-            raise ValueError(f"Duplicated accession/sample_id in metadata: {accession}")
-        seen_sample_ids.add(accession)
+        if identifier in seen_identifiers:
+            raise ValueError(f"Duplicated identifier in metadata: {identifier}")
+        seen_identifiers.add(identifier)
 
         label_key = clean_alnum(raw_label)
         label_safe = tree_label_sanitize(raw_label)
@@ -293,21 +293,21 @@ def validate_output_constraints(meta: MetadataInput, labelkey_to_code: Dict[str,
                 f"'{raw_label}' collides with '{seen_label_keys[collision_key]}'"
             )
         seen_label_keys[collision_key] = raw_label
-        sanitized_labels[accession] = (label_final, raw_label)
+        sanitized_labels[identifier] = (label_final, raw_label)
 
         if label_key in labelkey_to_code:
             ref_count += 1
         else:
             read_count += 1
 
-    for accession, (label_final, raw_label) in sanitized_labels.items():
-        if label_final in sanitized_labels and label_final != accession:
+    for identifier, (label_final, raw_label) in sanitized_labels.items():
+        if label_final in sanitized_labels and label_final != identifier:
             other_raw_label = sanitized_labels[label_final][1]
             raise ValueError(
                 "Ambiguous omni2treeview metadata after label sanitization: "
-                f"label '{label_final}' (from metadata label '{raw_label}', accession '{accession}') "
-                f"matches sample_id/accession '{label_final}' from another row "
-                f"(metadata label '{other_raw_label}'). Rename the conflicting input label or accession."
+                f"label '{label_final}' (from metadata label '{raw_label}', identifier '{identifier}') "
+                f"matches identifier '{label_final}' from another row "
+                f"(metadata label '{other_raw_label}'). Rename the conflicting input label or identifier."
             )
 
     log_info(
