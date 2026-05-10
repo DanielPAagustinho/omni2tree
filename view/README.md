@@ -53,21 +53,21 @@ Expected format:
 - Row 3 onward: metadata values.
 
 Required rules:
-- Column 1 must be `sample_id`.
+- Column 1 must be `identifier`.
 - Column 2 must be `label`.
-- `sample_id` values must be unique.
+- `identifier` values must be unique.
 - `label` values must be unique.
 - Empty values are converted to `NA`.
 
 Matching behavior:
-- Omni2treeView first tries to match each tree leaf name to metadata column 1: `sample_id`.
+- Omni2treeView first tries to match each tree leaf name to metadata column 1: `identifier`.
 - If that does not match, it then tries metadata column 2: `label`.
 - If neither matches, the sample metadata is filled with `NA`.
 
 Example:
 
 ```csv
-sample_id,label,Host,Host_Group,Host_Type,Collection_State,Year
+identifier,label,Host,Host_Group,Host_Type,Collection_State,Year
 character,character,character,character,character,character,date
 432,432,Bovine,Bovine,Mammalian,Ohio,2024
 3101271_749133,3101271_749133,Snow goose,Goose,Avian,Kansas,2023
@@ -92,5 +92,5 @@ The output will include:
 - If entropy images are available, a copied entropy folder: `*_entropy/`
 
 Notes on the generated view:
-- The clicked-node metadata panel includes `sample_id`.
-- The sample details table shows `sample_id` first, followed by `Label`, then the remaining metadata columns.
+- The clicked-node metadata panel includes `Identifier`.
+- The sample details table shows `Identifier` first, followed by `Label`, then the remaining metadata columns.
