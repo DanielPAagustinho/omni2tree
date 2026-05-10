@@ -586,7 +586,7 @@
                                                     </tr>
                                                 </thead>
                                                 <tbody>
-                                                    <tr v-for="row in pagedTableData" :key="row['sample_id'] + '-' + row['Label']">
+                                                    <tr v-for="row in pagedTableData" :key="row['Identifier'] + '-' + row['Label']">
                                                         <td v-for="header in selectedNodeChildrenMata.table_header"
                                                             :key="header" style="padding: 4px;">
                                                             {{ row[header] }}
@@ -1560,10 +1560,10 @@
                         const metaKeys = firstWithMeta ? Object.keys(firstWithMeta.data.meta || {}) : [];
 
                         d.data.cached_leaf_table = {
-                            table_header: ["sample_id", "Label", ...metaKeys],
+                            table_header: ["Identifier", "Label", ...metaKeys],
                             table_data: leaves.map(n => {
                                 const row = {
-                                    "sample_id": n.data.sample_id || "NA",
+                                    "Identifier": n.data.identifier || "NA",
                                     "Label": n.data.name || "(unnamed)"
                                 };
                                 for (const k of metaKeys) {
