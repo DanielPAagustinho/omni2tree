@@ -339,7 +339,7 @@ Influenza A Hong Kong
 | `stats/References_CDS/` | Directory containing reference CDS summary outputs generated in step 1. |
 | `stats/References_CDS/cds_count_per_accession*` | Per-reference CDS counts and their distribution across NCBI and local references: `cds_count_per_accession.tsv`, `cds_count_per_accession_frequency.tsv` and `cds_count_per_accession_distribution.png`. |
 | `stats/References_OGs/` | Directory containing reference OG summary outputs generated in step 1. |
-| `stats/References_OGs/OG_genes.tsv` | Table with all features for each CDS from the OGs identified by OMA. |
+| `stats/References_OGs/OG_genes.tsv` | Table with all features for each CDS from the OGs identified by OMA. The `Identifier` column is the source sequence identifier: an NCBI accession for downloaded records, or the local FASTA filename stem for local assemblies. |
 | `stats/References_OGs/OG_genes-unique.tsv` | Summary table listing the OGs alongside its associated gene, protein, and the taxa in which it is found. |
 | `stats/References_OGs/taxon_OG.tsv` | Table containing per-taxon summary: total CDS, missing protein_id, no-OG matches, and matched counts. |
 | `stats/References_OGs/OG_taxa.tsv` | Summary of species coverage per OG and whether it is kept (only when `--og_min_fraction` is used). |
@@ -577,12 +577,12 @@ OG5,E2
 ### Optional Files
 
 #### 3. Metadata Table (for grouping/filtering)
-- **Format**: CSV with `sample_id` column
+- **Format**: CSV with `label` column
 - **Purpose**: Filter samples or group entropy calculations
 
 **Example:**
 ```csv
-sample_id,genotype,collection_year,location
+label,genotype,collection_year,location
 HepC_SRR1170677,GT1,2011,USA
 HepC_SRR5122806,GT4,2009,Netherlands
 s0252,GT7,2014,Reference
@@ -678,7 +678,7 @@ python msa_to_position_table.py \
 ```
 
 **Output:** CSV with columns:
-- `sample_id` - Sample identifier
+- `label` - Sequence label
 - `position` - Position in alignment (1-indexed)
 - `character` - Amino acid or nucleotide at this position
 - `og` - Ortholog group (e.g., OG1)
@@ -900,7 +900,7 @@ Rscript -e "install.packages(c('tidyverse', 'RColorBrewer'), repos='https://cran
 
 **Issue:** All samples excluded by filter
 - **Check:** Pattern in `--exclude_pattern` matches your reference IDs
-- **Try:** Run without `--exclude_pattern` to see all sample IDs
+- **Try:** Run without `--exclude_pattern` to see all sequence labels
 
 ---
 
@@ -908,7 +908,7 @@ Rscript -e "install.packages(c('tidyverse', 'RColorBrewer'), repos='https://cran
 
 ### Position Table Example
 ```csv
-sample_id,position,character,og,gene,seq_type
+label,position,character,og,gene,seq_type
 HepC_SRR1170677,1,-,OG1,NS3,AA
 HepC_SRR1170677,2,-,OG1,NS3,AA
 HepC_SRR1170677,3,-,OG1,NS3,AA
