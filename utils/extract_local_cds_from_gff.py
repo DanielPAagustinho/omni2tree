@@ -47,7 +47,7 @@ def clean_token(text: str) -> str:
     return token or "unknown"
 
 
-MISSING_VALUES = {"", ".", "-", "na", "n/a", "unknown"}
+MISSING_VALUES = {"", ".", "-", "n/a", "unknown"}
 
 
 def is_missing_value(value: Optional[str]) -> bool:
@@ -338,7 +338,7 @@ def load_fasta(path: Path) -> Dict[str, SeqRecord]:
 
 
 def build_location(features: List[CdsFeature]) -> str:
-    parts = [f"{feat.seqid}:{feat.start}..{feat.end}({feat.strand})" for feat in features]
+    parts = [f"{feat.start}..{feat.end}" for feat in features]
     return ",".join(parts)
 
 
@@ -397,7 +397,7 @@ def make_seqrecords(
                 "which is not divisible by 3. Step 1 cleaning will pad it with N."
             )
 
-        gene = attr_value(first.attrs, ("gene", "gene_name", "Name", "locus_tag", "gene_id"))
+        gene = attr_value(first.attrs, ("gene", "gene_name", "Name"))
         product = attr_value(first.attrs, ("product", "protein", "Name"))
         locus_tag = attr_value(first.attrs, ("locus_tag", "gene_id"))
         db_xref = attr_value(first.attrs, ("Dbxref", "db_xref"))
