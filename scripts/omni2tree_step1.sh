@@ -483,13 +483,15 @@ generate_og_gene_tsv() {
               log_info "Success: Match found for protein ID $protein_id in OG $og_matches"
               # Iterate over the OGs found and write to temporary file
               local code="${SPECIES_TO_CODE[$species]}"
-              local accession="$(awk -F '_cds_' '{print $1}' <<< "${line#*|}")"
+              local identifier="$(awk -F '_cds_' '{print $1}' <<< "${line#*|}")"
               local gene="NA"
               local protein="NA"
               local location="NA"
               local locus_tag="NA"
               local db_xref="NA"
-              #local accession="NA"; local code="NA"
+              local has_gene=false
+              local has_protein=false
+              #local identifier="NA"; local code="NA"
               #local gene="$(echo "$line" | grep -oP '\[gene=\K[^\]]+')"
               #local protein="$(echo "$line" | grep -oP '\[protein=\K[^\]]+')"
               #local protein_id="$(echo "$line" | grep -oP '\[protein_id=\K[^\]]+')"
@@ -497,13 +499,17 @@ generate_og_gene_tsv() {
               # gene
               if [[ "$line" =~ \[gene=([^]]+)\] ]]; then
                 gene="${BASH_REMATCH[1]}"
+                has_gene=true
               fi
 
               # protein/product
               if [[ "$line" =~ \[protein=([^]]+)\] ]]; then
                 protein="${BASH_REMATCH[1]}"
-              elif [[ "$line" =~ \[product=([^]]+)\] ]]; then
+                has_protein=true
+              fi
+              if [[ "$has_protein" != true && "$line" =~ \[product=([^]]+)\] ]]; then
                 protein="${BASH_REMATCH[1]}"
+                has_protein=true
               fi
 
               # location
@@ -522,15 +528,15 @@ generate_og_gene_tsv() {
               #Output/OrthologousGroupsFasta/OG11.fa:>3355X||rsv_11||lcl|MG8139841cdsAZQ1955316 cleaned for r2t [rsv_11_3355X]
               #local compressed_id="$(echo "$protein_id" | sed 's/[^a-zA-Z0-9]//g')"
               #echo "Got correct features from *fna for ${protein_id}"
-              [[ "$gene" == "NA" ]]       && log_info "Missing gene for protein ID $protein_id in $file"
-              [[ "$protein" == "NA" ]]    && log_info "Missing product(protein) for protein ID $protein_id in $file"
+              [[ "$has_gene" != true ]]       && log_info "Missing gene for protein ID $protein_id in $file"
+              [[ "$has_protein" != true ]]    && log_info "Missing product(protein) for protein ID $protein_id in $file"
               [[ "$location" == "NA" ]]  && log_info "Missing location for protein ID $protein_id in $file"
               [[ "$locus_tag" == "NA" ]]  && log_info "Missing locus_tag for protein ID $protein_id in $file"
               [[ "$db_xref" == "NA" ]]  && log_info "Missing db_xref for protein ID $protein_id in $file"
               MATCHED_BY_SPECIES["$species"]=$(( ${MATCHED_BY_SPECIES["$species"]:-0} + 1 ))
 
               for og in $og_matches; do
-                  echo -e "${og}\t${gene}\t${protein}\t${protein_id}\t${location}\t${accession}\t${species}\t${code}\t${locus_tag}\t${db_xref}" >> "$tmp_file"
+                  echo -e "${og}\t${gene}\t${protein}\t${protein_id}\t${location}\t${identifier}\t${species}\t${code}\t${locus_tag}\t${db_xref}" >> "$tmp_file"
               done
         else #Should this be really a warn?, it just means that that gene is not in the OG from OMA
             NO_OG_BY_SPECIES["$species"]=$(( ${NO_OG_BY_SPECIES["$species"]:-0} + 1 ))
@@ -541,7 +547,7 @@ generate_og_gene_tsv() {
     log_info "Finished processing all coding sequences files in directory: $fna_dir"
     #-V option in sort from GNU coreutils
     sort -k1,1 -V -k2,2 "$tmp_file" > "$output_file2"
-    sed -i '1iOG\tGene\tProtein\tProtein_ID\tLocation\tAccession\tTaxon\tCode\tLocus_tag\tDb_xref' "$output_file2"
+    sed -i '1iOG\tGene\tProtein\tProtein_ID\tLocation\tIdentifier\tTaxon\tCode\tLocus_tag\tDb_xref' "$output_file2"
     {
       head -n +1 "$output_file2"
       # Skip the header of the main TSV
