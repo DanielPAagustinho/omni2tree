@@ -1,4 +1,4 @@
-sample_id,label,source,Genotype
+identifier,label,source,Genotype
 character,character,character,character
 GCA_038284295.1,ASM3828429v1,Reference,GT1
 AB827988-95,Influenza_A_virus_LBM330,Reference,GT2
