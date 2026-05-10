@@ -90,7 +90,11 @@ def load_meta(meta_file: str):
         uniq_labels = set()
         meta_dict["header"] = reader.fieldnames
         if meta_dict["header"] is None or len(meta_dict["header"]) < 2:
-            logging.error("Metadata file must contain at least two columns: sample_id and label. Exiting...")
+            logging.error("Metadata file must contain at least two columns: identifier and label. Exiting...")
+            exit(1)
+        expected_first_columns = [h.lower() for h in meta_dict["header"][:2]]
+        if expected_first_columns != ["identifier", "label"]:
+            logging.error("Metadata first two columns must be exactly: identifier,label. Exiting...")
             exit(1)
         # first row to determine column types
         first_row = next(reader)
@@ -103,14 +107,12 @@ def load_meta(meta_file: str):
 
         # process next rows
         for row in reader:
-            # get the first column as sample_id
-            sample_id = row[meta_dict["header"][0]]
-            # sample_id_list = sample_id.split('_')
-            # sample_id = sample_id_list[1]
-            if sample_id in uniq_ids:
-                logging.error(f"Duplicate sample_id {sample_id} found in metadata. exiting...")
+            # get the first column as identifier
+            identifier = row[meta_dict["header"][0]]
+            if identifier in uniq_ids:
+                logging.error(f"Duplicate identifier {identifier} found in metadata. exiting...")
                 exit(1)
-            uniq_ids.add(sample_id)
+            uniq_ids.add(identifier)
             sample_label = row[meta_dict["header"][1]]
             if sample_label in uniq_labels:
                 logging.error(f"Duplicate label {sample_label} found in metadata. exiting...")
@@ -122,13 +124,13 @@ def load_meta(meta_file: str):
                 if key not in row or row[key] == '':
                     row[key] = 'NA'
 
-            meta_dict[sample_id] = row
-            meta_dict["label_lookup"][sample_label] = sample_id
-            meta_dict["rows"].append(sample_id)
+            meta_dict[identifier] = row
+            meta_dict["label_lookup"][sample_label] = identifier
+            meta_dict["rows"].append(identifier)
 
     # validate the values based on col_type
-    for sample_id, row in meta_dict.items():
-        if sample_id in ['header', 'col_type', 'rows', 'label_lookup']:
+    for identifier, row in meta_dict.items():
+        if identifier in ['header', 'col_type', 'rows', 'label_lookup']:
             continue
         for idx, key in enumerate(meta_dict["header"]):
             value = row[key]
@@ -142,7 +144,7 @@ def load_meta(meta_file: str):
                     else:
                         int(value)
                 except ValueError:
-                    logging.error(f"Value '{value}' for column '{key}' in sample_id '{sample_id}' is not of type {col_type}. exiting...")
+                    logging.error(f"Value '{value}' for column '{key}' in identifier '{identifier}' is not of type {col_type}. exiting...")
                     exit(1)
             elif col_type == 'date':
                 # simple check for date format (could be improved)
@@ -150,7 +152,7 @@ def load_meta(meta_file: str):
 
                     if not value.isdigit():
 
-                        logging.error(f"Value '{value}' for column '{key}' in sample_id '{sample_id}' is not a valid Date format. exiting...")
+                        logging.error(f"Value '{value}' for column '{key}' in identifier '{identifier}' is not a valid Date format. exiting...")
                         exit(1)
             # character type does not need validation
     # print(meta_dict)
@@ -163,7 +165,7 @@ def parse_csv_to_tree(input_file: str,tree_name: str) -> Tuple[Dict[str, Any], D
     children_map = defaultdict(list)
     # meta_keys = {}
 
-    common_header = ["parent", "node", "branch.length", "label", "confidence", "sample_id"]
+    common_header = ["parent", "node", "branch.length", "label", "confidence", "identifier"]
     common_header = [ h.capitalize() for h in common_header]
 
     with open(input_file, newline='') as csvfile:
@@ -227,7 +229,7 @@ def parse_csv_to_tree(input_file: str,tree_name: str) -> Tuple[Dict[str, Any], D
             nodes[node_id] = {
                 "id": node_id,
                 "name": row["Label"],
-                "sample_id": row.get("Sample_id", "NA"),
+                "identifier": row.get("Identifier", "NA"),
                 "branch_length": brlen,
                 "meta": meta,
                 "confidence": row["Confidence"],
@@ -433,7 +435,7 @@ if __name__ == "__main__":
 
     meta_dict = load_meta(args.meta)
 
-    final_header = tree_csv["header"] + [meta_dict["header"][0]] + meta_dict["header"][2:]  # keep sample_id, skip label
+    final_header = tree_csv["header"] + [meta_dict["header"][0]] + meta_dict["header"][2:]  # keep identifier, skip label
     final_header = [x.capitalize() for x in final_header]
     final_col_type = ['integer','integer','numeric','character','numeric'] + [meta_dict["col_type"][0]] + meta_dict["col_type"][2:]
     logging.info(f"> Final header and column types ({len(final_header)}):")
@@ -448,30 +450,30 @@ if __name__ == "__main__":
     # print(meta_dict["header"])
 
     logging.info(f"> Generating merged CSV with metadata to {output_base}.meta.csv")
-    all_meta_sample_ids = set(meta_dict["rows"])
+    all_meta_identifiers = set(meta_dict["rows"])
     for row in tree_csv["rows_final"]:
         node_name = row[3]
-        # first try sample_id, then the label column stored in metadata
+        # first try identifier, then the label column stored in metadata
         if node_name in meta_dict:
             meta_row = meta_dict[node_name]
-            all_meta_sample_ids.discard(node_name)
+            all_meta_identifiers.discard(node_name)
         elif node_name in meta_dict["label_lookup"]:
-            sample_id = meta_dict["label_lookup"][node_name]
-            meta_row = meta_dict[sample_id]
-            all_meta_sample_ids.discard(sample_id)
+            identifier = meta_dict["label_lookup"][node_name]
+            meta_row = meta_dict[identifier]
+            all_meta_identifiers.discard(identifier)
         else:
             # print warnings
             if not node_name.startswith("Internal-"):
-                logging.warning(f"No metadata found for node '{node_name}'. Filling with NA. If this is not intentional, please check the metadata sample_id/label columns for consistency with the tree node names.")
+                logging.warning(f"No metadata found for node '{node_name}'. Filling with NA. If this is not intentional, please check the metadata identifier/label columns for consistency with the tree node names.")
             # fill with NA
             meta_row = {key: 'NA' for key in meta_dict["header"]}
-        # keep sample_id for display, skip label because it is already represented as the node name
+        # keep identifier for display, skip label because it is already represented as the node name
         meta_values = [meta_row[meta_dict["header"][0]]] + [meta_row[key] for key in meta_dict["header"][2:]]
         # print(row)
         final_row = row + meta_values
         writer.writerow(final_row)
-    if len(all_meta_sample_ids) > 0:
-        logging.warning(f"There are {len(all_meta_sample_ids)} sample IDs in metadata that are not found in the tree nodes. These samples will be ignored. Sample IDs: {', '.join(all_meta_sample_ids)}, please check for consistency between your metadata file and tree node names.")
+    if len(all_meta_identifiers) > 0:
+        logging.warning(f"There are {len(all_meta_identifiers)} identifiers in metadata that are not found in the tree nodes. These rows will be ignored. Identifiers: {', '.join(all_meta_identifiers)}, please check for consistency between your metadata file and tree node names.")
     out_fh.close()
 
     logging.info("> Generating tree and HTML output...")
