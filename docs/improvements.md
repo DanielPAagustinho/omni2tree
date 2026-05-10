@@ -17,10 +17,12 @@ Aguanta, pero los programas de anotacion generales no botan "mature_peptide" no?
 
 Me quedé en (viernes 8 de mayor):
 
-okey, haz esto: 1. En o2t step1, en la parte d evlaidacion de gff, edita brevmeente el scirpt para no imprimir un mensaje por cada gff validado, sino decir algo como que se está validando, y luego que se valdio y botar algun warn si es necesario. 2. Luego, veo que siempre generas esas imagenes de cds dos veces, cuando el input es local y accessions downloaded, puedes evitar eso minimamente o seria muy pesado? piensa como evitarlo minimamente, teniendo en cuenta que el parametro resume debe mantener su comportamiento de siempre. Funcionara mover la generacion del png al ultimo? primero propon y dime si es factible. 
+okey, haz esto: 
 
-Pendiente: añadir "frame" en caracteristicas a recuperar en el gff3 columna 9 y tmb en el og generate tsv, si es que estan presentes en lo descargado desde ncbi. Ah no, pero si añado eso no generaria muchos NA en los archviso resumenes de OG? Bueno añadirlo al final entonces
+Pendiente: que en todo o2t step1.sh se trate NA como valor normal, y tmb se añada NA cuando no se sabe que valor es. Creo quee sto ya es asi, solo verificar que siga siendo asi. Añadir no ta en el readme para alertar al usuario con ese nombre de gen, sobre todo cuando venga descargado de ncbi
 
-Pendiente: hacer algo cuando el gen se llama "NA" tal cual
+Y ademas a location solo pongo location, no añado protein id ni strand., solo start..end
 
-Pendiente: Protein y Product son practiamente lo mismo  par amis intereses .. asi qeu fine!
+
+Pendiente: arreglar minimamente los logs. Que si skipea solo accessiones, diga skipping step 1.3a. Si skipea local assemblies diga skipping step 1.3b. 
+
