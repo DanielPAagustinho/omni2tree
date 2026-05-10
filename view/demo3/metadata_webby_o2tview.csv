@@ -1,4 +1,4 @@
-sample_id,label,Host,Host_Group,Host_Type,Collection_State,Year
+identifier,label,Host,Host_Group,Host_Type,Collection_State,Year
 character,character,character,character,character,character,date
 432,432,Bovine,Bovine,Mammalian,Ohio,2024
 439,439,Bovine,Bovine,Mammalian,Ohio,2024
