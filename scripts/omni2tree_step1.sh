@@ -565,6 +565,7 @@ fetch_data() {
           return 0
         else
           log_error "Writing of mat_peptide features to ${target_fna} failed: file is empty for taxon ${strain}: ${accessions_list}"
+          rm -f "$target_fna"
           return 1
         fi
 
@@ -583,11 +584,13 @@ fetch_data() {
 
   if ! efetch -db nucleotide -id "$accessions_list" -format fasta_cds_na > "$target_fna"; then
       log_warn "Command efetch failed while fetching accession(s) for taxon ${strain}: ${accessions_list}"
+      rm -f "$target_fna"
       return 0
   fi
 
   if ! fasta_has_records "$target_fna"; then
 	  log_warn "Command efetch failed to fetch accession(s) for taxon ${strain}: ${accessions_list}"
+    rm -f "$target_fna"
     return 0
   fi
 
@@ -1415,6 +1418,15 @@ if [ "$RES_DOWN_VOID" == true ] && [ "$FORCE_STEP4" != true ] && [ -d "DB" ] && 
       if [ ! -s "$target_file" ]; then
           log_error "The file ${DB_file} doesn't have a corresponding ${target_file} in the db/ directory Please check your process."
           exit 1
+      fi
+  done
+  for db_file in db/*_cds_from_genomic.fna; do
+      base_name=$(basename "$db_file" _cds_from_genomic.fna)
+      target_file="DB/${base_name}.fa"
+      if [ ! -s "$target_file" ]; then
+          SKIP_STEP4=false
+          log_info "The file ${db_file} doesn't have a corresponding ${target_file} in the DB/ directory. Step 1.4 will be regenerated."
+          break
       fi
   done
   # Now check sequence count of dna ref to be the same in all the seq on db

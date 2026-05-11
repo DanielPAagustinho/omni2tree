@@ -24,18 +24,7 @@ Pendiente: arreglar minimamente los logs. Que si skipea solo accessiones, diga s
 
 Revisar: que se integre bien con todos step2 y step3
 
-Eliminar este info:
-[2026-05-11 12:33:30] [INFO] Writing step1 resume state (omni2tree_step1_resume.json, complete=false)?
-
-Eliminar este info:
-[INFO] Taxon HRSVAUSATXHOU1986702021 is marked for repair; keeping it in the download queue.
-[2026-05-11 12:36:35] [INFO] Taxon hRSVBAustraliaVICRCH0562019 is marked for repair; keeping it in the download queue.
-[2026-05-11 12:36:35] [INFO] Taxon RSVBhumanUSAWAS253042021 is marked for repair; keeping it in the download queue.
-[2026-05-11 12:36:35] 
-
-Que no repita para todos : [INFO] Validated 11 local sequence unit(s) from 11 feature row(s) for local taxon HRSV-A/IC688/12: /home/adrian_chalco/projects/fritz/o2t_local_assemblies/data/local_assemblies/KP663728.1.gff3
-[2026-05-11 12:36:34] [INFO] Validated 11 local sequence unit(s) from 11 feature row(s) for local taxon HRSV/A/England/397/2017: /home/adrian_chalco/projects/fritz/o2t_local_assemblies/data/local_assemblies/PP109421.1.gff3
-[2026-05-11 12:36:34]  
+Detale: cuantas veces se ejecuta extract_gff3.py? una sola vez no? y para cada fff3 se ejectua la parte de escirbir sha directamente (sin dar vueltas)
 
 Que siempre salga la version actual d e omni2tree, se puede conectar de alguna forma a tag actual?
 
