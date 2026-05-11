@@ -118,7 +118,7 @@ def read_local_rows(
 
     rows = []
     for row in load_local_manifest(path, has_code_column):
-        records, stats = make_seqrecords(row, feature_types, group_by)
+        records, stats = make_seqrecords(row, feature_types, group_by, emit_warnings=False)
         rows.append(
             {
                 "source": "local",
@@ -183,6 +183,18 @@ def db_outputs(db_dir: Path, expected: Dict[str, str]) -> Dict[str, Dict[str, An
     return outputs
 
 
+def validate_expected_db_outputs(outputs: Dict[str, Dict[str, Any]], expected: Dict[str, str]) -> None:
+    missing = []
+    for taxon in sorted(expected):
+        filename = f"{taxon}{DB_SUFFIX}"
+        if filename not in outputs:
+            missing.append(filename)
+    if missing:
+        raise ValueError(
+            "Missing, empty, or invalid expected db FASTA file(s): " + ", ".join(missing)
+        )
+
+
 def row_signatures(model: Dict[str, Any], source: str) -> Dict[str, str]:
     rows = model.get(source, {}).get("rows", [])
     signatures: Dict[str, str] = {}
@@ -222,6 +234,39 @@ def output_by_taxon(model: Dict[str, Any], source: str) -> Dict[str, Dict[str, A
         if item.get("source") == source and item.get("taxon"):
             selected[item["taxon"]] = item
     return selected
+
+
+def trusted_preserved_outputs(previous: Dict[str, Any], current: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
+    expected = expected_taxa(current["ncbi"]["rows"], current["local"]["rows"])
+    preserved: Dict[str, Dict[str, Any]] = {}
+    previous_rows = {
+        "ncbi": row_signatures(previous, "ncbi"),
+        "local": row_signatures(previous, "local"),
+    }
+    current_rows = {
+        "ncbi": row_signatures(current, "ncbi"),
+        "local": row_signatures(current, "local"),
+    }
+    params_match = {
+        source: source_params_signature(previous, source) == source_params_signature(current, source)
+        for source in ("ncbi", "local")
+    }
+
+    for filename, item in previous.get("outputs", {}).get("db", {}).items():
+        taxon = item.get("taxon")
+        source = item.get("source")
+        if source not in {"ncbi", "local"} or not taxon:
+            continue
+        if expected.get(taxon) != source:
+            continue
+        if not params_match[source]:
+            continue
+        if previous_rows[source].get(taxon) != current_rows[source].get(taxon):
+            continue
+        if item.get("record_count") is None or item.get("records_sha256") is None:
+            continue
+        preserved[filename] = item
+    return preserved
 
 
 def repair_taxa(
@@ -459,9 +504,50 @@ def cmd_compare(args: argparse.Namespace) -> None:
 
 def cmd_write(args: argparse.Namespace) -> None:
     state = build_model(args)
+    if args.complete:
+        validate_expected_db_outputs(state["outputs"]["db"], expected_taxa(state["ncbi"]["rows"], state["local"]["rows"]))
+    elif args.preserve_existing_outputs and args.state.is_file() and args.state.stat().st_size > 0:
+        previous = load_state(args.state, require_complete=False)
+        state["outputs"]["db"] = trusted_preserved_outputs(previous, state)
     args.state.parent.mkdir(parents=True, exist_ok=True)
     with args.state.open("w", encoding="utf-8") as fh:
         json.dump(state, fh, indent=2, sort_keys=True)
+        fh.write("\n")
+
+
+def cmd_mark_output(args: argparse.Namespace) -> None:
+    current = build_model(args)
+    expected = expected_taxa(current["ncbi"]["rows"], current["local"]["rows"])
+    taxon = clean_alnum(args.taxon)
+    if not taxon:
+        raise ValueError("Cannot mark output for an empty taxon")
+    if expected.get(taxon) != args.source:
+        raise ValueError(
+            f"Taxon '{taxon}' is not a current {args.source} reference input; cannot mark db output."
+        )
+
+    target = args.db_dir / f"{taxon}{DB_SUFFIX}"
+    summary = db_file_summary(target)
+    if summary is None:
+        raise ValueError(f"Cannot mark missing, empty, or invalid db FASTA output: {target}")
+
+    if args.state.is_file() and args.state.stat().st_size > 0:
+        previous = load_state(args.state, require_complete=False)
+        outputs = trusted_preserved_outputs(previous, current)
+    else:
+        outputs = {}
+
+    filename = f"{taxon}{DB_SUFFIX}"
+    outputs[filename] = {
+        "taxon": taxon,
+        "source": args.source,
+        **summary,
+    }
+    current["complete"] = False
+    current["outputs"]["db"] = outputs
+    args.state.parent.mkdir(parents=True, exist_ok=True)
+    with args.state.open("w", encoding="utf-8") as fh:
+        json.dump(current, fh, indent=2, sort_keys=True)
         fh.write("\n")
 
 
@@ -537,8 +623,16 @@ def parse_args() -> argparse.Namespace:
     write = sub.add_parser("write", help="Write the current resume state")
     write.add_argument("--state", required=True, type=Path)
     write.add_argument("--complete", type=parse_bool, required=True)
+    write.add_argument("--preserve-existing-outputs", action="store_true")
     add_model_args(write)
     write.set_defaults(func=cmd_write)
+
+    mark_output = sub.add_parser("mark-output", help="Mark one completed db FASTA output in the resume state")
+    mark_output.add_argument("--state", required=True, type=Path)
+    mark_output.add_argument("--taxon", required=True)
+    mark_output.add_argument("--source", choices=("ncbi", "local"), required=True)
+    add_model_args(mark_output)
+    mark_output.set_defaults(func=cmd_mark_output, complete=False, validate_db=False)
 
     write_codes = sub.add_parser("write-codes", help="Write five_letter_taxon.tsv from current inputs and db files")
     write_codes.add_argument("--output", required=True, type=Path)

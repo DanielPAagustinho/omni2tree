@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import csv
 import re
+import subprocess
 import sys
 from collections import Counter
 from dataclasses import dataclass
@@ -139,6 +140,14 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help="Single GTF/GFF3 attribute used to group selected feature rows into one sequence unit",
     )
+    p.add_argument("--resume-state", type=Path, default=None, help=argparse.SUPPRESS)
+    p.add_argument("--resume-state-helper", type=Path, default=None, help=argparse.SUPPRESS)
+    p.add_argument("--state-clean-file", type=Path, default=None, help=argparse.SUPPRESS)
+    p.add_argument("--state-local-clean-file", type=Path, default=None, help=argparse.SUPPRESS)
+    p.add_argument("--state-input-enabled", action="store_true", help=argparse.SUPPRESS)
+    p.add_argument("--state-has-code-column", action="store_true", help=argparse.SUPPRESS)
+    p.add_argument("--state-mat-peptides", action="store_true", help=argparse.SUPPRESS)
+    p.add_argument("--state-only-mat-peptides", action="store_true", help=argparse.SUPPRESS)
     return p.parse_args()
 
 
@@ -256,7 +265,7 @@ def parse_attributes(field: str) -> Dict[str, str]:
     return attrs
 
 
-def read_features(path: Path, feature_types: Sequence[str]) -> List[CdsFeature]:
+def read_features(path: Path, feature_types: Sequence[str], emit_warnings: bool = True) -> List[CdsFeature]:
     wanted = {feature_type.lower() for feature_type in feature_types}
     features: List[CdsFeature] = []
     with path.open(encoding="utf-8") as fh:
@@ -266,7 +275,8 @@ def read_features(path: Path, feature_types: Sequence[str]) -> List[CdsFeature]:
                 continue
             cols = line.split("\t")
             if len(cols) < 9:
-                log_warn(f"Skipping malformed annotation line {line_no} in {path}: expected at least 9 columns")
+                if emit_warnings:
+                    log_warn(f"Skipping malformed annotation line {line_no} in {path}: expected at least 9 columns")
                 continue
             seqid, _source, feature_type, start, end, _score, strand, phase = cols[:8]
             attributes = "\t".join(cols[8:])
@@ -276,13 +286,16 @@ def read_features(path: Path, feature_types: Sequence[str]) -> List[CdsFeature]:
                 start_i = int(start)
                 end_i = int(end)
             except ValueError:
-                log_warn(f"Skipping feature line {line_no} in {path}: invalid coordinates")
+                if emit_warnings:
+                    log_warn(f"Skipping feature line {line_no} in {path}: invalid coordinates")
                 continue
             if start_i < 1 or end_i < start_i:
-                log_warn(f"Skipping feature line {line_no} in {path}: unsupported coordinate range {start}..{end}")
+                if emit_warnings:
+                    log_warn(f"Skipping feature line {line_no} in {path}: unsupported coordinate range {start}..{end}")
                 continue
             if strand not in {"+", "-"}:
-                log_warn(f"Feature line {line_no} in {path} has strand '{strand}', treating as '+'")
+                if emit_warnings:
+                    log_warn(f"Feature line {line_no} in {path} has strand '{strand}', treating as '+'")
                 strand = "+"
             phase_i: Optional[int]
             if phase in {".", ""}:
@@ -368,9 +381,10 @@ def make_seqrecords(
     row: ManifestRow,
     feature_types: Sequence[str] = ("CDS",),
     group_by: Optional[str] = None,
+    emit_warnings: bool = True,
 ) -> Tuple[List[SeqRecord], ExtractionStats]:
     fasta_records = load_fasta(row.dna_path)
-    features = read_features(row.annotation_path, feature_types)
+    features = read_features(row.annotation_path, feature_types, emit_warnings=emit_warnings)
     if not features:
         raise ValueError(
             f"No selected feature(s) found in {row.annotation_path} for local taxon {row.taxon_raw}: "
@@ -391,7 +405,7 @@ def make_seqrecords(
         seq = extract_group_sequence(group, fasta_records)
         if not seq:
             raise ValueError(f"Empty local feature sequence generated for local taxon {row.taxon_raw}, group {key}")
-        if len(seq) % 3 != 0:
+        if emit_warnings and len(seq) % 3 != 0:
             log_warn(
                 f"Local feature group '{key}' for taxon {row.taxon_raw} has length {len(seq)}, "
                 "which is not divisible by 3. Step 1 cleaning will pad it with N."
@@ -506,6 +520,7 @@ def write_local_db_files(
     resume: bool,
     feature_types: Sequence[str],
     group_by: Optional[str],
+    args: argparse.Namespace,
 ) -> int:
     db_dir.mkdir(parents=True, exist_ok=True)
     written = 0
@@ -532,6 +547,7 @@ def write_local_db_files(
             f"Wrote {len(records)} local sequence unit(s) from {stats.feature_count} feature row(s) "
             f"for {row.taxon_raw}: {target}"
         )
+        mark_resume_output(args, row.taxon, feature_types, group_by)
     feature_summary = ", ".join(f"{feature}:{count}" for feature, count in sorted(feature_type_counts.items()))
     log_info(
         "Local extraction report: "
@@ -543,6 +559,56 @@ def write_local_db_files(
     return written
 
 
+def bool_arg(value: bool) -> str:
+    return "true" if value else "false"
+
+
+def mark_resume_output(
+    args: argparse.Namespace,
+    taxon: str,
+    feature_types: Sequence[str],
+    group_by: Optional[str],
+) -> None:
+    if args.resume_state is None or args.resume_state_helper is None:
+        return
+    local_clean_file = args.state_local_clean_file or args.manifest
+    cmd = [
+        sys.executable,
+        str(args.resume_state_helper),
+        "mark-output",
+        "--state",
+        str(args.resume_state),
+        "--taxon",
+        taxon,
+        "--source",
+        "local",
+        "--db-dir",
+        str(args.db_dir),
+        "--input-enabled",
+        bool_arg(args.state_input_enabled),
+        "--local-enabled",
+        "true",
+        "--has-code-column",
+        bool_arg(args.state_has_code_column),
+        "--mat-peptides",
+        bool_arg(args.state_mat_peptides),
+        "--only-mat-peptides",
+        bool_arg(args.state_only_mat_peptides),
+        "--local-features",
+        ",".join(feature_types),
+        "--local-clean-file",
+        str(local_clean_file),
+    ]
+    if args.state_input_enabled:
+        if args.state_clean_file is None:
+            raise ValueError("Missing --state-clean-file for local resume checkpoint with NCBI inputs")
+        cmd.extend(["--clean-file", str(args.state_clean_file)])
+    if group_by:
+        cmd.extend(["--local-group-by", group_by])
+    log_info(f"Marking completed local reference output in resume state: {taxon}")
+    subprocess.run(cmd, check=True)
+
+
 def main() -> None:
     args = parse_args()
     try:
@@ -551,7 +617,7 @@ def main() -> None:
         rows = load_manifest(args.manifest, args.has_code_column)
         log_info(f"Loaded {len(rows)} local assembly row(s) from {args.manifest}")
         code_updates = prepare_code_updates(rows, args.codes_output)
-        written = write_local_db_files(rows, args.db_dir, args.resume, feature_types, group_by)
+        written = write_local_db_files(rows, args.db_dir, args.resume, feature_types, group_by, args)
         append_codes(args.codes_output, code_updates)
         log_info(f"Local feature extraction completed successfully. Local db files written: {written}")
     except Exception as exc:

@@ -5,6 +5,7 @@ import argparse
 import csv
 import re
 import sys
+from collections import Counter
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
@@ -300,14 +301,24 @@ def validate_against_main(rows, main_clean_file: Optional[Path], has_code_column
 
 
 def validate_annotations(rows, feature_types, group_by) -> None:
+    total_feature_rows = 0
+    total_records = 0
+    feature_type_counts = Counter()
+
     for row in rows:
-        records, stats = make_seqrecords(row, feature_types, group_by)
+        records, stats = make_seqrecords(row, feature_types, group_by, emit_warnings=False)
         if not records:
             raise ValueError(f"No local sequence units generated for local taxon {row.taxon_raw}")
-        log_info(
-            f"Validated {len(records)} local sequence unit(s) from {stats.feature_count} feature row(s) "
-            f"for local taxon {row.taxon_raw}: {row.annotation_path}"
-        )
+        total_feature_rows += stats.feature_count
+        total_records += len(records)
+        feature_type_counts.update(stats.feature_type_counts)
+
+    feature_summary = ", ".join(f"{feature}:{count}" for feature, count in sorted(feature_type_counts.items()))
+    log_info(
+        "Validated local assembly annotations: "
+        f"taxa={len(rows)}, sequence_units={total_records}, feature_rows={total_feature_rows}, "
+        f"feature_types={feature_summary or 'none'}, group_by={group_by or 'none'}"
+    )
 
 
 def write_local_taxa(rows, output: Path) -> None:

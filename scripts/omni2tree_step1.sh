@@ -200,7 +200,6 @@ skip_taxa() {
             # Clean taxa
             raw_taxon=$(cut -d',' -f1 <<<"$line" | tr -cd '[:alnum:]')
             if [[ -n "${repair_taxa_map[$raw_taxon]:-}" ]]; then
-              log_info "Taxon ${raw_taxon} is marked for repair; keeping it in the download queue."
               echo "$line"
               unset 'downloaded_taxa_map["$raw_taxon"]'
             elif [[ -n "${downloaded_taxa_map[$raw_taxon]:-}" ]]; then
@@ -361,10 +360,24 @@ write_step1_resume_state() {
       --state "$RESUME_STATE_FILE"
       --complete "$complete")
     add_step1_state_model_args cmd
+    if [[ "$complete" != true ]]; then
+        cmd+=(--preserve-existing-outputs)
+    fi
     if [[ "$complete" == true ]]; then
         cmd+=(--validate-db)
     fi
-    log_info "Writing step1 resume state (${RESUME_STATE_FILE}, complete=${complete})"
+    "${cmd[@]}"
+}
+
+mark_step1_taxon_output() {
+    local taxon="$1"
+    local source="$2"
+    local cmd=(python3 "${SCRIPTS_DIR}/step1_resume_state.py" mark-output
+      --state "$RESUME_STATE_FILE"
+      --taxon "$taxon"
+      --source "$source")
+    add_step1_state_model_args cmd
+    log_info "Marking completed ${source} reference output in resume state: ${taxon}"
     "${cmd[@]}"
 }
 
@@ -548,6 +561,7 @@ fetch_data() {
             echo -e "${strain}\t${code}" >> "${FIVE_LETTER_FILE}"
           fi
           ((NCBI_DOWNLOAD_COUNT++))
+          mark_step1_taxon_output "$strain" "ncbi" || return 1
           return 0
         else
           log_error "Writing of mat_peptide features to ${target_fna} failed: file is empty for taxon ${strain}: ${accessions_list}"
@@ -585,6 +599,7 @@ fetch_data() {
     log_info "Writing 5-letter code for taxon ${strain} to ${FIVE_LETTER_FILE}"
     echo -e "${strain}\t${code}" >> "${FIVE_LETTER_FILE}"
   fi
+  mark_step1_taxon_output "$strain" "ncbi" || return 1
   sleep 1
   log_info "Successfully fetched data for taxon ${strain}\n"
 }
@@ -1107,7 +1122,7 @@ fi
 log_info "========== Step 1.2: Validating reference input file(s) =========="
 
 # Export the functions and variables
-export -f skip_taxa fetch_data log_info log_warn log_error clean_line fasta_has_records
+export -f skip_taxa fetch_data mark_step1_taxon_output add_step1_state_model_args log_info log_warn log_error clean_line fasta_has_records
 export RED YELLOW GREEN NC FIVE_LETTER_FILE HAS_CODE_COLUMN NCBI_DOWNLOAD_COUNT RES_DOWN_VOID RES_DOWN ONLY_MAT_PEPTIDES MAT_PEPTIDES
 
 #CLEAN_FILE="$(mktemp -p "$TEMP_DIR" file.XXXXXX)"  #Temporary file for cleaned input
@@ -1346,12 +1361,25 @@ if [[ -n "$LOCAL_ASSEMBLIES_FILE" ]]; then
     LOCAL_CDS_CMD=(python3 "${SCRIPTS_DIR}/extract_local_cds_from_gff.py"
       --manifest "$LOCAL_PROCESS_FILE"
       --db-dir "${WORK_DIR}/db"
-      --feature-types "$LOCAL_FEATURES")
+      --feature-types "$LOCAL_FEATURES"
+      --resume-state "$RESUME_STATE_FILE"
+      --resume-state-helper "${SCRIPTS_DIR}/step1_resume_state.py"
+      --state-local-clean-file "$LOCAL_CLEAN_FILE")
+    if [[ -n "$INPUT_FILE" ]]; then
+      LOCAL_CDS_CMD+=(--state-input-enabled --state-clean-file "$FULL_CLEAN_FILE")
+    fi
     if [[ -n "$LOCAL_GROUP_BY" ]]; then
       LOCAL_CDS_CMD+=(--group-by "$LOCAL_GROUP_BY")
     fi
     if $HAS_CODE_COLUMN; then
       LOCAL_CDS_CMD+=(--has-code-column)
+      LOCAL_CDS_CMD+=(--state-has-code-column)
+    fi
+    if $MAT_PEPTIDES; then
+      LOCAL_CDS_CMD+=(--state-mat-peptides)
+    fi
+    if $ONLY_MAT_PEPTIDES; then
+      LOCAL_CDS_CMD+=(--state-only-mat-peptides)
     fi
     if [[ "$RES_DOWN" == true && "$LOCAL_REBUILD" == false && "${LOCAL_REPAIR_COUNT:-0}" -eq 0 ]]; then
       LOCAL_CDS_CMD+=(--resume)

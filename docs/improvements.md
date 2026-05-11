@@ -24,21 +24,18 @@ Pendiente: arreglar minimamente los logs. Que si skipea solo accessiones, diga s
 
 Revisar: que se integre bien con todos step2 y step3
 
+Eliminar este info:
+[2026-05-11 12:33:30] [INFO] Writing step1 resume state (omni2tree_step1_resume.json, complete=false)?
 
-Asunto de accession: 
-En local assemblies:
-Se usa stem de fasta file
-En file con accessions:
-Se usa la accesion
+Eliminar este info:
+[INFO] Taxon HRSVAUSATXHOU1986702021 is marked for repair; keeping it in the download queue.
+[2026-05-11 12:36:35] [INFO] Taxon hRSVBAustraliaVICRCH0562019 is marked for repair; keeping it in the download queue.
+[2026-05-11 12:36:35] [INFO] Taxon RSVBhumanUSAWAS253042021 is marked for repair; keeping it in the download queue.
+[2026-05-11 12:36:35] 
 
-Sale en columna accession de og_genes.tsv
-
-
-En paso 3 es obligatorio colocar en metadata columna accesiones. Pero no se verifica contra anda, es solo informativa del id. Y termina llamandose sample_id.
-
-Tener en cuenta que o2tview verifica que ninguna columna se llame source y no recuerdo qué mas verificaba.
-
-
+Que no repita para todos : [INFO] Validated 11 local sequence unit(s) from 11 feature row(s) for local taxon HRSV-A/IC688/12: /home/adrian_chalco/projects/fritz/o2t_local_assemblies/data/local_assemblies/KP663728.1.gff3
+[2026-05-11 12:36:34] [INFO] Validated 11 local sequence unit(s) from 11 feature row(s) for local taxon HRSV/A/England/397/2017: /home/adrian_chalco/projects/fritz/o2t_local_assemblies/data/local_assemblies/PP109421.1.gff3
+[2026-05-11 12:36:34]  
 
 Que siempre salga la version actual d e omni2tree, se puede conectar de alguna forma a tag actual?
 
