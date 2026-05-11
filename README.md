@@ -93,6 +93,8 @@ If this file is not specified, OMA Standalone will use midpoint rooting, which i
 | `--debug`         | Keeps temp directory with intermediate files. |
 | `-h, --help`         | Show help. |
 
+> **Resume note:** with `--resume`, stale `db/*_cds_from_genomic.fna` and `DB/*.fa` files whose taxa are no longer present in the current inputs are removed automatically after a warning.
+
 ### **Accession File Format**
 
 When `-i/--input` is used, the accession file must be a comma-separated values (CSV) text file, with the first line as the header. Each line represents a taxon/species/strain/label with associated accessions. The format varies depending on whether a five-letter code is included.
