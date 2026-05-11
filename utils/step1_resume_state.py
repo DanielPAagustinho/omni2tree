@@ -57,7 +57,12 @@ def records_digest(records: Sequence[Any]) -> str:
 def db_file_summary(path: Path) -> Optional[Dict[str, Any]]:
     if not path.is_file() or path.stat().st_size == 0:
         return None
-    records = list(SeqIO.parse(str(path), "fasta"))
+    try:
+        records = list(SeqIO.parse(str(path), "fasta"))
+    except Exception:
+        return None
+    if not records:
+        return None
     return {
         "record_count": len(records),
         "records_sha256": records_digest(records),
@@ -141,19 +146,24 @@ def expected_taxa(ncbi_rows: Sequence[Dict[str, Any]], local_rows: Sequence[Dict
     return expected
 
 
-def validate_no_extra_db_files(db_dir: Path, expected: Dict[str, str]) -> None:
+def stale_db_files(db_dir: Path, expected: Dict[str, str]) -> List[str]:
     if not db_dir.is_dir():
-        return
+        return []
     extra = []
     for path in sorted(db_dir.glob(f"*{DB_SUFFIX}")):
         taxon = path.name[: -len(DB_SUFFIX)]
         if taxon not in expected:
             extra.append(path.name)
+    return extra
+
+
+def validate_no_extra_db_files(db_dir: Path, expected: Dict[str, str]) -> None:
+    extra = stale_db_files(db_dir, expected)
     if extra:
         raise ValueError(
             "Found file(s) in the 'db/' folder that are not present in the current reference inputs: "
             + ", ".join(extra)
-            + ". Please move them away before using --resume."
+            + ". Please move them away before writing a complete resume state."
         )
 
 
@@ -171,6 +181,90 @@ def db_outputs(db_dir: Path, expected: Dict[str, str]) -> Dict[str, Dict[str, An
             **summary,
         }
     return outputs
+
+
+def row_signatures(model: Dict[str, Any], source: str) -> Dict[str, str]:
+    rows = model.get(source, {}).get("rows", [])
+    signatures: Dict[str, str] = {}
+    for row in rows:
+        taxon = row["taxon"]
+        if source == "ncbi":
+            payload = {
+                "taxon": taxon,
+                "accessions": row.get("accessions", []),
+            }
+        elif source == "local":
+            payload = {
+                "taxon": taxon,
+                "record_count": row.get("record_count"),
+                "records_sha256": row.get("records_sha256"),
+                "feature_rows": row.get("feature_rows"),
+                "feature_type_counts": row.get("feature_type_counts", {}),
+            }
+        else:
+            raise ValueError(f"Unsupported source for row signatures: {source}")
+        signatures[taxon] = stable_digest(payload)
+    return signatures
+
+
+def source_params_signature(model: Dict[str, Any], source: str) -> str:
+    payload = {
+        "enabled": model.get(source, {}).get("enabled", False),
+        "params": model.get(source, {}).get("params", {}),
+    }
+    return stable_digest(payload)
+
+
+def output_by_taxon(model: Dict[str, Any], source: str) -> Dict[str, Dict[str, Any]]:
+    outputs = model.get("outputs", {}).get("db", {})
+    selected: Dict[str, Dict[str, Any]] = {}
+    for item in outputs.values():
+        if item.get("source") == source and item.get("taxon"):
+            selected[item["taxon"]] = item
+    return selected
+
+
+def repair_taxa(
+    previous: Dict[str, Any],
+    current: Dict[str, Any],
+    source: str,
+    params_changed: bool,
+) -> Tuple[List[str], bool]:
+    current_enabled = current.get(source, {}).get("enabled", False)
+    if not current_enabled or params_changed:
+        return [], False
+
+    previous_rows = row_signatures(previous, source)
+    current_rows = row_signatures(current, source)
+    previous_outputs = output_by_taxon(previous, source)
+    current_outputs = output_by_taxon(current, source)
+    repair: List[str] = []
+
+    for taxon in sorted(current_rows):
+        current_output = current_outputs.get(taxon)
+        old_signature = previous_rows.get(taxon)
+        if old_signature is None:
+            repair.append(taxon)
+            continue
+        if old_signature != current_rows[taxon]:
+            repair.append(taxon)
+            continue
+        old_output = previous_outputs.get(taxon)
+        if old_output is None:
+            repair.append(taxon)
+            continue
+        if current_output is None:
+            repair.append(taxon)
+            continue
+        if old_output.get("record_count") != current_output.get("record_count"):
+            repair.append(taxon)
+            continue
+        if old_output.get("records_sha256") != current_output.get("records_sha256"):
+            repair.append(taxon)
+            continue
+
+    rows_changed = previous_rows != current_rows
+    return repair, rows_changed
 
 
 def build_model(args: argparse.Namespace) -> Dict[str, Any]:
@@ -240,6 +334,8 @@ def build_model(args: argparse.Namespace) -> Dict[str, Any]:
         "rows": code_rows,
     }
 
+    outputs = db_outputs(args.db_dir, expected)
+
     return {
         "schema_version": SCHEMA_VERSION,
         "complete": args.complete,
@@ -260,12 +356,12 @@ def build_model(args: argparse.Namespace) -> Dict[str, Any]:
         },
         "codes": codes_signature_payload,
         "outputs": {
-            "db": db_outputs(args.db_dir, expected),
+            "db": outputs,
         },
     }
 
 
-def load_state(path: Path) -> Dict[str, Any]:
+def load_state(path: Path, require_complete: bool = True) -> Dict[str, Any]:
     if not path.is_file() or path.stat().st_size == 0:
         raise ValueError(f"Resume state file '{path}' is missing. Cannot use --resume.")
     with path.open(encoding="utf-8") as fh:
@@ -274,70 +370,91 @@ def load_state(path: Path) -> Dict[str, Any]:
         raise ValueError(
             f"Resume state file '{path}' has unsupported schema version: {state.get('schema_version')}"
         )
-    if state.get("complete") is not True:
+    if require_complete and state.get("complete") is not True:
         raise ValueError(f"Resume state file '{path}' is incomplete. Cannot use --resume safely.")
     return state
-
-
-def output_mismatch(
-    previous: Dict[str, Any],
-    current: Dict[str, Any],
-    source: str,
-) -> bool:
-    previous_outputs = previous.get("outputs", {}).get("db", {})
-    current_outputs = current.get("outputs", {}).get("db", {})
-    current_expected_rows = current.get(source, {}).get("rows", [])
-    for row in current_expected_rows:
-        filename = f"{row['taxon']}{DB_SUFFIX}"
-        old = previous_outputs.get(filename)
-        new = current_outputs.get(filename)
-        if old is None or new is None:
-            return True
-        if old.get("record_count") != new.get("record_count"):
-            return True
-        if old.get("records_sha256") != new.get("records_sha256"):
-            return True
-    return False
 
 
 def bool_env(value: bool) -> str:
     return "true" if value else "false"
 
 
+def env_value(value: Any) -> str:
+    if isinstance(value, bool):
+        return bool_env(value)
+    return str(value)
+
+
 def cmd_check(args: argparse.Namespace) -> None:
-    load_state(args.state)
+    load_state(args.state, require_complete=False)
 
 
 def cmd_compare(args: argparse.Namespace) -> None:
-    previous = load_state(args.state)
+    previous = load_state(args.state, require_complete=False)
     current = build_model(args)
 
-    ncbi_signature_changed = (
-        previous.get("signatures", {}).get("ncbi") != current["signatures"]["ncbi"]
+    ncbi_params_changed = (
+        current["ncbi"]["enabled"]
+        and previous.get("ncbi", {}).get("enabled")
+        and source_params_signature(previous, "ncbi") != source_params_signature(current, "ncbi")
     )
-    local_signature_changed = (
-        previous.get("signatures", {}).get("local") != current["signatures"]["local"]
+    local_params_changed = (
+        current["local"]["enabled"]
+        and previous.get("local", {}).get("enabled")
+        and source_params_signature(previous, "local") != source_params_signature(current, "local")
     )
     codes_changed = previous.get("signatures", {}).get("codes") != current["signatures"]["codes"]
-    ncbi_db_mismatch = output_mismatch(previous, current, "ncbi")
-    local_db_mismatch = output_mismatch(previous, current, "local")
-    ncbi_rebuild = current["ncbi"]["enabled"] and (ncbi_signature_changed or ncbi_db_mismatch)
-    local_rebuild = current["local"]["enabled"] and (local_signature_changed or local_db_mismatch)
-    force_step4 = ncbi_rebuild or local_rebuild or codes_changed
+    ncbi_rebuild = bool(ncbi_params_changed)
+    local_rebuild = bool(local_params_changed)
+    ncbi_repair, ncbi_rows_changed = repair_taxa(previous, current, "ncbi", ncbi_rebuild)
+    local_repair, local_rows_changed = repair_taxa(previous, current, "local", local_rebuild)
+    expected = expected_taxa(current["ncbi"]["rows"], current["local"]["rows"])
+    stale_db = stale_db_files(args.db_dir, expected)
+    ncbi_db_mismatch = bool(ncbi_repair)
+    local_db_mismatch = bool(local_repair)
+    force_step4 = (
+        ncbi_rebuild
+        or local_rebuild
+        or codes_changed
+        or bool(ncbi_repair)
+        or bool(local_repair)
+        or ncbi_rows_changed
+        or local_rows_changed
+        or bool(stale_db)
+    )
+
+    if args.ncbi_repair_output:
+        args.ncbi_repair_output.write_text("".join(f"{taxon}\n" for taxon in ncbi_repair), encoding="utf-8")
+    if args.local_repair_output:
+        args.local_repair_output.write_text("".join(f"{taxon}\n" for taxon in local_repair), encoding="utf-8")
+    if args.stale_db_output:
+        args.stale_db_output.write_text("".join(f"{filename}\n" for filename in stale_db), encoding="utf-8")
+    if args.expected_taxa_output:
+        args.expected_taxa_output.write_text(
+            "".join(f"{taxon}\t{source}\n" for taxon, source in sorted(expected.items())),
+            encoding="utf-8",
+        )
 
     env = {
-        "NCBI_SIGNATURE_CHANGED": ncbi_signature_changed,
-        "LOCAL_SIGNATURE_CHANGED": local_signature_changed,
+        "NCBI_SIGNATURE_CHANGED": ncbi_params_changed or ncbi_rows_changed,
+        "LOCAL_SIGNATURE_CHANGED": local_params_changed or local_rows_changed,
+        "NCBI_PARAMS_CHANGED": ncbi_params_changed,
+        "LOCAL_PARAMS_CHANGED": local_params_changed,
         "CODES_CHANGED": codes_changed,
         "NCBI_DB_MISMATCH": ncbi_db_mismatch,
         "LOCAL_DB_MISMATCH": local_db_mismatch,
         "NCBI_REBUILD": ncbi_rebuild,
         "LOCAL_REBUILD": local_rebuild,
+        "NCBI_REPAIR_COUNT": len(ncbi_repair),
+        "LOCAL_REPAIR_COUNT": len(local_repair),
+        "NCBI_ROWS_CHANGED": ncbi_rows_changed,
+        "LOCAL_ROWS_CHANGED": local_rows_changed,
+        "STALE_DB_COUNT": len(stale_db),
         "FORCE_STEP4": force_step4,
     }
     with args.env_output.open("w", encoding="utf-8") as fh:
         for key, value in env.items():
-            fh.write(f"{key}={bool_env(value)}\n")
+            fh.write(f"{key}={env_value(value)}\n")
 
 
 def cmd_write(args: argparse.Namespace) -> None:
@@ -410,6 +527,10 @@ def parse_args() -> argparse.Namespace:
     compare = sub.add_parser("compare", help="Compare current inputs with a previous resume state")
     compare.add_argument("--state", required=True, type=Path)
     compare.add_argument("--env-output", required=True, type=Path)
+    compare.add_argument("--ncbi-repair-output", type=Path, default=None)
+    compare.add_argument("--local-repair-output", type=Path, default=None)
+    compare.add_argument("--stale-db-output", type=Path, default=None)
+    compare.add_argument("--expected-taxa-output", type=Path, default=None)
     add_model_args(compare)
     compare.set_defaults(func=cmd_compare, complete=True)
 

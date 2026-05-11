@@ -19,7 +19,7 @@ WORK_DIR=""
 #OMA="${MAIN_DIR}/../oma/bin"
 PARAMETERS_FILE="parameters.drw"
 FIVE_LETTER_FILE="five_letter_taxon.tsv"
-RESUME_STATE_FILE=".omni2tree_step1_resume.json"
+RESUME_STATE_FILE="omni2tree_step1_resume.json"
 INPUT_FILE=""
 LOCAL_ASSEMBLIES_FILE=""
 LOCAL_FEATURES="CDS"
@@ -44,6 +44,10 @@ NCBI_REBUILD=false
 LOCAL_REBUILD=false
 CODES_CHANGED=false
 FORCE_STEP4=false
+NCBI_REPAIR_COUNT=0
+LOCAL_REPAIR_COUNT=0
+STALE_DB_COUNT=0
+STALE_REFERENCES_REMOVED=false
 
 if [ -t 1 ]; then
   RED="\033[1;31m"
@@ -136,8 +140,7 @@ Optional:
   -o, --o2t_out <dir>                          Specify base output directory where all outputs will be saved [default: current directory]
                                                The read2tree step1 output directory is always named O2T_RESULTS inside o2t_out.
   -T, --threads <int>                          Number of threads [default: 12]  
-  -R, --resume                                 Skips taxa whose reference FASTA already exists in the db folder and matches the hidden step1 resume state. Skips as many steps as possible up to the OMA run step (1.6). When run, it removes existing OMA output and read2tree directories.
-                                               Requires .omni2tree_step1_resume.json from a previous completed step1 reference build.
+  -R, --resume                                 Reuses per-taxon reference FASTA files from db/ only when they match the record count and SHA stored in the step1 resume state; repairs missing, invalid, changed, or newly added taxa when global extraction parameters are unchanged. If global NCBI/local extraction parameters change, all taxa from that source are rebuilt. Stale reference files in db/ and DB/ that are not present in current inputs are removed with a warning. Skips as many steps as possible up to the OMA run step (1.6). When run, it removes existing OMA output and read2tree directories.
   --og_min_fraction <float>                    Keep only OGs present in at least this fraction of species (0–1). If omitted, all OGs are kept.
   -p, --use_mat_peptides                       For NCBI accessions, downloads the gbk file for each taxon's accession(s). If at least one mature peptide feature is detected, these features are used as the coding sequences; otherwise, the standard CDS features are downloaded.
   -q, --use_mat_peptides_only                  For NCBI accessions, downloads the gbk file for each taxon's accession(s). If at least one mature peptide feature is detected, these features are used as the coding sequences; if none are detected, that taxon is skipped.
@@ -158,11 +161,25 @@ clean_line() {
   echo "$input" | tr -cd '[:alnum:]'
 }
 
+fasta_has_records() {
+  local fasta_file="$1"
+  [[ -s "$fasta_file" ]] && grep -q '^>' "$fasta_file"
+}
+
 skip_taxa() {
     local CLEAN_FILE="$1"
     local EXTRA_EXPECTED_TAXA_FILE="${2:-}"
+    local REPAIR_TAXA_FILE="${3:-}"
     local filtered_input_file="${CLEAN_FILE%.*}_filtered.csv"
     local taxon_list=""
+    declare -A repair_taxa_map=()
+    if [[ -n "$REPAIR_TAXA_FILE" && -s "$REPAIR_TAXA_FILE" ]]; then
+        while IFS= read -r repair_taxon || [[ -n "$repair_taxon" ]]; do
+            repair_taxon=$(clean_line "$repair_taxon")
+            [[ -z "$repair_taxon" ]] && continue
+            repair_taxa_map["$repair_taxon"]=1
+        done < "$REPAIR_TAXA_FILE"
+    fi
     #echo "This is the filtered_input_file: ${filtered_input_file}"
     # Create an associative array of downloaded taxa already in db dir
     declare -A downloaded_taxa_map=()
@@ -182,12 +199,15 @@ skip_taxa() {
         while IFS= read -r line || [[ -n "$line" ]]; do
             # Clean taxa
             raw_taxon=$(cut -d',' -f1 <<<"$line" | tr -cd '[:alnum:]')
-            if [[ -n "${downloaded_taxa_map[$raw_taxon]:-}" ]]; then
+            if [[ -n "${repair_taxa_map[$raw_taxon]:-}" ]]; then
+              log_info "Taxon ${raw_taxon} is marked for repair; keeping it in the download queue."
+              echo "$line"
+              unset 'downloaded_taxa_map["$raw_taxon"]'
+            elif [[ -n "${downloaded_taxa_map[$raw_taxon]:-}" ]]; then
               if [ -s "db/${raw_taxon}_cds_from_genomic.fna" ]; then
                 taxon_list+="${raw_taxon}_cds_from_genomic.fna, "
               else
-                rm -f "db/${raw_taxon}_cds_from_genomic.fna"
-                log_warn "Removed invalid file: ${raw_taxon}_cds_from_genomic.fna. Will re-download" >&2
+                log_warn "Invalid file detected for ${raw_taxon}_cds_from_genomic.fna. Will re-download" >&2
                 echo "$line"
               fi
               unset 'downloaded_taxa_map["$raw_taxon"]'
@@ -203,7 +223,7 @@ skip_taxa() {
         for taxon in "${!downloaded_taxa_map[@]}"; do
             extra_files+=( "${taxon}_cds_from_genomic.fna" )
         done
-        log_error "Found file(s) in the 'db/' folder that are not present in the accession file: ${extra_files[*]}. Please delete them"
+        log_error "Found file(s) in the 'db/' folder after stale-reference cleanup that are not present in current inputs: ${extra_files[*]}. Please check permissions and the resume inputs."
         return 1
     fi
 
@@ -325,9 +345,12 @@ compare_step1_resume_state() {
     local env_output="$1"
     local cmd=(python3 "${SCRIPTS_DIR}/step1_resume_state.py" compare
       --state "$RESUME_STATE_FILE"
-      --env-output "$env_output")
+      --env-output "$env_output"
+      --ncbi-repair-output "$NCBI_REPAIR_TAXA_FILE"
+      --local-repair-output "$LOCAL_REPAIR_TAXA_FILE"
+      --stale-db-output "$STALE_DB_FILES"
+      --expected-taxa-output "$RESUME_EXPECTED_TAXA_FILE")
     add_step1_state_model_args cmd
-    cmd+=(--validate-db)
     log_info "Comparing current reference inputs against resume state: ${RESUME_STATE_FILE}"
     "${cmd[@]}"
 }
@@ -351,6 +374,70 @@ write_current_code_mapping() {
     add_step1_state_model_args cmd
     log_info "Regenerating ${FIVE_LETTER_FILE} from current reference inputs and db files"
     "${cmd[@]}"
+}
+
+cleanup_stale_reference_files() {
+    local expected_taxa_file="$1"
+    local taxon filename stale_taxon
+    declare -A expected_taxa_map=()
+    STALE_REFERENCES_REMOVED=false
+
+    [[ -s "$expected_taxa_file" ]] || return 0
+    while IFS=$'\t' read -r taxon _source || [[ -n "$taxon" ]]; do
+        taxon=$(clean_line "$taxon")
+        [[ -z "$taxon" ]] && continue
+        expected_taxa_map["$taxon"]=1
+    done < "$expected_taxa_file"
+
+    if [[ -d "db" ]]; then
+        for filename in db/*_cds_from_genomic.fna; do
+            [[ -e "$filename" ]] || continue
+            stale_taxon="$(basename "$filename" "_cds_from_genomic.fna")"
+            stale_taxon="$(clean_line "$stale_taxon")"
+            if [[ -z "${expected_taxa_map[$stale_taxon]:-}" ]]; then
+                log_warn "Removing stale reference file not present in current inputs: $filename"
+                rm -f "$filename"
+                STALE_REFERENCES_REMOVED=true
+            fi
+        done
+    fi
+
+    if [[ -d "DB" ]]; then
+        for filename in DB/*.fa; do
+            [[ -e "$filename" ]] || continue
+            stale_taxon="$(basename "$filename" ".fa")"
+            stale_taxon="$(clean_line "$stale_taxon")"
+            if [[ -z "${expected_taxa_map[$stale_taxon]:-}" ]]; then
+                log_warn "Removing stale cleaned reference file not present in current inputs: $filename"
+                rm -f "$filename"
+                STALE_REFERENCES_REMOVED=true
+            fi
+        done
+    fi
+}
+
+filter_manifest_by_taxa() {
+    local input_manifest="$1"
+    local taxa_file="$2"
+    local output_manifest="$3"
+    local line taxon
+    declare -A selected_taxa_map=()
+
+    while IFS= read -r taxon || [[ -n "$taxon" ]]; do
+        taxon=$(clean_line "$taxon")
+        [[ -z "$taxon" ]] && continue
+        selected_taxa_map["$taxon"]=1
+    done < "$taxa_file"
+
+    {
+        head -n1 "$input_manifest"
+        tail -n +2 "$input_manifest" | while IFS= read -r line || [[ -n "$line" ]]; do
+            taxon=$(cut -d',' -f1 <<<"$line" | tr -cd '[:alnum:]')
+            if [[ -n "${selected_taxa_map[$taxon]:-}" ]]; then
+                echo "$line"
+            fi
+        done
+    } > "$output_manifest"
 }
 
 fetch_data() {
@@ -446,15 +533,16 @@ fetch_data() {
   # Fetch data
   
   log_info "Fetching data for taxon: ${strain}. Final nucleotide accession(s) used: ${accessions_list//,/ }."
+  local target_fna="db/${strain}_cds_from_genomic.fna"
   
   if $MAT_PEPTIDES; then
     #downloads all the ids in a single gbk file
     log_info "--use_mat_peptides parameter specified, searching for gbk file and evaluating..."
     
     efetch -db nucleotide -id "$accessions_list" -format gbwithparts > "${TEMP_DIR}/gbk_dir/${strain}.gbk"
-    if python3 "${SCRIPTS_DIR}/write_mat_peptides.py" "${TEMP_DIR}/gbk_dir/${strain}.gbk" "db/${strain}_cds_from_genomic.fna"; then
-      if [[ -f "db/${strain}_cds_from_genomic.fna" ]]; then
-        if [[ -s "db/${strain}_cds_from_genomic.fna" ]]; then
+    if python3 "${SCRIPTS_DIR}/write_mat_peptides.py" "${TEMP_DIR}/gbk_dir/${strain}.gbk" "$target_fna"; then
+      if [[ -f "$target_fna" ]]; then
+        if fasta_has_records "$target_fna"; then
           if $HAS_CODE_COLUMN; then
             log_info "Writing 5-letter code for taxon ${strain} to ${FIVE_LETTER_FILE}"
             echo -e "${strain}\t${code}" >> "${FIVE_LETTER_FILE}"
@@ -462,7 +550,7 @@ fetch_data() {
           ((NCBI_DOWNLOAD_COUNT++))
           return 0
         else
-          log_error "Writing of mat_peptide features to db/${strain}_cds_from_genomic.fna failed: file is empty for taxon ${strain}: ${accessions_list}"
+          log_error "Writing of mat_peptide features to ${target_fna} failed: file is empty for taxon ${strain}: ${accessions_list}"
           return 1
         fi
 
@@ -479,17 +567,13 @@ fetch_data() {
     fi
   fi
 
-  efetch -db nucleotide -id "$accessions_list" -format fasta_cds_na \
-    > "db/${strain}_cds_from_genomic.fna" \
-    || {
+  if ! efetch -db nucleotide -id "$accessions_list" -format fasta_cds_na > "$target_fna"; then
       log_warn "Command efetch failed while fetching accession(s) for taxon ${strain}: ${accessions_list}"
-      rm -f "db/${strain}_cds_from_genomic.fna" #Ensures this file won't exist
       return 0
-    }
+  fi
 
-  if [ ! -s "db/${strain}_cds_from_genomic.fna" ]; then
+  if ! fasta_has_records "$target_fna"; then
 	  log_warn "Command efetch failed to fetch accession(s) for taxon ${strain}: ${accessions_list}"
-	  rm -f "db/${strain}_cds_from_genomic.fna"
     return 0
   fi
 
@@ -904,7 +988,7 @@ if [[ -d "$OUT_DIR" ]]; then
     log_info "Removing existing read2tree output directory: $(realpath "$OUT_DIR") to avoid conflicts when rerunning"
     rm -rf "$OUT_DIR"
   else
-    log_error "The fixed read2tree output directory '$(realpath "$OUT_DIR")' already exists (name is always O2T_RESULTS). Delete it or use -R/--resume"
+    log_error "The fixed read2tree output directory '$(realpath "$OUT_DIR")' already exists. Delete it or use -R/--resume"
     exit 1
   fi
 fi
@@ -1023,7 +1107,7 @@ fi
 log_info "========== Step 1.2: Validating reference input file(s) =========="
 
 # Export the functions and variables
-export -f skip_taxa fetch_data log_info log_warn log_error clean_line 
+export -f skip_taxa fetch_data log_info log_warn log_error clean_line fasta_has_records
 export RED YELLOW GREEN NC FIVE_LETTER_FILE HAS_CODE_COLUMN NCBI_DOWNLOAD_COUNT RES_DOWN_VOID RES_DOWN ONLY_MAT_PEPTIDES MAT_PEPTIDES
 
 #CLEAN_FILE="$(mktemp -p "$TEMP_DIR" file.XXXXXX)"  #Temporary file for cleaned input
@@ -1031,6 +1115,10 @@ CLEAN_FILE="$TEMP_DIR/input_clean_file.txt"
 FULL_CLEAN_FILE="$TEMP_DIR/input_clean_file_full.txt"
 LOCAL_CLEAN_FILE="$TEMP_DIR/local_assemblies_clean.csv"
 LOCAL_EXPECTED_TAXA_FILE="$TEMP_DIR/local_assemblies_taxa.txt"
+NCBI_REPAIR_TAXA_FILE="$TEMP_DIR/ncbi_repair_taxa.txt"
+LOCAL_REPAIR_TAXA_FILE="$TEMP_DIR/local_repair_taxa.txt"
+STALE_DB_FILES="$TEMP_DIR/stale_db_files.txt"
+RESUME_EXPECTED_TAXA_FILE="$TEMP_DIR/resume_expected_taxa.tsv"
 HAS_CODE_COLUMN=false
 if [[ -n "$INPUT_FILE" ]]; then
   # Extract the header line from the input file
@@ -1154,16 +1242,28 @@ if [[ "$RES_DOWN" == true ]]; then
   # shellcheck disable=SC1090
   source "$RESUME_COMPARE_ENV"
 
+  cleanup_stale_reference_files "$RESUME_EXPECTED_TAXA_FILE"
+  if [[ "$STALE_REFERENCES_REMOVED" == true ]]; then
+    FORCE_STEP4=true
+  fi
+
   if [[ "$NCBI_REBUILD" == true ]]; then
-    log_info "Resume state changed for NCBI references or db counts; re-fetching all current NCBI taxa."
+    log_info "Resume state changed for NCBI global parameters; re-fetching all current NCBI taxa."
   elif [[ -n "$INPUT_FILE" ]]; then
-    skip_taxa "$CLEAN_FILE" "$LOCAL_EXPECTED_TAXA_FILE"
+    if [[ "${NCBI_REPAIR_COUNT:-0}" -gt 0 ]]; then
+      log_info "Resume mode will re-fetch ${NCBI_REPAIR_COUNT} NCBI taxon/taxa with missing, changed, or invalid db FASTA."
+    fi
+    skip_taxa "$CLEAN_FILE" "$LOCAL_EXPECTED_TAXA_FILE" "$NCBI_REPAIR_TAXA_FILE"
   fi
 
   if [[ "$LOCAL_REBUILD" == true ]]; then
-    log_info "Resume state changed for local assemblies or db counts; re-extracting all current local taxa."
+    log_info "Resume state changed for local extraction parameters; re-extracting all current local taxa."
   elif [[ -n "$LOCAL_ASSEMBLIES_FILE" ]]; then
-    log_info "All local taxa match the resume state; local feature extraction can be skipped."
+    if [[ "${LOCAL_REPAIR_COUNT:-0}" -gt 0 ]]; then
+      log_info "Resume mode will re-extract ${LOCAL_REPAIR_COUNT} local taxon/taxa with missing, changed, or invalid db FASTA."
+    else
+      log_info "All local taxa match the resume state; local feature extraction can be skipped."
+    fi
   fi
 
   if [[ "$CODES_CHANGED" == true ]]; then
@@ -1225,15 +1325,26 @@ fi
 
 if [[ -n "$LOCAL_ASSEMBLIES_FILE" ]]; then
   log_info "========== Step 1.3b: Extracting local feature sequences from local assemblies =========="
-  LOCAL_ASSEMBLY_COUNT=$(awk 'NR >= 2 && NF {count += 1} END {print count + 0}' "$LOCAL_CLEAN_FILE")
-  if [[ "$RES_DOWN" == true ]] && local_db_files_complete "$LOCAL_EXPECTED_TAXA_FILE"; then
-    LOCAL_RES_DOWN_VOID=true
+  LOCAL_PROCESS_FILE="$LOCAL_CLEAN_FILE"
+  LOCAL_ASSEMBLY_COUNT=$(awk 'NR >= 2 && NF {count += 1} END {print count + 0}' "$LOCAL_PROCESS_FILE")
+  if [[ "$RES_DOWN" == true && "$LOCAL_REBUILD" == false ]]; then
+    if [[ "${LOCAL_REPAIR_COUNT:-0}" -gt 0 ]]; then
+      LOCAL_PROCESS_FILE="$TEMP_DIR/local_assemblies_repair.csv"
+      filter_manifest_by_taxa "$LOCAL_CLEAN_FILE" "$LOCAL_REPAIR_TAXA_FILE" "$LOCAL_PROCESS_FILE"
+      LOCAL_ASSEMBLY_COUNT=$(awk 'NR >= 2 && NF {count += 1} END {print count + 0}' "$LOCAL_PROCESS_FILE")
+      if [[ "$LOCAL_ASSEMBLY_COUNT" -eq 0 ]]; then
+        log_error "Resume state requested local repairs, but no matching local manifest rows were found."
+        exit 1
+      fi
+    elif local_db_files_complete "$LOCAL_EXPECTED_TAXA_FILE"; then
+      LOCAL_RES_DOWN_VOID=true
+    fi
   fi
   if [[ "$RES_DOWN" == true && "$LOCAL_REBUILD" == false && "$LOCAL_RES_DOWN_VOID" == true ]]; then
     log_info "All local taxa had corresponding db files and matching resume counts; skipping local extraction."
   else
     LOCAL_CDS_CMD=(python3 "${SCRIPTS_DIR}/extract_local_cds_from_gff.py"
-      --manifest "$LOCAL_CLEAN_FILE"
+      --manifest "$LOCAL_PROCESS_FILE"
       --db-dir "${WORK_DIR}/db"
       --feature-types "$LOCAL_FEATURES")
     if [[ -n "$LOCAL_GROUP_BY" ]]; then
@@ -1242,7 +1353,7 @@ if [[ -n "$LOCAL_ASSEMBLIES_FILE" ]]; then
     if $HAS_CODE_COLUMN; then
       LOCAL_CDS_CMD+=(--has-code-column)
     fi
-    if [[ "$RES_DOWN" == true && "$LOCAL_REBUILD" == false ]]; then
+    if [[ "$RES_DOWN" == true && "$LOCAL_REBUILD" == false && "${LOCAL_REPAIR_COUNT:-0}" -eq 0 ]]; then
       LOCAL_CDS_CMD+=(--resume)
     fi
     log_info "Executing local feature extraction command: ${LOCAL_CDS_CMD[*]}"
