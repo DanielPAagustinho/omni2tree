@@ -131,7 +131,10 @@ append_stats() {
     if [[ ! -s "$STATS_FILE" ]]; then
       printf "%s\t%s\t%s\t%s\n" "FASTQ File" "Num Reads" "Avg Length" "Total Bases" >> "$STATS_FILE"
     fi
-    printf "%s\n" "$stats_block" >> "$STATS_FILE"
+    printf "%s\n" "$stats_block" | awk -F '\t' '
+      NR == FNR { seen[$1] = 1; next }
+      !($1 in seen) { seen[$1] = 1; print $0 }
+    ' "$STATS_FILE" - >> "$STATS_FILE"
   ) 200>>"$STATS_FILE"
 }
 
