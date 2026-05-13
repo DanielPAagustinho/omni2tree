@@ -1310,6 +1310,13 @@ if [[ -n "$INPUT_FILE" && "$RES_DOWN_VOID" == false ]]; then
   #it is not sth of the while loop, as I ran it apart and ran well, its sth of the fetch_data function!!, but I dont know what 
   #because the exit code is always cero!!!, and when it stops it simply gets out the while loop WITHOUT passing by my error message!!!
   #And after 3 hours of trials, the solution was to add <dev/null to prevent the function (or the commands it invokes) from consuming the standard script input.
+  
+  # Para evitar duplicados en code column mejor lo vaciamos, aunque igual si llegamos a este punto siempre se regenerará el five letter file
+  if $HAS_CODE_COLUMN && [[ "$RES_DOWN" == true && "$NCBI_REBUILD" == false ]]; then
+    log_info "Clearing $FIVE_LETTER_FILE to avoid overwriting existing codes"
+    : > "$FIVE_LETTER_FILE"
+  fi
+  
   while IFS= read -r line || [[ -n $line ]]; do
     log_info "Processing line: $line"
     if ! fetch_data "$line" < /dev/null; then
@@ -1488,7 +1495,7 @@ sed -i '/#WriteOutput_\(Phy\|Par\|H\)/ s/^#//' parameters.drw
 if [ ${#outgroup_codes[@]} -gt 0 ]; then
     outgroup_list=$(IFS=,; echo "${outgroup_codes[*]}")
     OUTGROUPS="OutgroupSpecies := [${outgroup_list}];"
-    log_info "Using the following 5-letter code outgroup(s) to edit the parameters file: ${outgroup_list//,/ }"
+    log_info "Using the following OMA outgroup species name(s) to edit the parameters file: ${outgroup_list//,/ }"
 else
     log_warn "No valid outgroup taxon provided. Using default 'none'."
     OUTGROUPS="OutgroupSpecies := 'none';"

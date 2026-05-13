@@ -24,7 +24,8 @@ def log_error(message):
     print(f"{RED}[{datetime.now():%Y-%m-%d %H:%M:%S}] [ERROR]{NC} {message}", file=sys.stderr)
 
 def read_fasta_files(input_folder):
-    files = listdir(input_folder)
+    # for the same accession file generate the same codes
+    files = sorted(listdir(input_folder))
     records_all = []
     file_names = [] 
     suffix = "_cds_from_genomic.fna"
