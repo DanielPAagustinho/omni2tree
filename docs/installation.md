@@ -2,7 +2,7 @@
 
 ## Dependencies
 
-This software relies on four external tools: [OMA Standalone](https://omabrowser.org/standalone/), [Rasusa](https://github.com/mbhall88/rasusa?tab=readme-ov-file#install), [czid-dedup](https://github.com/chanzuckerberg/czid-dedup?tab=readme-ov-file#installation), and [Read2Tree](https://github.com/DessimozLab/read2tree/tree/minimap2?tab=readme-ov-file#installation). It assumes all programs are in your Conda environment or `PATH`.
+This software relies on four external tools: [OMA Standalone](https://omabrowser.org/standalone/), [Rasusa](https://github.com/mbhall88/rasusa?tab=readme-ov-file#install), [czid-dedup](https://github.com/chanzuckerberg/czid-dedup?tab=readme-ov-file#installation), and [Read2Tree](https://github.com/DessimozLab/read2tree/tree/combined?tab=readme-ov-file#installation). It assumes all programs are in your Conda environment or `PATH`.
 
 Below are two general ways to install all the required dependencies. For more details, please visit the respective web pages.
 
@@ -13,13 +13,13 @@ Below are two general ways to install all the required dependencies. For more de
 ```bash
 conda create -n my_env python=3.10.8 -y
 conda activate my_env
-conda install -c bioconda rasusa read2tree sra-tools entrez-direct -y
+conda install -c bioconda rasusa sra-tools entrez-direct -y
 ```
 
 Notes:
 
 - OMA standalone and czid-dedup are not available via Conda. Please follow the "Installation from source" instructions below.
-- The Conda version of Read2Tree does not include the metagenomics branch. If you need this branch, follow the "Installation from source" instructions.
+- Read2Tree must be installed from source (see below). The conda package does not include `--meta` (metagenomic mode), which is required for co-infection analysis.
 
 ## 2. Installation from Source
 
@@ -76,19 +76,15 @@ conda install -c bioconda dendropy pysam -y
 # Install required software.
 conda install -c bioconda mafft iqtree minimap2 samtools -y
 
-# Clone and install Read2Tree.
-git clone https://github.com/DessimozLab/read2tree.git
+# Clone and install Read2Tree from the combined branch.
+git clone -b combined https://github.com/DessimozLab/read2tree.git
 cd read2tree
 python setup.py install
 ```
 
 Read2Tree will be placed in the default bin folder of your Conda installation.
 
-To study co-infection in metagenomics mode, use a separate Conda environment and install the Read2Tree metagenomics branch:
-
-```bash
-git clone -b metagenomics https://github.com/DessimozLab/read2tree.git
-```
+The `combined` branch includes both standard and metagenomic (`--meta`) modes.
 
 ### SRA Toolkit
 
