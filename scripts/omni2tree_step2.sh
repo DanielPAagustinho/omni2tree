@@ -24,6 +24,9 @@ DEBUG=false
 STATS_FILE=""
 ROOT_DIR=""
 STATS_DIR=""
+META=false
+SC_THRESHOLD=""
+MIN_CONS_COVERAGE=""
 
 ############################################
 # Functions
@@ -113,6 +116,13 @@ $(usage)
     --num_bases <int>        Target number of bases (requires --downsample)
     --num_reads <int>        Target number of reads (requires --downsample)
     --debug                  Keep temporary directory with intermediate read preprocessing files
+    --meta                   Enable metagenomic mode: allow multiple consensus sequences per OG
+                             (one per strain/species in a coinfected sample). Must also be passed
+                             to o2t-step3.
+    --sc_threshold <float>   [0-1] Minimum completeness (ACGT bp / length) for a mapped consensus
+                             to be kept. [default: 0.25]
+    --min_cons_coverage <int>  Minimum read depth required at a column to call a consensus base.
+                             [default: 1]
     -h, --help               Show this help
 
 Examples:
@@ -259,6 +269,18 @@ while [[ $# -gt 0 ]]; do
       DEBUG=true
       shift
       ;;
+    --meta)
+      META=true
+      shift
+      ;;
+    --sc_threshold)
+      SC_THRESHOLD="$2"
+      shift 2
+      ;;
+    --min_cons_coverage)
+      MIN_CONS_COVERAGE="$2"
+      shift 2
+      ;;
     -h|--help)
       show_help
       ;;
@@ -275,8 +297,16 @@ done
 # Validate required parameters
 ############################################
 
-check_dependencies
-log_info "Checked system dependencies"
+if [[ -n "$SC_THRESHOLD" ]]; then
+  if ! [[ "$SC_THRESHOLD" =~ ^0*(\.[0-9]+)?$|^1(\.0+)?$ ]]; then
+    log_error "--sc_threshold must be a float in [0,1]"
+    exit 1
+  fi
+fi
+if [[ -n "$MIN_CONS_COVERAGE" ]] && ! [[ "$MIN_CONS_COVERAGE" =~ ^[0-9]+$ ]]; then
+  log_error "--min_cons_coverage must be a non-negative integer"
+  exit 1
+fi
 
 
 if [[ ${#READS[@]} -eq 0 ]]; then
@@ -320,6 +350,11 @@ if [[ -n "$DEDUP_L" ]]; then
         exit 1
     fi
 fi
+
+
+check_dependencies
+log_info "Checked system dependencies"
+
 
 #Verify the use of just one of the 3 rasusa options
 if [[ "$DOWNSAMPLE" == true ]]; then
@@ -625,6 +660,10 @@ READ2TREE_CMD=( read2tree --step 2map
                 --threads "$THREADS"
                 --output_path "$OUT_DIR"
                 --debug )
+
+[[ "$META" == true ]] && READ2TREE_CMD+=( --meta )
+[[ -n "$SC_THRESHOLD" ]] && READ2TREE_CMD+=( --sc_threshold "$SC_THRESHOLD" )
+[[ -n "$MIN_CONS_COVERAGE" ]] && READ2TREE_CMD+=( --min_cons_coverage "$MIN_CONS_COVERAGE" )
 
 READ2TREE_CMD+=( --read_type "$MINIMAP2_OPTIONS" )
 if [[ "$READ_TYPE" == "paired" ]]; then
