@@ -934,8 +934,6 @@ while [[ "$#" -gt 0 ]]; do
 done
 
 # Validate dependencies at the very beggining
-check_dependencies
-log_info "Checked system dependencies"
 
 if [[ -z "${INPUT_FILE}" && -z "${LOCAL_ASSEMBLIES_FILE}" ]]; then
     log_error "Error: at least one reference input is required: --input (-i) and/or --local_assemblies (-L)."
@@ -981,6 +979,10 @@ if [ "$P_FLAG" = true ] && [ "$Q_FLAG" = true ]; then
     log_error "Options -p and -q cannot be used together"
     exit 1
 fi
+
+check_dependencies
+log_info "Checked system dependencies"
+
 
 if [[ -n "$WORK_DIR" ]]; then
     mkdir -p "$WORK_DIR"
