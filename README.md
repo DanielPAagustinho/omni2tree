@@ -233,6 +233,9 @@ parallel -j 4 o2t-step2 \
 | `--num_bases`    | Target number of bases for subsampling (integer). Cannot to be used together with `--genome_size` and `--coverage`. |
 | `--num_reads`    | Target number of reads for subsampling (integer). Cannot to be used together with `--genome_size` and `--coverage`. |
 | `-T, --threads`   | Threads to use during step 2 of read2tree. **Default:** 4. |
+| `--meta` | Enable metagenomic mode: allow multiple consensus sequences per OG (one per strain/species in a coinfected sample). Must also be passed to step 3. |
+| `--sc_threshold` | Minimum completeness (ACGT bp / sequence length, 0–1) for a mapped consensus to be kept. **Default:** `0.25`. |
+| `--min_cons_coverage` | Minimum read depth at a column to call a consensus base. **Default:** `1`. |
 | `--debug`        | Keeps temp directory with intermediate files. |
 | `-h, --help`         | Show help. |
 
@@ -297,6 +300,9 @@ This last step executes the following workflow:
 | `--min_samples` | Minimum samples per position for entropy. |
 | `--exclude_gaps` | Exclude gap character (`-`) before entropy calculation. |
 | `--add_domain` | Optional domain CSV (`gene,domain,start,end`) to add domain ranges to per-gene entropy plots. Coordinates are interpreted in the entropy coordinate system: alignment positions by default, reference positions with `--reference_id`. The `gene` value must match the `gene` column in `stats/entropy/OG_genes_entropy.csv` generated in step 1 from `stats/References_OGs/OG_genes.tsv`. |
+| `--meta` | Enable metagenomic concat mode (per-strain alignments). Must also be passed to step 2. |
+| `--meta_min_markers` | Minimum number of marker OGs per metagenomic species (requires `--meta`; auto-enables it). **Default:** `0`. |
+| `--meta_marker_fraction` | Minimum fraction (0–1) of total marker OGs per metagenomic species (requires `--meta`; auto-enables it). **Default:** `0.0`. |
 | `-h, --help` | Show help. |
 
 ### **Metadata Input Format (`-m`)**
