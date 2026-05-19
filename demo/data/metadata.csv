@@ -1,4 +1,4 @@
-LABEL,ACcession,subgroup,lineage,tree_group,location,collection_date,decade,bases,avg_spot_len,selection_note
+LABEL,Identifier,subgroup,lineage,tree_group,location,collection_date,decade,bases,avg_spot_len,selection_note
 character,character,character,character,character,character,character,character,numeric,numeric,character
 A2,M74568.1,RSV-A,A.1_historical,historical_RSV_A,USA,1961,1960,NA,NA,Historical_RSV_A_anchor
 HRSV_A_England_397_2017,PP109421.1,RSV-A,A.D.2.2.1,post_ON1_RSV_A,UK,2017,2010,NA,NA,Goya_2024_RSV_A_coordinate_reference
