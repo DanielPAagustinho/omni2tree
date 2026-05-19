@@ -71,7 +71,7 @@ _o2t_step2_complete() {
 
   opts="-r --reads -t --read_type -map_op --minimap2_options -T --threads --temp_dir -o --o2t_out \
         --stats_file --dedup --dedup_l --downsample --coverage --genome_size \
-        --num_bases --num_reads --debug -h --help"
+        --num_bases --num_reads --meta --sc_threshold --min_cons_coverage --debug -h --help"
 
   case "$prev" in
     -r|--reads|--stats_file)
@@ -99,7 +99,7 @@ _o2t_step3_complete() {
   cur="${COMP_WORDS[COMP_CWORD]}"
   prev="${COMP_WORDS[COMP_CWORD-1]}"
 
-  opts="-o --o2t_out -l --label -m --metadata --seq_type -T --threads --bootstrap -r --redo --temp_dir --debug --reference_id --exclude_pattern --filter_column --filter_value --group_by --min_samples --exclude_gaps --add_domain -h --help"
+  opts="-o --o2t_out -l --label -m --metadata --seq_type -T --threads --bootstrap -r --redo --temp_dir --debug --reference_id --exclude_pattern --filter_column --filter_value --group_by --min_samples --exclude_gaps --add_domain --meta --meta_min_markers --meta_marker_fraction -h --help"
 
   case "$prev" in
     -o|--o2t_out|--temp_dir)
