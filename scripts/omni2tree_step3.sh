@@ -36,6 +36,9 @@ REFERENCE_ID=""
 GROUP_BY=()
 FIVE_LETTER_FILE="five_letter_taxon.tsv"
 OG_ENTROPY_TABLE="stats/entropy/OG_genes_entropy.csv"
+META=false
+META_MIN_MARKERS=""
+META_MARKER_FRACTION=""
 
 if [ -t 1 ]; then
   RED="\033[1;31m"
@@ -109,6 +112,15 @@ Entropy Step 3 (plot_entropy.R) optional:
                                                 Gene names are validated against stats/entropy/OG_genes_entropy.csv
                                                 Coordinates are used as provided in the entropy coordinate system:
                                                 alignment positions by default, reference positions with --reference_id.
+
+Metagenomic mode (coinfection / multi-strain):
+  --meta                                        Enable metagenomic mode. Must also be passed to
+                                                o2t-step2 to take effect there.
+  --meta_min_markers <int>                      Minimum number of marker OGs a metagenomic species
+                                                must have to be kept. [default: 0] Implies --meta.
+  --meta_marker_fraction <float>                [0-1] Minimum fraction of total marker OGs a
+                                                metagenomic species must cover. [default: 0.0]
+                                                Implies --meta.
 
 Expected inputs from previous steps (inside --o2t_out):
   O2T_RESULTS/                                  read2tree output from step1/step2
@@ -432,6 +444,18 @@ while [[ $# -gt 0 ]]; do
       ADD_DOMAIN_FILE="$2"
       shift 2
       ;;
+    --meta)
+      META=true
+      shift
+      ;;
+    --meta_min_markers)
+      META_MIN_MARKERS="$2"
+      shift 2
+      ;;
+    --meta_marker_fraction)
+      META_MARKER_FRACTION="$2"
+      shift 2
+      ;;
     -h|--help)
       show_help
       ;;
@@ -481,6 +505,20 @@ fi
 if [[ -n "$FILTER_COLUMN" && -z "$FILTER_VALUE" ]] || [[ -z "$FILTER_COLUMN" && -n "$FILTER_VALUE" ]]; then
   log_error "--filter_column and --filter_value must be provided together"
   exit 1
+fi
+if [[ -n "$META_MIN_MARKERS" ]] && ! [[ "$META_MIN_MARKERS" =~ ^[0-9]+$ ]]; then
+  log_error "--meta_min_markers must be a non-negative integer"
+  exit 1
+fi
+if [[ -n "$META_MARKER_FRACTION" ]]; then
+  if ! [[ "$META_MARKER_FRACTION" =~ ^0*(\.[0-9]+)?$|^1(\.0+)?$ ]]; then
+    log_error "--meta_marker_fraction must be a float in [0,1]"
+    exit 1
+  fi
+fi
+if [[ "$META" == false && ( -n "$META_MIN_MARKERS" || -n "$META_MARKER_FRACTION" ) ]]; then
+  log_warn "--meta_min_markers/--meta_marker_fraction require --meta to take effect; enabling --meta automatically"
+  META=true
 fi
 
 check_dependencies
@@ -535,13 +573,24 @@ VALIDATE_META_CMD=(python3 "$UTILS_DIR/validate_metadata.py"
 run_cmd "${VALIDATE_META_CMD[@]}"
 
 log_info "========== Step 3.2: Running Read2tree (step 3 combine) =========="
-READ2TREE_CMD=(read2tree --step 3combine --standalone_path marker_genes --dna_reference dna_ref.fa --output_path "$OUT_DIR" --tree --debug)
+READ2TREE_CMD=( read2tree --step 3combine
+                --standalone_path marker_genes
+                --dna_reference dna_ref.fa
+                --output_path "$OUT_DIR"
+                --tree
+                --debug )
+[[ "$META" == true ]] && READ2TREE_CMD+=( --meta )
+[[ -n "$META_MIN_MARKERS" ]] && READ2TREE_CMD+=( --meta_min_markers "$META_MIN_MARKERS" )
+[[ -n "$META_MARKER_FRACTION" ]] && READ2TREE_CMD+=( --meta_marker_fraction "$META_MARKER_FRACTION" )
 run_cmd "${READ2TREE_CMD[@]}"
 
 log_info "========== Step 3.3: Running IQ-TREE =========="
 CONCAT_PHY="$(detect_concat_phy "$SEQ_LC")"
 require_file "$CONCAT_PHY" "Concatenated alignment not found"
-IQTREE_CMD=(iqtree -T "$THREADS" -s "$CONCAT_PHY" -bb "$BOOTSTRAP")
+IQTREE_CMD=(iqtree -T "$THREADS" -s "$CONCAT_PHY")
+if (( BOOTSTRAP > 0 )); then
+  IQTREE_CMD+=( -bb "$BOOTSTRAP" )
+fi
 if [[ "$REDO" == true ]]; then
   IQTREE_CMD+=( -redo )
   log_info "Redo mode enabled: IQ-TREE will rerun even if previous outputs already exist for this alignment"
