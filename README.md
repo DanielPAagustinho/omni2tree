@@ -87,8 +87,6 @@ If this file is not specified, OMA Standalone will use midpoint rooting, which i
 | `--temp_dir`       | Temporary directory (relative to `--o2t_out` or absolute). **Default:** `mktemp -d`|
 | `-R`, `--resume`       | Skips taxa whose reference FASTA already exists in the `db` folder. If all taxa are already present, it resumes at Step 1.4. If the required cleaned files are already present and match `db/`, Step 1.4 is bypassed and the script resumes from the OMA Standalone run (Step 1.6). When run, it *removes* existing OMA output & read2tree directories. |
 |`--og_min_fraction`| Keep only OGs present in at least this fraction of species (0–1). If omitted, all OGs are kept. |
-| `-p, --use_mat_peptides`       | For NCBI accessions, download GBK files and use `mat_peptide` features instead of CDS features if at least one `mat_peptide` is found. |
-| `-q, --use_mat_peptides_only`       | Same as `--use_mat_peptides`, except that if no `mat_peptide` feature is found, it does not download CDS features and skips that taxon. |
 | `-T, --threads`   | Number of threads to use for OMA Standalone and the first step of read2tree. **Default:** `12`. |
 | `--debug`         | Keeps temp directory with intermediate files. |
 | `-h, --help`         | Show help. |
@@ -175,7 +173,7 @@ All outputs are placed within the `--o2t_out` directory
 
 | **File**                      | **Description** |
 |--------------------------------|------------------------------------------------------------------|
-| `db/{taxon}_cds_from_genomic.fna` | Nucleotide FASTA files for each taxon with NCBI CDS/mature peptides or selected local GTF/GFF3 feature units. |
+| `db/{taxon}_cds_from_genomic.fna` | Nucleotide FASTA files for each taxon with NCBI CDS or selected local GTF/GFF3 feature units. |
 | `DB/{taxon}.fa`               | Amino acid FASTA files for each taxon, prepared for OMA Standalone and read2tree. |
 | `dna_ref.fa`                  | Reference FASTA file with all cleaned nucleotide reference units from all taxa, prepared for read2tree. |
 | `five_letter_taxon.tsv`        | Table linking taxa with five-letter codes. |

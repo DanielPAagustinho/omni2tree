@@ -142,8 +142,6 @@ Optional:
   -T, --threads <int>                          Number of threads [default: 12]  
   -R, --resume                                 Reuses per-taxon reference FASTA files from db/ only when they match the record count and SHA stored in the step1 resume state; repairs missing, invalid, changed, or newly added taxa when global extraction parameters are unchanged. If global NCBI/local extraction parameters change, all taxa from that source are rebuilt. Stale reference files in db/ and DB/ that are not present in current inputs are removed with a warning. Skips as many steps as possible up to the OMA run step (1.6). When run, it removes existing OMA output and read2tree directories.
   --og_min_fraction <float>                    Keep only OGs present in at least this fraction of species (0–1). If omitted, all OGs are kept.
-  -p, --use_mat_peptides                       For NCBI accessions, downloads the gbk file for each taxon's accession(s). If at least one mature peptide feature is detected, these features are used as the coding sequences; otherwise, the standard CDS features are downloaded.
-  -q, --use_mat_peptides_only                  For NCBI accessions, downloads the gbk file for each taxon's accession(s). If at least one mature peptide feature is detected, these features are used as the coding sequences; if none are detected, that taxon is skipped.
   --temp_dir <dir>                             Optional temp directory. If relative, it will be relative to o2t_out.
   --debug                                      Keeps temporary directory
   -h, --help                                   Show this help message
@@ -919,8 +917,6 @@ while [[ "$#" -gt 0 ]]; do
         --local_features) LOCAL_FEATURES="$2"; shift ;;
         --local_group_by) LOCAL_GROUP_BY="$2"; shift ;;
         -g|--outgroup) OUTGROUP_FILE="$2"; shift ;;
-        -p|--use_mat_peptides) MAT_PEPTIDES=true; P_FLAG=true;;
-        -q|--use_mat_peptides_only) MAT_PEPTIDES=true; ONLY_MAT_PEPTIDES=true; Q_FLAG=true;;
         -T|--threads) THREADS="$2"; shift ;;
         --temp_dir) TEMP_DIR="${2%/}"; shift ;;
         -o|--o2t_out) WORK_DIR="${2%/}"; shift ;;
