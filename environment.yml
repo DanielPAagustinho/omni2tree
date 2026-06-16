@@ -5,6 +5,7 @@ channels:
   - defaults
 dependencies:
   - python=3.10
+  - pip
   - biopython
   - lxml
   - scipy
@@ -29,3 +30,10 @@ dependencies:
   - rasusa
   - ete3
   - cython
+  - sra-tools
+  - entrez-direct
+  - r-base
+  - r-tidyverse
+  - r-rcolorbrewer
+  - matplotlib
+  - parallel
