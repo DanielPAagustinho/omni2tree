@@ -60,3 +60,20 @@ Compare your generated `../my_results` folder with the bundled [results](results
 ### Example HTML Visualization
 
 ![O2T visualization demo](../docs/demo_o2t_view.png)
+
+## Running with Docker
+
+The demo data is bundled in the image. Mount a local directory for results and run all steps in one container:
+
+```bash
+docker run --rm -it \
+  -v "$PWD/my_results:/opt/omni2tree/demo/my_results" \
+  omni2tree \
+  bash -c 'cd /opt/omni2tree/demo/data &&
+    o2t-sra -i reads.csv -o reads --layout SINGLE &&
+    o2t-step1 -i accessions.csv -g outgroup.csv -T 3 --o2t_out ../my_results &&
+    parallel -j 4 o2t-step2 -r {1} --o2t_out ../my_results -T 2 ::: $(ls reads/hRSV_*fastq | sort) &&
+    o2t-step3 -o ../my_results -m metadata.csv -l hRSV_demo --seq_type aa -T 3 -r --exclude_pattern "s0" --min_samples 4'
+```
+
+Outputs land in `my_results/` on your host. SRA reads are downloaded inside the container during the run and do not persist after exit.

@@ -6,30 +6,27 @@ This software relies on four external tools: [OMA Standalone](https://omabrowser
 
 Below are three ways to install all required dependencies.
 
-## 1. Docker (recommended — no manual setup)
+## 1. Docker
 
 The repository ships a `Dockerfile` that installs every dependency and the Omni2Tree entry points. No Conda environment or manual tool installation required.
 
-**Build the image** (from the repository root):
+> **Note:** The default `Dockerfile` does not include `czid-dedup` (read deduplication). To build an image with deduplication support, use `Dockerfile-complete` instead: `docker build -f Dockerfile-complete -t omni2tree .`
+
+Clone the repository and build the image:
 
 ```bash
+git clone https://github.com/DanielPAagustinho/omni2tree.git
+cd omni2tree
 docker build -t omni2tree .
 ```
 
-**Verify the image:**
+Verify the image:
 
 ```bash
 docker run --rm omni2tree bash -c 'command -v o2t-step1 && command -v read2tree && command -v oma'
 ```
 
-**Run a pipeline step** by mounting your data directory as `/work`:
-
-```bash
-docker run --rm -it \
-  -v "$PWD/my_results:/work/my_results" \
-  omni2tree \
-  bash -c 'cd /opt/omni2tree/demo/data && o2t-step1 -i accessions.csv -g outgroup.csv -T 4 --o2t_out ../my_results'
-```
+To run the hRSV demo inside the container, see [Running with Docker](../demo/README.md#running-with-docker).
 
 Two important notes for running the container:
 - Use `bash -c '...'`, **not** `bash -lc '...'`. The login-shell flag is not needed; the image sets `PATH` via `ENV` and it is available in every non-login shell.
