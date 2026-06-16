@@ -16,9 +16,9 @@ Omni2Tree is an end-to-end phylogenomic workflow that builds maximum-likelihood 
 
 ## Installation
 
-For the quickest setup, use [Docker](docs/installation.md#1-docker) — no Conda or manual installs needed. For full options, see [docs/installation.md](docs/installation.md).
+See the full installation guide in [docs/installation.md](docs/installation.md).
 
-Otherwise, install Omni2Tree with:
+After installing the dependencies, install Omni2Tree itself with:
 
 ```bash
 git clone https://github.com/DanielPAagustinho/omni2tree.git
