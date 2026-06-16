@@ -4,9 +4,38 @@
 
 This software relies on four external tools: [OMA Standalone](https://omabrowser.org/standalone/), [Rasusa](https://github.com/mbhall88/rasusa?tab=readme-ov-file#install), [czid-dedup](https://github.com/chanzuckerberg/czid-dedup?tab=readme-ov-file#installation), and [Read2Tree](https://github.com/DessimozLab/read2tree/tree/combined?tab=readme-ov-file#installation). It assumes all programs are in your Conda environment or `PATH`.
 
-Below are two general ways to install all the required dependencies. For more details, please visit the respective web pages.
+Below are three ways to install all required dependencies.
 
-## 1. Installation with Conda
+## 1. Docker (recommended — no manual setup)
+
+The repository ships a `Dockerfile` that installs every dependency and the Omni2Tree entry points. No Conda environment or manual tool installation required.
+
+**Build the image** (from the repository root):
+
+```bash
+docker build -t omni2tree .
+```
+
+**Verify the image:**
+
+```bash
+docker run --rm omni2tree bash -c 'command -v o2t-step1 && command -v read2tree && command -v oma'
+```
+
+**Run a pipeline step** by mounting your data directory as `/work`:
+
+```bash
+docker run --rm -it \
+  -v "$PWD/my_results:/work/my_results" \
+  omni2tree \
+  bash -c 'cd /opt/omni2tree/demo/data && o2t-step1 -i accessions.csv -g outgroup.csv -T 4 --o2t_out ../my_results'
+```
+
+Two important notes for running the container:
+- Use `bash -c '...'`, **not** `bash -lc '...'`. The login-shell flag is not needed; the image sets `PATH` via `ENV` and it is available in every non-login shell.
+- The container runs as **root** by default. Do **not** pass `--user`; some tools (OMA, warthog) need write access to directories under `/opt/OMA` on first run.
+
+## 2. Installation with Conda
 
 [Conda](https://docs.anaconda.com/miniconda/) is a package manager that allows you to install all dependencies quickly and easily.
 
@@ -21,7 +50,7 @@ Notes:
 - OMA standalone and czid-dedup are not available via Conda. Please follow the "Installation from source" instructions below.
 - Read2Tree must be installed from source (see below). The conda package does not include `--meta` (metagenomic mode), which is required for co-infection analysis.
 
-## 2. Installation from Source
+## 3. Installation from Source
 
 If you prefer to install the tools manually from their source code, use the following commands.
 
@@ -105,7 +134,7 @@ sh -c "$(wget -q https://ftp.ncbi.nlm.nih.gov/entrez/entrezdirect/install-edirec
 source ~/.bashrc
 ```
 
-## 3. Verify Dependencies
+## 4. Verify Dependencies
 
 To verify that all tools are installed and available in your Conda environment or `PATH`, run:
 
@@ -113,7 +142,7 @@ To verify that all tools are installed and available in your Conda environment o
 command -v oma && command -v rasusa && command -v czid-dedup && command -v read2tree && command -v fasterq-dump && command -v esearch
 ```
 
-## 4. Install Omni2Tree
+## 5. Install Omni2Tree
 
 Clone the repo and run the installer:
 
