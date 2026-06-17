@@ -77,3 +77,25 @@ docker run --rm -it \
 ```
 
 Outputs land in `my_results/` on your host. SRA reads are downloaded inside the container during the run and do not persist after exit.
+
+## Running with Apptainer / Singularity
+
+Download `omni2tree.sif` from the GitHub release assets. Run the command below from the repository root. The SIF filesystem is read-only, so results and reads must be written to bound host directories:
+
+```bash
+mkdir -p demo/o2t_singularity_results demo/o2t_singularity_reads
+
+apptainer exec \
+  --bind demo/o2t_singularity_results:/opt/omni2tree/demo/my_results \
+  --bind demo/o2t_singularity_reads:/opt/omni2tree/demo/data/reads \
+  omni2tree.sif \
+  bash -c 'cd /opt/omni2tree/demo/data &&
+    o2t-sra -i reads.csv -o reads --layout SINGLE &&
+    o2t-step1 -i accessions.csv -g outgroup.csv -T 3 --o2t_out ../my_results &&
+    parallel -j 4 o2t-step2 -r {1} --o2t_out ../my_results -T 2 ::: $(ls reads/hRSV_*fastq | sort) &&
+    o2t-step3 -o ../my_results -m metadata.csv -l hRSV_demo --seq_type aa -T 3 -r --exclude_pattern "s0" --min_samples 4'
+```
+
+Outputs land in `demo/o2t_singularity_results/` on your host. Downloaded SRA reads land in `demo/o2t_singularity_reads/`.
+
+If your system provides `singularity` instead of `apptainer`, replace `apptainer exec` with `singularity exec`.
