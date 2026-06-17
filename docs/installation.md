@@ -36,7 +36,7 @@ Two important notes for running the container:
 
 For HPC users without Docker or root access, use the prebuilt `omni2tree.sif` image from the GitHub release assets.
 
-Clone the repository, then download the image and checksum:
+Download the image and checksum:
 
 ```bash
 wget https://github.com/DanielPAagustinho/omni2tree/releases/download/v0.3.1/omni2tree.sif
