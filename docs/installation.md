@@ -10,8 +10,6 @@ Below are four ways to install all required dependencies.
 
 The repository ships a `Dockerfile` that installs every dependency and the Omni2Tree entry points. No Conda environment or manual tool installation required.
 
-> **Note:** The default `Dockerfile` does not include `czid-dedup` (read deduplication). To build an image with deduplication support, use `Dockerfile-complete` instead: `docker build -f Dockerfile-complete -t omni2tree .`
-
 Clone the repository and build the image:
 
 ```bash
@@ -32,13 +30,17 @@ Two important notes for running the container:
 - Use `bash -c '...'`, **not** `bash -lc '...'`. The login-shell flag is not needed; the image sets `PATH` via `ENV` and it is available in every non-login shell.
 - The container runs as **root** by default. Do **not** pass `--user`; some tools (OMA, warthog) need write access to directories under `/opt/OMA` on first run.
 
+> **Note:** The default `Dockerfile` does not include `czid-dedup` (read deduplication). To build an image with deduplication support, use `Dockerfile-complete` instead: `docker build -f Dockerfile-complete -t omni2tree .`
+
 ## 2. Apptainer / Singularity
 
 For HPC users without Docker or root access, use the prebuilt `omni2tree.sif` image from the GitHub release assets.
 
-Download the image and checksum:
+Clone the repository, then download the image and checksum:
 
 ```bash
+git clone https://github.com/DanielPAagustinho/omni2tree.git
+cd omni2tree
 wget https://github.com/DanielPAagustinho/omni2tree/releases/download/v0.3.1/omni2tree.sif
 wget https://github.com/DanielPAagustinho/omni2tree/releases/download/v0.3.1/omni2tree.sif.sha256
 sha256sum -c omni2tree.sif.sha256
@@ -172,7 +174,7 @@ Clone the repo and run the installer:
 ```bash
 git clone https://github.com/DanielPAagustinho/omni2tree.git
 cd omni2tree
-./install.sh /your/install/path
+./install_omni2tree.sh /your/install/path
 ```
 
 The installation script creates symlinks to the shell entry points.

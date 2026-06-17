@@ -53,8 +53,8 @@ ENV PATH="/opt/OMA/OMA.${OMA_VERSION}/bin:/opt/OMA/bin:/opt/conda/bin:${PATH}"
 
 COPY --chown=$MAMBA_USER:$MAMBA_USER . /opt/omni2tree
 
-RUN chmod +x install.sh scripts/*.sh scripts/*.py scripts/*.R utils/*.py view/omni2treeview.py \
-    && ./install.sh /usr/local/bin \
+RUN chmod +x install_omni2tree.sh scripts/*.sh scripts/*.py scripts/*.R utils/*.py view/omni2treeview.py \
+    && ./install_omni2tree.sh /usr/local/bin \
     && command -v o2t-step1 \
     && command -v read2tree \
     && command -v oma \

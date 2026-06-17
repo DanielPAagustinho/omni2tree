@@ -23,7 +23,7 @@ After installing the dependencies, install Omni2Tree itself with:
 ```bash
 git clone https://github.com/DanielPAagustinho/omni2tree.git
 cd omni2tree
-./install.sh /your/install/path
+./install_omni2tree.sh /your/install/path
 ```
 
 ## Quick start

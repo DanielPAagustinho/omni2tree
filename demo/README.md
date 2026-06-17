@@ -80,9 +80,16 @@ Outputs land in `my_results/` on your host. SRA reads are downloaded inside the 
 
 ## Running with Apptainer / Singularity
 
-Download `omni2tree.sif` from the GitHub release assets. Run the command below from the repository root. The SIF filesystem is read-only, so results and reads must be written to bound host directories:
+Clone the repository and download `omni2tree.sif` from the GitHub release assets. The SIF filesystem is read-only, so results and reads must be written to bound host directories:
 
 ```bash
+git clone https://github.com/DanielPAagustinho/omni2tree.git
+cd omni2tree
+
+wget https://github.com/DanielPAagustinho/omni2tree/releases/download/v0.3.1/omni2tree.sif
+wget https://github.com/DanielPAagustinho/omni2tree/releases/download/v0.3.1/omni2tree.sif.sha256
+sha256sum -c omni2tree.sif.sha256
+
 mkdir -p demo/o2t_singularity_results demo/o2t_singularity_reads
 
 apptainer exec \

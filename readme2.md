@@ -154,7 +154,7 @@ You can set up Omni2tree by cloning the repo and running the installer:
 ```bash
 git clone https://github.com/DanielPAagustinho/virus2tree.git
 cd virus2tree
-./install.sh /your/install/path
+./install_omni2tree.sh /your/install/path
 ```
 
 The installation script creates symlinks to the shell entry points.
