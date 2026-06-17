@@ -39,8 +39,6 @@ For HPC users without Docker or root access, use the prebuilt `omni2tree.sif` im
 Clone the repository, then download the image and checksum:
 
 ```bash
-git clone https://github.com/DanielPAagustinho/omni2tree.git
-cd omni2tree
 wget https://github.com/DanielPAagustinho/omni2tree/releases/download/v0.3.1/omni2tree.sif
 wget https://github.com/DanielPAagustinho/omni2tree/releases/download/v0.3.1/omni2tree.sif.sha256
 sha256sum -c omni2tree.sif.sha256
